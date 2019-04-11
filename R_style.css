@@ -1,28 +1,26 @@
 body {
 	font-family: "游ゴシック", "Yu Gothic UI", "Meiryo UI", "Hiragino Kaku Gothic ProN", "sans-serif";
+	font-size: 14px;
 }
 
-h1,h2,h3,h4,h5,h6 {
-	font-weight:bold;	
-	margin: 2em 0 0.3em 0;
-	padding: 0.5em;
+h1,h3,h4,h5,h6 {
+	font-weight:bold;
+	margin: 1em 0 0.25em 0;
+	padding: 0.25em;
 }
 
 h1 {
-  font-size: 28px;
+  font-size: 2em;
 }
 
 h2 {
-  font-size: 25px;
+  font-size: 1.8em;
 }
 
 h3 {
-  font-size: 18px;
+  font-size: 1.5em;
 }
 
-h4 {
-  font-size: 16px;
-}
 
 
 .math {
@@ -54,21 +52,64 @@ em {
   font-style: normal;
 }
 
-
+/*
 div.section.level1 h1{
 	display:block;
-	/* border-bottom:2px solid lightgray; */
-	/*background-color: lightgray;*/
 	position: relative;
-  border-top: solid 2px #3399FF;
-  border-bottom: solid 2px #3399FF;
+  border-top: solid 2px #A9D0F5;
+  border-bottom: solid 2px #A9D0F5;
   background: #f4f4f4;
   line-height: 1.4;
   padding: 0.4em 0.5em;
   margin: 2em 0 0.5em;
+}*/
+
+div.section.level1 h1 {
+  /*color: #6cb4e4;
+  text-align: center;*/
+  padding: 0.5em;
+  border-top: solid 2px #BDBDBD; /* blue: #6cb4e4 */
+  border-bottom: solid 2px #BDBDBD;
+  background: -webkit-repeating-linear-gradient(-45deg, #E6E6E6, #F2F2F2 3px,#E6E6E6 3px, #E6E6E6 7px);
+  background: repeating-linear-gradient(-45deg, #E6E6E6, #F2F2F2 3px,#E6E6E6 3px, #E6E6E6 7px);
 }
 
+/*
+div.section.level2 h2 {
+    position: relative;
+    padding: 0.15em 0;
+}
+div.section.level2 h2:after {
+  margin-top: 0.1em;
+  content: "";
+  display: block;
+  height: 2px;
+  background: -webkit-linear-gradient(to right, #BDBDBD, #E6E6E6);
+  background: linear-gradient(to right, #BDBDBD, #E6E6E6);
+}
+*/
+
+div.section.level2 h2 {
+  border-bottom: solid 3px #E6E6E6;
+  position: relative;
+}
+
+div.section.level2 h2:after {
+  position: absolute;
+  content: " ";
+  display: block;
+  border-bottom: solid 3px #BDBDBD;
+  bottom: -3px;
+  width: 5%;
+}
+h2 {
+	font-weight:bold;
+	margin: 1em 0 0.25em 0;
+	padding-bottom: 0.25em;
+}
+
+/*
 div.section.level1 h2{
 	display:block;
 	border-bottom:1px solid lightgray;
-}
+}*/
