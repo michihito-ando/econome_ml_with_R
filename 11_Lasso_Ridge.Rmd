@@ -1,0 +1,708 @@
+---
+title: "機械学習２：リッジ回帰・Lasso"
+author: ""
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    fig_height: 4          # 画像サイズのデフォルトを設定
+    fig_width: 6           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+```
+
+$$
+% 定義
+\newcommand{\argmin}{\mathop{\rm arg~min}\limits}
+$$
+
+
+
+# 汎化性能と過学習
+
+機械学習で行いたいことは学習に使用したデータのみへの予測精度を高めることではなく，学習に使用していない未知のデータに対しても高い予測精度をもつこと，すなわち**汎化性能**を高めることである。
+
+逆に，学習用データに対しての予測精度は高いものの未知のデータに対する予測精度が低い（汎化性能が低い）予測モデルのことを**過学習**（overfitting）しているという。
+
+数値例を示そう。ある変数$\{x,y\}$について10個のサンプルが得られ，それを学習用データにして予測モデルを作るとする。
+
+```{r, fig.width=8, echo=F}
+library(tidyverse)
+library(MLmetrics)
+set.seed(0)
+
+# データ生成 ----
+n = 20
+# x = rnorm(n, sd = 0.5)
+x = 1:n * 1/n
+y = 0.5 + 0.4*sin(2*pi*x) + rnorm(n = n, sd = 0.1)
+df = data_frame(y, x, x2 = x^2, x3 = x^3, x4 = x^4, x5 = x^5, x6 = x^6, x7 = x^7, x8 = x^8, x9 = x^9)
+
+# データを分割 ----
+# ID列を追加
+df = df %>% rownames_to_column("ID")
+
+# 50%を学習用データに
+train <- df %>% sample_frac(size = 0.5)
+
+# 学習用データに使っていないIDの行をテスト用データに
+test <- anti_join(df, train, by = "ID")
+
+# ID列の削除
+df <- df %>% select(-ID)
+train <- train %>% select(-ID)
+test <- test %>% select(-ID)
+```
+
+
+```{r, fig.width=5, fig.height=3.5, echo=F}
+ggplot(train, aes(x, y))+
+  geom_point()
+```
+
+データは非線形な分布をしているため，以下のような多項式回帰をいくつか作って比較してみるとする。
+
+$$
+y = \beta_0 + \beta_1 x + \beta_2 x^2 + \cdots + \beta_p x^p + \varepsilon
+$$
+
+以下の図が次数をいくつか変えていった多項式回帰の回帰曲線である。
+
+```{r, echo=F}
+# plot
+p = 1
+p1 <- ggplot(train, aes(x, y))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 1))+
+  labs(title = str_c(p,"次多項式回帰"))
+
+p = 2
+p2 <- ggplot(train, aes(x, y))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 2))+
+  labs(title = str_c(p,"次多項式回帰"))
+
+p = 3
+p3 <- ggplot(train, aes(x, y))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 3))+
+  labs(title = str_c(p,"次多項式回帰"))
+
+p = 5
+p5 <- ggplot(train, aes(x, y))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 5))+
+  labs(title = str_c(p,"次多項式回帰"))
+
+p = 7
+p7 <- ggplot(train, aes(x, y))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 7))+
+  labs(title = str_c(p,"次多項式回帰"))
+
+p = 9
+p9 <- ggplot(train, aes(x, y))+
+  geom_point()+
+  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 9))+
+  labs(title = str_c(p,"次多項式回帰"))
+
+library(gridExtra)
+grid.arrange(grobs = list(p1, p2, p3, p5, p7, p9), ncol = 3)
+```
+
+次数の高いモデルのほうがデータの分布をよく近似する曲線を描いている。
+
+では次数が最も高い多項式回帰が最も良い汎化性能を持つのかというと，そうとは限らない。
+
+以下の図は，10個の学習用データでの誤差と，10個のテストデータでの誤差をモデルごとに示したものである。
+
+```{r, echo=F}
+# 次数を変えながら学習・予測
+for(p in 1:9){
+  reg = lm(y ~ ., data = train[,1:(p+1)]) # 学習
+  # trainへの予測精度
+  y_train_pred = predict(reg, train[,1:(p+1)])   # 予測
+  train_error = RMSE(y_train_pred, train$y) # 誤差
+  # testへの予測精度
+  y_test_pred = predict(reg, test[,1:(p+1)])   # 予測
+  test_error = RMSE(y_test_pred, test$y) # 誤差
+  if(p == 1) result = data_frame(p, train_error, test_error)
+  if(p != 1) result = rbind(result, data_frame(p, train_error, test_error))
+}
+
+
+ggplot(result %>% gather(key, error, -p),
+       aes(x = p, y = error, color = key))+
+  geom_point()+
+  geom_line(size = 1)+
+  scale_x_continuous(breaks = c(1:9))+
+  labs(color = "", x = "多項式回帰の次数", y = "誤差（RMSE)",
+       title = "モデルの複雑さと過学習")
+```
+
+多項式回帰の次数が高くなるほど学習用データへの予測誤差（train_error）は減少しているが，テストデータに対する予測誤差（test_error）は次数が5以上になると増加しており，過学習していることがわかる。
+
+次数が高い多項式回帰モデルは高い表現力をもつ複雑なモデルであるが，データに対して過剰に複雑なモデルを使用してしまうと過学習をおこすことになる。
+
+過学習を抑えたい場合に使われる手法の1つに**正則化**（regularization）という手法がある。以下では有名な正則化回帰である**リッジ回帰**と**lasso**について述べる。
+
+<!-- # 正則化 -->
+
+<!-- この多項式の例で，次数を下げる（投入する変数を選ぶ）以外の方法で過学習を抑えたい場合に使われる手法の1つに**正則化**（regularization）という手法がある。 -->
+
+<!-- 正則化は通常の誤差関数$E(\boldsymbol{\beta})$に正則化のための項を加えたもの -->
+
+<!-- $$ -->
+<!-- E(\boldsymbol{\beta}) + \lambda \frac{1}{p} \sum_{j=1}^p |\beta_j|^q -->
+<!-- $$ -->
+
+<!-- を誤差関数に使用してパラメータ$\beta$の推定を行う。 -->
+
+<!-- 以下では有名な正則化回帰である**リッジ回帰**と**lasso**について述べる。 -->
+
+
+
+# リッジ回帰
+
+## リッジ回帰
+
+**リッジ回帰**（ridge regression）は推定するパラメータの二乗和がある値$R$を超えない範囲で推定するという制約条件の下で誤差二乗和$\sum^n_{i=1}(y_i - \hat{y}_i)^2$（$\hat{y}$は予測値）を最小化するようなパラメータを推定する。
+
+$$
+\min_\beta \sum^n_{i=1}(y_i - \hat{y}_i)^2 ,\hspace{1em}
+\text{subject to }\sum_{j=1}^p \beta_j^2 \leq R
+$$
+
+このことについて，パラメータが２つ（$\beta_0, \beta_1$）の場合を例に最小二乗法とリッジ回帰を視覚的に比較したものが下の図である。
+
+![](11_Lasso_Ridge.assets/1552139531142.png)
+
+最小化したい誤差二乗和は放物面のような形になっており（左図），それを最小化するパラメータが最小二乗推定量$(\hat{\beta}_1^{LS}, \hat{\beta}_2^{LS})$となる。
+
+左図を真上から見るようにして２次元の図にしたものが中央の図で，楕円は放物面の等高線（誤差二乗和が等しい点を結んだ線）を表している。
+
+最小二乗法は採用するパラメータに制約が無いためパラメータ空間全体を使うことができる（中央図）。
+
+リッジ回帰は制約条件を満たす範囲がパラメータ空間の原点を中心とする円になるため，円の領域の中で誤差二乗和を最小化するパラメータを探索することになる（右図）。制約条件の$R$は円の大きさを表している。
+
+なお，最小二乗法で得られる推定量がリッジ回帰の円の中にある場合は最小二乗推定量とリッジ回帰の推定量は同じものになる。
+
+```{r, include=F}
+# パラメータ空間
+# df_plot = expand.grid(beta_1 = -50:50 * 1/50,
+#                      beta_2 = -50:50 * 1/50) %>% 
+#   mutate(beta_L2 = beta_1^2 + beta_2^2) %>% 
+#   mutate(isR = 1*(beta_L2 <= 0.5))
+# 
+# ggplot(df_plot, aes(x = beta_1, y = beta_2, color = isR))+
+#   geom_point()+
+#   geom_hline(yintercept = 0)+
+#   geom_vline(xintercept = 0)
+```
+
+
+書き方を変えると，リッジ回帰のパラメータの推定量（のベクトル）$\hat{\boldsymbol{\beta}}^{ridge}$は
+$$
+\hat{\boldsymbol{\beta}}^{ridge} = \argmin_{\boldsymbol{\beta}} \left\{\sum_{i=1}^n(y_i - \hat{y}_i)^2 + \lambda \sum_{j=1}^p \beta_j^2\right\}
+$$
+というものになる。
+
+最小二乗法の推定量は誤差二乗和$\sum_{i=1}^n(y_i - \hat{y}_i)^2$を最小化するパラメータ
+$$
+\hat{\boldsymbol{\beta}}^{LS} = \argmin_{\boldsymbol{\beta}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
+$$
+
+であった。リッジ回帰は誤差二乗和に$\lambda \sum_{j=1}^p \beta_j^2$の項を加えたものを誤差関数とし，それを最小化している。
+
+$\lambda$は**正則化パラメータ**（regularization parameter）と呼ばれ，**正則化項**（regularization term）$\sum_{j=1}^p \beta_j^2$の影響の程度を調整するパラメータである。
+
+$\lambda$は予測モデルによってデータから推定されるパラメータ$\beta_j$とは異なり，分析者が適切な値を指定する必要がある。こうした予測モデル外から設定する必要があるパラメータを**ハイパーパラメータ**（hyperparameter）という。
+
+## データの標準化
+
+変数の測定単位が異なる場合，回帰分析のパラメータ$\beta_j$も異なってくる。
+
+リッジ回帰は正則化項$\sum_{j=1}^p \beta_j^2$でパラメータの値に基づいて推定を行うため，正則化法を使用する際には各変数の測定単位の違いやパラメータ$\beta$の大きさの差をなくすために説明変数を**標準化**する必要がある。
+
+標準化とは，変数の平均を0，分散を1にすることであり，ある変数$x$の平均$\mu$と標準偏差$\sigma$を用いて
+
+$$
+z = \frac{x - \mu}{\sigma}
+$$
+
+のように変換することである。
+
+適当に乱数を生成して比較したものが次のグラフである。標準化することによって分布の中心が原点$(0,0)$になる。これを**中心化**という。
+
+```{r, echo=F, fig.height=3.5}
+# data
+x1 <- rnorm(n = 100, mean = 5, sd = 3)
+e <- rnorm(n = 100, mean = 5, sd = 6)
+X <- data_frame(x1, 
+                x2 = 2*x1 + e)
+
+# plot
+g1 <- ggplot(X, aes(x = x1, y = x2))+
+  geom_point()+
+  geom_vline(xintercept = 0)+
+  geom_hline(yintercept = 0)+
+  labs(title = "元のデータ")
+g2 <- ggplot(scale(X) %>% data.frame(), aes(x = x1, y = x2))+
+  geom_point()+
+  geom_vline(xintercept = 0)+
+  geom_hline(yintercept = 0)+
+  labs(title = "標準化後のデータ")
+grid.arrange(g1,g2, ncol = 2)
+
+```
+
+<!-- 標準化によって各変数の長さ（$L_2$ノルム$||\boldsymbol{x}||_2=\sqrt{x_1^2+x_2^2+\cdots+x_p^2}$）も統一される。 -->
+
+<!-- これにより，変数の測定単位の違いによる推定への影響を無くすことができる。 -->
+
+<!-- ```{r} -->
+<!-- # ノルム -->
+<!-- L2norm <- function(x){ -->
+<!--   x^2 %>% sum() %>% sqrt() -->
+<!-- } -->
+
+<!-- # norm -->
+<!-- bind_cls(data = c("元のノルム", "標準化後のノルム"), -->
+<!--           rbind(X %>% apply(2, L2norm), -->
+<!--                 X %>% scale() %>% apply(2, L2norm)) %>%  -->
+<!--             as_data_frame()) %>%  -->
+<!--   knitr::kable() -->
+<!-- ``` -->
+
+Rでは`scale()`関数で標準化を行うことができる。
+
+
+
+
+## Rでの実践
+
+### データの用意
+
+```{r}
+# パッケージの読み込み
+library(tidyverse)
+library(MLmetrics)
+
+# 乱数の種を固定
+set.seed(0)
+# データ生成 ----
+n = 20
+x = 1:n * 1/n
+y = 0.5 + 0.4*sin(2*pi*x) + rnorm(n = n, sd = 0.1)
+# xの2乗～9乗の変数を作成
+df = data_frame(y, x, x2 = x^2, x3 = x^3, x4 = x^4, x5 = x^5, x6 = x^6, x7 = x^7, x8 = x^8, x9 = x^9)
+
+# データを分割 ----
+# ID列を追加
+df = df %>% rownames_to_column("ID")
+
+# 50%を学習用データに
+train <- df %>% sample_frac(size = 0.5)
+
+# 学習用データに使っていないIDの行をテスト用データに
+test <- anti_join(df, train, by = "ID")
+
+# ID列の削除
+train <- train %>% select(-ID)
+test <- test %>% select(-ID)
+```
+
+リッジ回帰を実行する関数`glmnet()`では説明変数と目的変数を分ける必要があるので，あらかじめ分けておく
+
+```{r}
+# glmnetは説明変数Xと目的変数yを別々に入れる必要があるので分ける
+
+# train
+X_train = train %>% select(-y) %>% as.matrix() # as.matrix()でmatrix型のデータにする
+y_train = train$y
+
+# test
+X_test = test %>% select(-y) %>% as.matrix()
+y_test = test$y
+```
+
+
+### glmnet関数
+
+{`glmnet`}パッケージの`glmnet()`関数で正則化回帰を行うことができる。
+
+```{r,eval=F}
+install.packages("glmnet")
+```
+
+`glmnet()`関数は以下のように書く。
+
+```
+glmnet(x = X, y = y, lambda = 1, alpha = 0)
+```
+
+- `x`：説明変数。データフレームではなくmatrix型で指定する必要がある。
+    - 説明変数のみを含むデータフレームを`as.matrix()`関数に通せばよい
+- `y`：被説明変数（目的変数）。ベクトル型で指定する。
+- `lambda`：正則化パラメータ$\lambda$の値
+- `alpha`：モデルの指定。`alpha = 0`でリッジ回帰になる。
+
+なお，事前に説明変数の標準化を行うかどうかを指定する`standardize`という引数もあり，デフォルトでは`TRUE`になっているため自動的に標準化を行ってくれる。
+
+
+```{r}
+# 9次多項式でリッジ回帰
+library(glmnet)
+reg_ridge <- glmnet(x = X_train, # 説明変数
+                    y = y_train, # 目的変数
+                    lambda = 0.1, # λ：任意の値
+                    alpha = 0) # alpha = 0でリッジ回帰
+
+# trainに対する予測精度
+y_train_pred = predict(reg_ridge, X_train) # 予測
+train_error = RMSE(y_train_pred, y_train) # 誤差
+str_c("train_error: ", round(train_error, 3)) %>% print() # 結果を表示
+
+# testに対する予測精度
+y_test_pred = predict(reg_ridge, X_test) # 予測
+test_error = RMSE(y_test_pred, y_test) # 誤差
+str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
+```
+
+学習用データに対する予測誤差（RMSE）は`r round(train_error,3)`，テストデータに対しては`r round(test_error,3)`となった。
+
+この結果は正則化パラメータ$\lambda$の値によって大きく変化する。次節では適切な$\lambda$の推定方法について述べる。
+
+# 交差検証とハイパーパラメータのチューニング
+
+## 交差検証
+
+**k-分割交差検証**（k-fold cross validation）とは予測精度の測り方の一つであり，
+
+1. データを$k$個（大抵の場合10個）のサブセットへ無作為に分割する
+2. $k-1$個のサブセットのデータで予測モデルを学習させる
+3. 残りの$1$個のサブセットのデータをテスト用に回して予測誤差を測る
+4. これを$k$回繰り返して予測誤差の平均値を使って予測性能を評価する
+
+という手順で予測精度を測定するものである。
+
+<center><img src="11_Lasso_Ridge.assets/1552223371123.png" width = 60%></center>
+
+これまではデータを学習用データ・テスト用データに2分割して予測性能を評価してきたが（この方法をホールドアウト法という），
+交差検証は手元のデータすべてを学習とテストに使用できるため，データが少ない場合においてはホールドアウト法よりもよい予測性能の評価方法になる。
+
+## cv.glmnet()関数による実践
+
+`{glmnet}`パッケージには正則化パラメータ$\lambda$を少しずつ変えながら交差検証で予測性能を評価することにより良い予測性能を与える$\lambda$を推定するための関数`cv.glmnet()`がある。
+
+```{r}
+# ラムダを変えながら交差検証で誤差を評価
+ridge_cv <- cv.glmnet(x = X_train, # 説明変数
+                      y = y_train, # 目的変数
+                      lambda = 1:100 * 0.00001, # 探索する範囲を指定（任意）
+                      alpha = 0) # alpha = 0でリッジ回帰
+                      
+# ラムダと交差検証誤差のグラフ
+plot(ridge_cv)
+```
+
+`plot()`で$\lambda$を変えながら交差検証で誤差を計算したときのグラフを見ることができる。縦の破線は最適と考えられる$\lambda$の値を示している。左側の破線は交差検証で誤差が最小だった$\lambda$であり，右側の破線は最小の誤差+標準誤差未満で最大の$\lambda$である[^1]
+
+[^1]: 交差検証の誤差が小さい中でもできるだけ$\lambda$が大きい（単純なモデル）を採用して過学習を回避しようとする$\lambda$の選択方法である。これは**1標準誤差ルール**（one standard error rule）と呼ばれる。<br>より具体的には，交差検証での誤差がある$\lambda$で最小値$CV_0$をとったとして，$CV_0$における$K$個の誤差の標準誤差を$se_0$としたとき，交差検証での誤差が$CV_0+se_0$よりも小さくなる$\lambda$の中で最大の$\lambda$を採用する，という選択方法である。
+
+
+`coef()`関数で推定されたパラメータを見ることができる。その際に`s = "lambda.min"`と指定することで交差検証で誤差が最小だった$\lambda$にアクセスできる。
+
+```{r}
+# 誤差を最小にしたラムダを採択したときのパラメータ
+coef(ridge_cv, s = "lambda.min") %>% round(3)
+```
+
+続いて予測精度を評価してみる。
+
+`predict()`でも同様に`s = "lambda.min"`と指定することで，誤差を最小化していた$\lambda$を採用したときの予測値を算出できる。
+
+```{r}
+# trainに対する予測精度
+y_train_pred = predict(ridge_cv, X_train, s = "lambda.min") # 予測
+train_error = RMSE(y_train_pred, y_train) # 誤差
+str_c("train_error: ", round(train_error, 3)) %>% print() # 結果を表示
+
+# testに対する予測精度
+y_test_pred = predict(ridge_cv, X_test, s = "lambda.min") # 予測
+test_error = RMSE(y_test_pred, y_test) # 誤差
+str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
+```
+
+```{r, echo=F}
+# 後で使うので格納
+y_test_pred_ridge = y_test_pred
+y_train_pred_ridge = y_train_pred
+```
+
+
+学習用データに対する予測誤差（RMSE）は`r round(train_error,3)`，テストデータに対しては`r round(test_error,3)`となった。
+
+リッジ回帰でなく最小二乗法で9次多項式回帰を推定した際のテストデータに対する誤差が`r round(result[result$p == 9, "test_error"][[1]],3)`であったのと比べると，過学習が抑制されている。
+
+テスト用データに対する予測値のグラフをみても，最小二乗法（LS）は（学習用データに対してぴったり予測するように過学習しているため）極端に外している値があるのに対し，リッジ回帰（Ridge）は9次多項式回帰であっても穏当な誤差になっている様子がみられる。
+
+
+
+```{r, echo=F}
+# testへの9次多項式OLS
+reg_ls <- lm(y ~ ., train)
+y_test_pred_ls <- predict(reg_ls, test)
+
+# data
+data_for_plot <- data_frame(x = test$x, y = test$y,
+                            LS = y_test_pred_ls, 
+                            Ridge = c(y_test_pred)) %>% 
+  gather(model, value, -x,-y)
+
+# plot
+ggplot(data_for_plot, aes(x, y = value, color = model))+
+  geom_point(aes(x,y), size = 1.5, color = "black")+
+  geom_line(size = 1.5, alpha = 0.5)+
+  geom_point(size = 2, alpha = 0.5)+
+  scale_color_brewer(palette = "Set1")+
+  labs(title = "9次多項式回帰によるtestデータに対する予測")
+
+# ggplot(test, aes(x, y))+
+#   geom_point()+
+#   geom_line(aes(y = y_test_pred_ls), color = "blue", size = 1, alpha = 0.7)+
+#   geom_point(aes(y = y_test_pred_ls), color = "blue", size = 1, alpha = 0.7)+
+#   geom_line(aes(y = y_test_pred), color = "orange", size = 1, alpha = 0.7)+
+#   geom_point(aes(y = y_test_pred), color = "orange", size = 1, alpha = 0.7)+
+#   labs(title = "testデータでの9次多項式回帰による予測")
+```
+
+
+
+# lasso
+
+## 特徴量選択
+
+
+本資料の序盤で述べた多項式回帰の例のように，無駄な説明変数が多く過度に複雑なモデルは過学習を起こしやすい。
+
+
+```{r, fig.width=5, fig.height=3, echo=F}
+ggplot(result %>% gather(key, error, -p),
+       aes(x = p, y = error, color = key))+
+  geom_point()+
+  geom_line(size = 1)+
+  scale_x_continuous(breaks = c(1:9))+
+  labs(color = "", x = "多項式回帰の次数", y = "誤差（RMSE)",
+       title = "モデルの複雑さと過学習（再掲）")
+```
+
+より良い予測モデルを構築するには，適切な説明変数（機械学習の分野では**特徴量** featureとも呼ばれる）を投入する必要がある。
+
+そのためのプロセスは**特徴量エンジニアリング**（feature engineering）と呼ばれ，次の作業から構成される。
+
+- **特徴量選択**（feature selection）：既存の特徴量から予測モデルの構築に役立つ特徴量を選択する。
+- **特徴量抽出**（feature extraction）：既存の特徴量を組み合わせて，より役に立つ１つの特徴量を生み出す。
+- 新しいデータの収集による特徴量の追加
+
+次節で紹介するlassoは特徴量エンジニアリングのうち特徴量選択をデータから自動的に行うことができる手法である。
+
+
+## lasso
+
+**lasso**（least absolute shrinkage and selection operator）は
+$$
+\min_\beta \sum^n_{i=1}(y_i - \hat{y}_i)^2 ,\hspace{1em}
+\text{subject to }\sum_{j=1}^p |\beta_j| \leq R
+$$
+
+の制約付き最小化問題の解によってパラメータを推定するもので，そのパラメータは
+
+$$
+\hat{\boldsymbol{\beta}}^{lasso} = \argmin_{\boldsymbol{\beta}} \left\{\sum_{i=1}^n(y_i - \hat{y}_i)^2 + \lambda \sum_{j=1}^p |\beta_j|\right\}
+$$
+
+となる。
+
+最小二乗法の推定とlassoによる推定を視覚的に比較したものが下の図である。
+
+![](11_Lasso_Ridge.assets/1552139547841.png)
+
+lassoの制約条件を満たす推定量はパラメータ空間の原点を中心にしたひし形の領域になる（右図）。
+
+もし最小二乗推定量$(\hat{\beta}_1^{LS}, \hat{\beta}_2^{LS})$がlassoのひし形の制約領域の外にある場合，制約領域内で誤差二乗和を最小化するパラメータがlassoの推定量となるため，誤差二乗和の等高線の楕円とlassoのひし形の領域が接する点がlassoの推定量となる。誤差二乗和の等高線の形状によってはlassoの推定量が$(0, \hat{\beta}_2^{lasso})$のように一部のパラメータが0と推定される。
+
+0と推定されたパラメータに対応する説明変数は目的変数に寄与しないと解釈することができ，特徴量の選択が行われたモデルを得ることができる。リッジ回帰はパラメータを縮小するものの，ぴったり0に縮小することはない。パラメータをぴったり0に推定することで特徴量選択を行うことができるのはlassoの長所である。
+
+なお，正則化パラメータ$\lambda$を大きくすると0と推定されるパラメータの数が多くなり，$\lambda$を小さくすると0と推定されるパラメータの数は少なくなる。
+
+
+## Rでの実践
+
+リッジ回帰のときと同じデータ（xの9次多項式のデータ）でlassoを実行してみよう。
+
+
+`glmnet()`関数で引数に`alpha = 1`と指定すればlassoを実行できる。
+
+まず`cv.glmnet()`関数で適切な$\lambda$を推定する
+
+```{r}
+# ラムダを変えながら交差検証で誤差を評価
+lasso_cv <- cv.glmnet(x = X_train, # 説明変数
+                      y = y_train, # 目的変数
+                      alpha = 1) # alpha = 1でlasso
+
+# ラムダと交差検証MSEのグラフ
+plot(lasso_cv)
+```
+
+推定されたパラメータを確認する
+
+```{r}
+# 誤差を最小にしたラムダを採択したときのパラメータ
+coef(lasso_cv, s = "lambda.min") %>% round(3)
+```
+
+いくつかのパラメータはぴったり0と推定されたため説明変数として採用されなかったことが`.`で示されている。
+
+```{r}
+# testに対する予測精度
+y_test_pred = predict(lasso_cv, X_test, s = "lambda.min") # 予測
+test_error = RMSE(y_test_pred, y_test) # 誤差
+str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
+```
+
+テスト用データに対する予測の誤差は`r round(test_error, 3)`となった。
+
+最小二乗法で9次多項式回帰を推定した際のテストデータに対する誤差が`r round(result[result$p == 9, "test_error"][[1]],3)`であったのと比べると，過学習が抑制されており，よりよい予測モデルになっている。
+
+
+# まとめ
+
+長くなったのでまとめておこう。
+
+## 推定量
+
+最小二乗法は誤差二乗和$\sum_{i=1}^n(y_i - \hat{y}_i)^2$という誤差関数を最小化するパラメータ$\hat{\boldsymbol{\beta}}^{LS}$を採用するというものだった。
+
+$$
+\hat{\boldsymbol{\beta}}^{LS} = \argmin_{\boldsymbol{\beta}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
+$$
+
+リッジ回帰は誤差二乗和に$\lambda \sum_{j=1}^p \beta_j^2$を加えた誤差関数を最小化するパラメータ$\hat{\boldsymbol{\beta}}^{ridge}$を採用するというものだった。
+
+$$
+\hat{\boldsymbol{\beta}}^{ridge} = \argmin_{\boldsymbol{\beta}} \left\{\sum_{i=1}^n(y_i - \hat{y}_i)^2 + \lambda \sum_{j=1}^p \beta_j^2\right\}
+$$
+
+lassoは誤差二乗和に$\lambda \sum_{j=1}^p |\beta_j|$を加えた誤差関数を最小化するパラメータ$\hat{\boldsymbol{\beta}}^{lasso}$を採用するというものだった。
+
+$$
+\hat{\boldsymbol{\beta}}^{lasso} = \argmin_{\boldsymbol{\beta}} \left\{\sum_{i=1}^n(y_i - \hat{y}_i)^2 + \lambda \sum_{j=1}^p |\beta_j|\right\}
+$$
+
+
+
+## 推定結果
+
+今回，例として使用した9次多項式回帰モデルでは，次のような推定結果になった。
+
+
+まず，最小二乗法，リッジ回帰，lassoで推定されたパラメータは次のようになった。
+
+```{r, echo=F}
+coef_df = cbind(LS = coef(reg_ls) %>% round(3),
+                Ridge = coef(ridge_cv, s = "lambda.min") %>% as.matrix() %>% round(3),
+                Lasso = coef(lasso_cv, s = "lambda.min") %>% as.matrix() %>% round(3)) %>% as.data.frame()
+colnames(coef_df) = c("LS","Ridge","Lasso")
+knitr::kable(coef_df)
+```
+
+テスト用データに対する予測値は次のような分布になった。
+
+```{r, echo=F}
+# 予測値のオブジェクト名を一応変えておく
+y_test_pred_lasso = y_test_pred
+
+# data
+data_for_plot <- data_frame(x = test$x, y = test$y,
+                            LS = y_test_pred_ls, 
+                            Ridge = c(y_test_pred_ridge),
+                            Lasso = c(y_test_pred_lasso)) %>% 
+  gather(model, value, -x,-y)
+## 順番を指定
+data_for_plot$model = factor(data_for_plot$model, levels = unique(data_for_plot$model))
+
+# plot
+ggplot(data_for_plot, aes(x, y = value, color = model))+
+  geom_point(aes(x,y), size = 1.5, color = "black")+
+  geom_line(size = 1.5, alpha = 0.5)+
+  geom_point(size = 2, alpha = 0.5)+
+  scale_color_brewer(palette = "Set1")+
+  labs(title = "9次多項式回帰によるtestデータに対する予測")
+```
+
+その予測誤差（RMSEで測ったもの）は次のようになった。
+
+```{r, echo=F}
+error_df = data.frame(LS = RMSE(y_test_pred_ls, y_test),
+                      Ridge = RMSE(y_test_pred_ridge, y_test),
+                      Lasso = RMSE(y_test_pred_lasso, y_test)) 
+rownames(error_df) = "RMSE"
+knitr::kable(error_df)
+```
+
+
+
+# （参考）エラスティックネット
+
+リッジ回帰とlassoを結合したエラスティックネット（elastic net）というアルゴリズムも存在する。
+
+$$
+\hat{\boldsymbol{\beta}}^{EN} = \argmin_{\boldsymbol{\beta}} \left\{
+\sum_{i=1}^n(y_i - \hat{y}_i)^2 
++ \lambda \sum_{j=1}^p 
+\left ( \alpha |\beta_j|  + (1-\alpha) \beta_j^2 \right )
+\right\}
+$$
+
+$\alpha$はlassoとリッジ回帰のどちらに重きを置くかのウェイトで，これもハイパーパラメータである。
+
+実は`glmnet()`はエラスティックネットの関数であり，`glmnet()`を実行するときに，「リッジ回帰なら`alpha = 0`」と指定していたのがこの$\alpha$にあたる。
+
+
+
+```{r}
+# Elastic Net
+
+# ラムダを変えながら交差検証で誤差を評価
+EN_cv <- cv.glmnet(x = X_train, # 説明変数
+                      y = y_train, # 目的変数
+                      alpha = 0.35) # 任意のα
+
+# testに対する予測精度
+y_test_pred = predict(EN_cv, X_test, s = "lambda.min") # 予測
+test_error = RMSE(y_test_pred, y_test) # 誤差
+str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
+```
+
+
+
+

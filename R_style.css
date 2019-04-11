@@ -1,0 +1,74 @@
+body {
+	font-family: "游ゴシック", "Yu Gothic UI", "Meiryo UI", "Hiragino Kaku Gothic ProN", "sans-serif";
+}
+
+h1,h2,h3,h4,h5,h6 {
+	font-weight:bold;	
+	margin: 2em 0 0.3em 0;
+	padding: 0.5em;
+}
+
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 25px;
+}
+
+h3 {
+  font-size: 18px;
+}
+
+h4 {
+  font-size: 16px;
+}
+
+
+.math {
+  font-size: 12px;
+}
+
+p {
+  margin: 0.75em 0 0.75em 0;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+/* コメントアウト*/
+span.co {
+  font-family: "游ゴシック", "Yu Gothic UI", "Meiryo UI", "Hiragino Kaku Gothic ProN", "sans-serif";
+  color: #0B6138;
+  font-style: normal;
+}
+
+/* 引用部分 */ 
+blockquote {
+  font-size: 14px;
+}
+
+/* 日付部分を斜体にしない */
+em {
+  font-style: normal;
+}
+
+
+div.section.level1 h1{
+	display:block;
+	/* border-bottom:2px solid lightgray; */
+	/*background-color: lightgray;*/
+	position: relative;
+  border-top: solid 2px #3399FF;
+  border-bottom: solid 2px #3399FF;
+  background: #f4f4f4;
+  line-height: 1.4;
+  padding: 0.4em 0.5em;
+  margin: 2em 0 0.5em;
+}
+
+div.section.level1 h2{
+	display:block;
+	border-bottom:1px solid lightgray;
+}

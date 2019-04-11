@@ -1,0 +1,212 @@
+---
+title: "計量経済学３：回帰不連続デザイン"
+author: ""
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    fig_height: 4          # 画像サイズのデフォルトを設定
+    fig_width: 6           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+```
+
+
+# データの用意
+
+今回は前々回と同じデータを生成して分析していく。
+
+個人の所得$Y$と学歴$X$・能力$A$との関係についての架空データを次のように生成する（ただし$\varepsilon$は測定誤差などを反映した撹乱項）
+
+$$
+Y = 200 + 10A + 500X+ \varepsilon
+$$
+
+- サンプルは10万人
+- 切片は200万円
+- 能力が1上がると所得は10上昇する
+- 能力は0から100まで均等に分布する
+- 大卒だと所得が500万円上昇する
+- 大卒になる条件は2つあり，どちらかの条件を満たせば大卒になるとする
+    - 条件1：能力が 80 以上の約 2 万人の中から約 1 万人がランダムに選ばれて大卒となる。
+    - 条件2：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる（約1万人が合格する）
+
+
+```{r, echo=F}
+library(DiagrammeR)
+grViz("digraph dot{
+graph[rankdir = LR]
+
+node[shape = circle, fontname = 'Yu Gothic']
+
+edge[fontname = 'Yu Gothic']
+能力A -> 所得Y [label='10']
+能力A -> 学歴X [label='80以上の中からランダム']
+能力A -> テストの点 [label='能力を部分的に反映']
+テストの点 -> 学歴X [label='180点以上かどうか']
+学歴X -> 所得Y [label='500']
+
+{rank = same; 能力A; テストの点; 学歴X}
+}")
+```
+
+
+
+```{r}
+# 事前準備 --------------------
+# パッケージの読み込み
+library(tidyverse)
+# 乱数の種を固定
+set.seed(0)
+
+# データの生成 ----------------
+n = 100000
+# 能力は0から100まで均等に分布
+ability = runif(n, min = 0, max = 100)
+
+# IDとabilityをデータフレームに格納する
+df = data_frame(ID = 1:n, ability)
+
+# 大卒フラグ
+## 条件１：能力が 80 以上の約 2 万人の中から約 1 万人がランダムに選ばれて大卒となる。
+college = df %>% filter(ability >= 80) %>% sample_frac(0.5) # 大卒の人
+college["is_college1"] = 1
+no_college = anti_join(df, college, by = c("ID","ability")) # 大卒じゃない人
+no_college["is_college1"] = 0
+df = bind_rows(college, no_college) %>% arrange(ID) # 両者を結合
+
+## 条件２：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる
+### １万人くらいが該当するようにする
+df["score"] = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10)
+df["is_college2"] = 1*(df["score"] >= 180)
+
+## ２つの条件のいずれかに該当していれば大卒とする
+df = df %>% mutate(is_college = case_when(is_college1 == 1 | is_college2 == 1 ~ 1, # "|"はorの記号
+                                          TRUE ~ 0)) # それ以外は0
+# 所得
+df["income"] = 200 + 10*df["ability"] + 500*df["is_college"] + rnorm(n, sd = 50)
+
+# 最初の6行
+head(df)
+```
+
+こうして生成したデータの所得と能力・学歴・テストの点数の関係をプロットすると次のようになる。
+
+```{r, echo=F}
+# 塗り分けプロット
+# plot
+ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "大卒(条件1)",
+                                           is_college2 == 1 ~ "大卒(条件2)",
+                                           is_college == 0 ~ "非大卒")),
+       aes(x = ability, y = income, color = education))+
+  geom_point(alpha = 0.5)+
+  labs(title = "能力と所得")
+
+ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "大卒(条件1)",
+                                           is_college2 == 1 ~ "大卒(条件2)",
+                                           is_college == 0 ~ "非大卒")),
+       aes(x = score, y = income, color = education))+
+  geom_point(alpha = 0.5)+
+  labs(title = "テストの点数と所得")
+```
+
+
+以下では「学歴（大卒になること）が所得をどれだけ上昇させるのか」を知ることを目的として分析していくことにする。
+
+
+
+# 回帰不連続デザイン
+
+## 概要
+
+```{r}
+temp <- df %>% 
+         mutate(education = case_when(is_college2 == 1 ~ "大卒(条件2)",
+                                      is_college == 0 ~ "非大卒")) %>% 
+         filter(!is.na(education))
+
+ggplot(temp,
+       aes(x = score, y = income, color = education, fill = education))+
+  geom_point(alpha = 0.5)+
+  geom_smooth(method="lm",se=F, color="black", alpha = 0.5)+
+  labs(title = "大卒（条件2）と非大卒のスコアと所得")
+```
+
+条件2で大卒になった人の場合を見ていくと，テストの点数がある閾値（180点）を超える点で所得にジャンプがみられる。
+**回帰不連続デザイン**(regression discontinuity design: RDD)はこうした閾値を伴うDGPを利用する調査設計（デザイン）で，以下のようなロジックをもとに分析を行う。
+
+- スコアが180点になる点で大卒になれるかどうかを決めるというのは人為的な制度であり，その背景で個々人の能力は連続的に分布している（179点で不合格だった人と180点で合格した人とで能力に大差はない）と考えられる
+- 能力$A$が所得$Y$に与える影響も閾値周辺で不連続に変化するとは考え難い
+- したがって，この閾値において所得に明確なジャンプがある理由は大卒の効果以外には考えられない
+
+
+<!-- 数式で記述すると，処置変数（効果を知りたい目的の変数）である学歴$X$は（条件2で大卒になった人に限っては）テストの点数$S$が閾値$c$を超えるかどうかによって決まる。 -->
+
+<!-- $$ -->
+<!-- X_i =  -->
+<!-- \begin{cases} -->
+<!-- 1 & \text{if } S_i \geq c \\  -->
+<!-- 0 & \text{if } S_i < c -->
+<!-- \end{cases} -->
+<!-- \\ -->
+<!-- $$ -->
+
+<!-- そしてこれは，線形回帰モデルでは -->
+
+<!-- $$ -->
+<!-- Y_i = \alpha + \beta S_i + \rho X_i + \eta_i -->
+<!-- $$ -->
+
+
+
+
+
+## Rで実践
+
+RDDは閾値周辺のデータを使った回帰分析である局所線形回帰（local linear regression）などを使う。
+
+
+```{r}
+# 条件2の大卒者と非大卒者のみを取り出す
+df_rdd = df %>% filter(is_college2 == 1 | is_college == 0)
+
+# 閾値周辺のサンプルの取り出し
+h = 1  # バンド幅：閾値周辺のどの程度の幅のデータを使うか
+c = 180 # 閾値
+df_local = df_rdd %>% filter(c - h <= score & score < c + h)
+```
+
+取り出した閾値周辺のデータの分布は次のようになっている
+
+```{r}
+# plot
+ggplot(df_local, aes(x = score, y = income))+
+  geom_point()
+```
+
+
+```{r}
+# 局所線形回帰
+llr <- lm(income ~ score + is_college, data = df_local) 
+stargazer::stargazer(llr, type = "text")
+```
+
+比較的500に近い値を推定することができた
+

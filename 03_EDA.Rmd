@@ -1,0 +1,320 @@
+---
+title: "R入門３：データの可視化"
+author: ""
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    fig_height: 4          # 画像サイズのデフォルトを設定
+    fig_width: 6           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+```
+
+
+# 例示用データの用意 
+
+今回もこのデータを使う
+
+```{r}
+library("readxl")
+df <- read_excel("classes.xlsx") # エクセル読み込み
+head(df)
+```
+
+
+
+
+# 描画用パッケージ
+
+グラフの描画で役立つパッケージを紹介する
+
+## ggplot2
+
+`{ggplot2}`というグラフの描画用パッケージは綺麗なグラフを描くことができる。
+
+ggplotは次のように２つ以上の手順をとり，２つ以上の関数を`+`でつなげていき，レイヤーを重ねるように描画していく。
+
+1. キャンバスを用意する（`ggplot(データフレーム, aes(x, y))`）
+2. グラフを用意する（`geom_histogram()`などgeom_なんたらという関数）
+3. グラフの装飾のための関数を使う場合は，さらにレイヤーを重ねていく
+
+```{r}
+# パッケージ読み込み
+library(tidyverse) # ggplot2もtidyverseパッケージに含まれている
+
+# 棒グラフをつくり，gに代入する
+g <- ggplot(df, aes(x = クラス)) + # dfのデータでキャンバスを作る
+  geom_bar() # キャンバスに棒グラフgeom_bar()を重ねる
+g # 表示
+```
+
+- 参考：[ggplot2のチートシート](https://github.com/rstudio/cheatsheets/raw/master/translations/japanese/ggplot2-cheatsheet-2.0-ja.pdf)
+
+## plotly
+
+`{plotly}`パッケージは動的なグラフ（マウスを乗せると情報が表示されたりするグラフ）を描くことができる。
+
+`ggplotly()`関数を使うと，`{ggplot2}`で描いたグラフを動的なものに変換できる。
+
+```{r, eval=F}
+install.packages("plotly")
+```
+
+```{r}
+library(plotly)
+ggplotly(g)   # ggplot2のグラフをplotlyのグラフへ変換
+```
+
+
+
+
+
+# データの分布を要約する
+
+## 平均・分散など
+
+データの分布を要約するための指標（**要約統計量**）の代表的なものが**平均**（mean）と**分散**（variance）である。
+
+- **平均**（mean）：$n$個のデータ$x_i$の総和を，サンプルサイズ$n$で割ったもの。
+
+$$
+\bar{x} = \frac{1}{n}\sum_{i=1}^n  x_i
+$$
+
+- **分散**（variance）：平均からの差の2乗和の平均
+
+$$
+\sigma^2=\frac{1}{n}\sum_{i=1}^{n}(x_i-\bar{x})^2
+$$
+
+ただし，Rの`var()`関数は抽出された標本で計算する分散であることに対する修正を加えている**不偏分散**というものである。
+
+$$
+s^2=\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2
+$$
+
+```{r, eval=F, include=F}
+simple_var <- function(x) {
+  n = length(x)
+  sigma2 = 1/n * sum((x - mean(x))^2)
+  return(sigma2)
+}
+simple_var(df[["英語"]])
+
+
+unbiased_var <- function(x) {
+  n = length(x)
+  s2 = n/(n-1)*simple_var(x)
+  return(s2)
+}
+unbiased_var(df[["英語"]])
+```
+
+
+```{r}
+# 不偏分散
+var(df$英語)
+```
+
+分散は2乗しているので，それを元の単位に戻すために平方根をとったものが**標準偏差**（standard deviation）である。
+
+```{r}
+# 不偏標準偏差
+sd(df$英語)
+```
+
+
+## 要約統計量
+
+`summary()`関数は，データフレームの各行に関する代表値などの情報を取得することができる関数である。
+
+```{r}
+summary(df)
+```
+
+「クラス」と「名前」は文字列（character）型なので，Length（行数，標本数）が40であることくらいしか表示されない。
+
+「英語」「現文」「数学」は整数（integer）型なので，代表値などの**要約統計量**（summary statistics）が表示されている。
+
+それぞれの統計量の意味は
+
+- `Min.`が最小値
+- `1st Qu.`が**第一四分位数**（1st quantile）：「データを小さいものから順に並べた時に標本数の4分の1の位置（下位25%）にくる値」
+- `Median`が**中央値**（median）：「データを小さい順に並べた時に標本数の2分の1の位置にくる値」
+- `Mean`が**平均値**（mean）：「データの総計をデータの個数で割ったもの」$\sum_{i=1}^n x_i/n$
+- `3rd Qu.`が**第三四分位数**（3rd quantile）：「データを小さい順に並べた時に標本数の4分の3の位置（75%）にくる値」
+- `Max.`が最大値
+
+である。これらのうちMean以外の５つの統計量をまとめて**五数要約**という。
+
+
+平均値は**外れ値**（極端に高かったり低かったりする値）の影響を受けやすいため，これらの統計量を見ることで，中央値と平均値が大きく異なるデータは外れ値があったりデータの分布に歪みがあることが推測できるわけである。
+
+
+
+# 2変数の関係を要約する
+
+## 相関係数
+
+**相関係数**（correlation coefficient）は２つの量的変数の直線的な関係の強さを測るもので，次の式で定義される
+
+$$
+\begin{align}
+x\text{と}y\text{の相関係数}r
+&= \frac{x\text{と}y\text{の共分散}}{x\text{の標準偏差}\times y\text{の標準偏差}} \\
+&= \frac{\frac{1}{n} \sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})}
+{\sqrt{\frac{1}{n} \sum_{i=1}^n (x_i - \bar{x})^2}
+  \sqrt{\frac{1}{n} \sum_{i=1}^n (y_i - \bar{y})^2}}
+\end{align}
+$$
+
+Rでは`cor()`で計算できる。相関係数は-1から+1の範囲の値をとり，絶対値で1に近いほど関係が強いことを示す。
+
+```{r}
+cor(x = df$英語, y = df$数学)
+```
+
+
+## 相関行列
+
+相関係数が入った行列を相関行列という
+
+```{r}
+cor(df[,3:5])
+```
+
+
+
+# 1変数のグラフ
+
+## ヒストグラム
+
+ヒストグラムは量的変数の分布を確認するには極めて有用なグラフである。
+
+```{r}
+# ヒストグラム
+ggplot(df, aes(x = 英語)) +
+  geom_histogram(bins = 10) # binsは棒の数。指定しない場合はbins=30になる
+```
+
+R本体の機能でヒストグラムを描く場合は`hist()`を使う
+
+```{r}
+# ヒストグラム
+hist(x = df[["数学"]])
+```
+
+## 棒グラフ
+
+```{r}
+# ggplotの棒グラフ
+ggplot(df, aes(x = クラス))+
+  geom_bar()
+```
+
+
+# 2変数のグラフ
+
+## 散布図
+
+2変数でグラフを描く場合，キャンバスに`x`（グラフ横軸）と`y`（グラフ縦軸）の両方を指定する。
+
+そして散布図を描く場合は`geom_point()`を`+`でつなげればよい
+
+```{r}
+ggplot(df, aes(x = 英語, y = 現文))+
+  geom_point()
+```
+
+
+## 折れ線グラフ
+
+折れ線グラフは`geom_line()`で描くことができる。
+
+Excelで言うところの「マーカー付き折れ線グラフ」にしたい場合は`geom_point()`を重ねればよい。
+
+```{r}
+ggplot(df, aes(x = 英語, y = 現文))+
+  geom_line()+ # 折れ線
+  geom_point() # マーカー
+```
+
+
+### （参考）アメリカのGNP{-}
+
+上では説明の簡単のため散布図と同じデータを使ったが，折れ線グラフは本来は時系列データに使うのが望ましい。
+
+そこで，以下ではRにあらかじめ収録されている練習用のデータセットのひとつである`longley`を使った例をのせる。
+
+このデータは1947~62年のアメリカのGNPや雇用者数などが収録されている（詳細はhelpを参照してほしい）。
+
+```{r}
+head(longley)
+```
+
+```{r}
+ggplot(longley, aes(x = Year, y = GNP))+
+  geom_line()+ # 折れ線
+  geom_point()+ # マーカー
+  labs(title = "1947~62年のアメリカのGNP")
+```
+
+
+## 箱ひげ図
+
+箱ひげ図は**五数要約**の統計量（最小値，第一四分位数，中央値，第三四分位数，最大値）をプロットすることで分布の概形を表示する図である。
+
+```{r}
+g <- ggplot(df, aes(x = クラス, y = 現文))+
+  geom_boxplot()+
+  labs(title = "クラスごとの現文の点数の分布")
+ggplotly(g)
+```
+
+
+# 層別化
+
+`ggplot()`関数の中に入れる`aes()`関数の`fill`や`color`といった引数に質的変数を指定することで，色の塗り分けによる層別化ができる。
+
+これにより３つ目の変数の情報を表現できる。
+
+```{r}
+ggplot(df, aes(x = 英語, y = 現文, fill = クラス, color = クラス))+
+  geom_point()+
+  labs(title = "英語と現文の得点の散布図をクラスごとに塗り分けたもの")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

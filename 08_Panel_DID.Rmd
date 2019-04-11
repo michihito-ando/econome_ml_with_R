@@ -1,0 +1,212 @@
+---
+title: "計量経済学２：パネルデータ分析/差の差法"
+author: ""
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    fig_height: 4          # 画像サイズのデフォルトを設定
+    fig_width: 6           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+```
+
+# パネルデータ分析
+
+## パネルデータとは
+
+**パネルデータ(panel data)**とは，複数の個体を複数の期間にわたって観察したデータである。
+（e.g. 同じ人を追跡調査したデータ，国✕年度の公的統計データ）
+
+例えば以下のような形式のもの。
+
+```{r}
+library(tidyverse)
+library(plm)
+# data(Gasoline)
+# Gasoline %>% filter(1961 <= year & year <= 1963) %>% head()
+
+data(Grunfeld)
+Grunfeld %>% rename(`企業ID`=firm, `年度`=year, `投資額`=inv, `企業価値`=value, `資産額`=capital) %>%
+  filter(1951 <= `年度` & `年度` <= 1953) %>% head() %>% knitr::kable()
+```
+
+
+
+$k$個の説明変数$X$と被説明変数$Y$の個体$i$・時点$t$のパネルデータは，次のように表記される。
+
+$$
+(X_{1it}, X_{2it},…,X_{kit}, Y_{it}), \hspace{1em} i = 1,…,n \text{ and } t = 1,…,T
+$$
+
+
+
+
+- 欠損値の有無による分類がある
+    - **balanced panel**：各個体と各時点の観測値がすべて揃っているパネルデータ
+    - **unbalanced panel**：欠損のあるパネルデータ
+
+
+## 固定効果モデル
+
+固定効果モデルはパネルデータの分析で使われる分析手法のひとつで，固有効果（時間によって変化しない個体に固有の要素）のうち推定の邪魔になるもの（説明変数と相関のある固有効果：固定効果とよぶ）を除去して分析を行うもののことである。
+
+### one-way固定効果モデル
+
+#### 個体の固定効果モデル（グループ内推定：within）{-}
+
+$$
+Y_{it} =  \beta X_{it} +\alpha_i + u_{it}
+$$
+
+個体の固定効果（entity fixed effects）$\alpha_i$の除去については，以下のような推定方法がある。
+
+##### (1) 差分モデル（first difference model）のOLS推定($T=2$のときのみ){-}
+
+$$
+(Y_{i,t+1} - Y_{it}) = (\beta_0 - \beta_0) + \beta_1 (X_{i,t+1}-X_{it}) + (F_i - F_i) + (\varepsilon_{i,t+1} - \varepsilon_{it})
+$$
+
+記号を置き換えると
+$$
+\Delta Y_{it} = \beta_1 \Delta X_{it}+ \Delta \varepsilon_{it}
+$$
+
+- 推定方法：
+  1. 説明変数，被説明変数それぞれ$t+1$期から$t$期を引く
+  2. 上の式をOLS推定する
+
+
+##### (2) “$n-1$個のダミー説明変数”を用いたOLS推定 {-}
+
+最小二乗ダミー変数推定（Least Squares Dummy Variables (LSDV) 推定）とも呼ばれるもの
+
+$$
+Y_{it} = \beta_0 + \beta_1 X_{it} + \gamma_2 D2_i + \cdots + \gamma_n Dn_i + u_{it}  \\
+  \text{where } D2_i = 
+  \begin{cases}
+  1 & \text{for } i = 2\\
+  0 & \text{otherwise}
+  \end{cases} \text{, etc.}
+$$
+
+- 推定方法：
+  1. ダミー変数$D2_i, \cdots, Dn_i$を作成する
+  2. 上の式をOLS推定する
+  3. 検定はロバスト標準誤差で行う
+     - 均一分散が仮定できることは稀だろうから不均一分散対策としてロバスト標準誤差を使う
+
+##### (3) ”個体の平均除去（Entity-demeaned）”を用いたOLS推定{-}
+
+$$
+\begin{align}
+\tilde{Y}_{it} &= \beta_1 \tilde{X}_{it} + \tilde{u}_{it} \\
+\text{where }
+\tilde{Y}_{it} &= Y_{it} - \bar{Y}_i, \hspace{1em}   \bar{Y}_i = \frac{1}{T} \sum^T_{t=1} Y_{it}\\
+\tilde{X}_{it} &= X_{it} - \bar{X}_i, \hspace{1em} \bar{X}_i  = \frac{1}{T} \sum^T_{t=1} X_{it}\\
+\tilde{u}_{it} &= u_{it}- \bar{u}_i, \hspace{1em} \bar{u}_i = \frac{1}{T} \sum_{t=1}^T u_{it}
+\end{align}
+$$
+
+- 推定方法：
+  1. 説明変数・被説明変数について，変数から期間平均を引く
+  2. 上の式をOLS推定する
+  3. 検定はクラスターロバスト標準誤差を使う
+- $n-1$個のダミー変数による推定と同じ推定量が得られる
+- ダミー変数を使う方法だと計算量が多くなりがちでスケーラビリティがないため，統計ソフトでは通常entity-demeanedによる推定が行われる
+
+
+#### 時間の固定効果モデル（グループ間推定：between）{-}
+
+なお，時間の固定効果（time fixed effects）$\alpha_t$を除去したい場合も似たような手法で分析できる。
+
+$$
+Y_{it} = \beta_1 X_{it} +\alpha_t + u_{it}
+$$
+
+1. ”$T-1$個のダミー説明変数”を用いたOLS推定
+2. ”time-demeaned”を用いたOLS推定
+
+
+### two-way固定効果モデル
+
+two-way固定効果モデルあるいは個体と時間の固定効果モデル（entity and time fixed effects model）
+
+$$
+Y_{it} =\beta_1 X_{it} +\alpha_i + \alpha_t + u_{it}
+$$
+
+によって個体の固定効果$\alpha_i$と時間の固定効果$\alpha_t$の両方を除去したい場合はそれぞれの推定方法の組み合わせになる
+
+1. 差分モデルのOLS推定（T=2）
+2. ”entity demeaning”と”$T-1$個のダミー変数”を用いたOLS推定
+3. ”time demeaning”と“$n-1$個のダミー変数”を用いたOLS推定
+4. ”entity & time demeaning”を用いたOLS推定
+     - 説明変数と被説明変数について，個体と時間両方の平均を引いてOLS推定
+   
+
+## Rで実践
+
+
+```{r}
+# 事前準備 ------------
+# パッケージの読み込み
+library(tidyverse)
+```
+
+Rでは`{plm}`パッケージによってパネルデータ分析を行うことができる。
+
+```{r, eval=F}
+install.packages("plm")
+```
+
+
+```{r}
+# ライブラリ読み込み
+library(plm)
+
+# データ読み込み
+data("Grunfeld")
+head(Grunfeld)
+```
+
+`Grunfeld`は1935～1954年にかけてのアメリカの10の企業のbalanced panelデータである。
+
+- `firm`: 企業（ID的なもの）
+- `inv`: 投資総額
+- `value`: 企業の価値
+- `capital`: 工場や設備のストック
+
+```{r}
+# replicates some results from Baltagi (2013), table 3.1
+
+wi <- plm(inv ~ value + capital,
+          data = Grunfeld, model = "within", effect = "twoways")
+```
+
+
+
+
+# 差の差法
+
+差の差法（difference in difference: DID）とは
+
+
+

@@ -1,0 +1,259 @@
+---
+title: "R入門４：回帰分析"
+author: ""
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    # fig_height: 4          # 画像サイズのデフォルトを設定
+    # fig_width: 6           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F,
+                      fig.height=3, fig.width=4)
+```
+
+
+
+# 回帰分析の基礎
+
+**回帰分析**（regression analysis）は，ある変数$Y$（被説明変数）を，別の変数$X$（説明変数）で説明することで両変数の関係を分析する手法である。
+
+最も基本的な回帰モデルは次のような線形で説明変数が１つの回帰モデルである。
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + u_i
+$$
+
+
+
+こうした線形の回帰モデルは**線形回帰**（linear regression）と呼ばれ，また説明変数$X_i$が１つの回帰モデルは**単回帰モデル**（simple regression model）と呼ばれる。
+
+## データの用意
+
+以下ではRで回帰分析を行っていくが，今回は{AER}パッケージ（Applied Econometrics with Rパッケージ）に収録されているデータセットを例に使用する。
+
+まず，{AER}のインストールを行う。
+
+```{r,eval=F}
+install.packages("AER")
+```
+
+パッケージを読み込み，`data()`関数でデータセットの読み込みを行う。
+
+```{r}
+# パッケージの読み込み
+library(AER)
+
+# データの読み込み
+data("CPS1985")
+```
+
+今回使用する`CPS1985`データセットは，1985年アメリカの時給や教育年数などの変数が入ったものである。
+
+```{r}
+head(CPS1985)
+```
+
+
+## 最小二乗法
+
+線形回帰のパラメータ$\beta_0, \beta_1$はデータ$X_i,Y_i$から推定する。最も有名で非常に強力な推定方法は**最小二乗法**（least squares method）であり，これは推定したパラメータ$\hat{\beta}_0, \hat{\beta}_1$からの予測値$\hat{Y}_i$の実測値$Y_i$との誤差二乗和$\sum_{i=1}^n (Y_i - \hat{Y}_i)^2$を最小にするパラメータを使用する。
+
+最小二乗法による線形回帰は`lm()`関数で行うことができる。
+
+例えば，被説明変数を賃金$\text{Wage}$，説明変数を教育年数$\text{Education}$とする
+
+$$
+\text{Wage}_i  = \beta_0 + \beta_1 \text{Education}_i  + u_i
+$$
+のような回帰モデルを作って推定したい場合は，`lm()`の`formula`引数に`wage ~ education`と指定し，使用するデータフレームを`data`引数に指定すればよい。
+
+```{r}
+# Regression
+reg <- lm(formula = wage ~ education, data = CPS1985) # 教育年数が賃金を決めるモデル
+reg
+```
+
+ここで`Coefficients:`の部分に表示されている`(Intercept)`は切片の係数$\beta_0$で，`education`は傾き係数$\beta_1$である。
+
+推定したlmオブジェクトは，`summary()`関数でより詳細な情報を見ることができる。
+
+```{r}
+summary(reg)
+```
+
+## 回帰分析の結果表示
+
+`summary()`による結果表示は論文に使用できるような整った形ではない。
+
+そこで，`{stargazer}`パッケージを使って整形する。
+
+```{r, eval=F}
+install.packages("stargazer")
+```
+
+`stargazer()`に`lm()`関数のオブジェクトを入れ，`type`引数に`"text"`を指定することで以下のように表示される
+
+```{r}
+library(stargazer)
+stargazer(reg, type = "text")
+```
+
+`type = "html", out = "reg1.html"`とおけばhtml形式で保存できる
+
+```{r, eval=F}
+stargazer(reg,             # 回帰分析の結果
+          type = "html",    # ファイル形式
+          out = "reg1.html")# 保存するファイル名
+```
+
+
+
+
+
+# 変数変換と重回帰モデル
+
+## 対数変換
+
+データ分析の過程では，データを対数変換したい場合もある。
+
+例えば，賃金のように「低い人（低所得者層）が多く，高い人（高所得者層）が少ない」ような分布はL字型のような右に歪んだ分布になる。こうした分布は対数変換を行うことで正規分布に近づく。
+
+```{r, echo=FALSE}
+library(tidyverse)
+library(gridExtra)
+
+g1 <- ggplot(CPS1985, aes(x = wage))+
+  geom_histogram(bins = 10)
+g2 <- ggplot(CPS1985, aes(x = log(wage)))+
+  geom_histogram(bins = 10)
+grid.arrange(g1, g2)
+
+# g1 <- ggplot(CPS1985, aes(x = education, y = wage))+
+#   geom_point(alpha = 0.5)+
+#   geom_smooth(method = "loess", se = F)
+# g2 <- ggplot(CPS1985, aes(x = education, y = log(wage)))+
+#   geom_point(alpha = 0.5)+
+#   geom_smooth(method = "loess", se = F)
+```
+
+また，変数変換を行うことによって係数の解釈も次のように変わる。
+
+| モデル                                | 係数の解釈                                                 |
+| ------------------------------------- | ---------------------------------------------------------- |
+| $Y = \beta_0 + \beta_1 X$             | 「$X$が1単位増加すると，$Y$が$\beta_1$単位増加する」       |
+| $Y = \beta_0 + \beta_1 \ln(X)$       | 「$X$が1%増加すると，$Y$が$\beta_1 / 100$単位増加する」 |
+| $\ln(Y) = \beta_0 + \beta_1 X$       | 「$X$が1単位増加すると，$Y$が$\beta_1$%増加する」          |
+| $\ln(Y) = \beta_0 + \beta_1 \ln(X)$ | 「$X$が1%増加すると，$Y$が$\beta_1$%増加する」             |
+
+
+回帰分析での変数の対数変換は`lm()`関数内で変数を`log()`で囲うだけでよい（なお，`log()`はデフォルトでは自然対数$\ln(\cdot)$となる）。
+
+先程の単回帰モデルの被説明変数$Wage​$を対数変換した回帰モデル
+
+$$
+\ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i  + u_i
+$$
+
+は以下のコードで実行できる。
+
+```{r}
+reg1 <- lm(formula = log(wage) ~ education, data = CPS1985)
+```
+
+対数変換をしなかった線形回帰の結果`reg`と今回の`reg1`を`stargazer()`に入れることで，まとめて結果表示できる。
+
+```{r}
+stargazer(reg, reg1, type = "text")
+```
+
+
+## 重回帰モデル
+
+複数の説明変数を使用した回帰モデルを**重回帰モデル**（multiple regression model）という。
+
+$$
+Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
+$$
+
+先程の回帰モデルに新たな変数$\text{Experience}$（潜在経験年数）を追加した回帰モデル
+
+$$
+\ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i + \beta_2 \text{Experience}_i + u_i
+$$
+
+をRで推定する場合，`lm()`関数の引数`formula`に` + experience`を追加し，
+
+```{r}
+reg2 <- lm(formula = log(wage) ~ education + experience, data = CPS1985)
+```
+
+と書けばよい。
+
+```{r}
+stargazer(reg1, reg2, type = "text")
+```
+
+
+## ミンサー型賃金関数と２乗項
+
+### ミンサー型賃金関数{-}
+
+賃金$\text{Wage}$を教育年数$\text{Education}$，潜在経験年数$\text{Experience}$，潜在経験年数の２乗$\text{Experience}^2$，観察不能な賃金決定要因の関数$u$として示す式
+
+$$
+\ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i + \beta_2 \text{Experience}_i + \beta_3 \text{Experience}_i^2 + u_i
+$$
+
+はミンサー型賃金関数と呼ばれ，世界各国の様々な時点の賃金分布をよく説明することが知られている。
+
+### ２乗項を含む重回帰モデル{-}
+
+ミンサー型賃金関数を実際のデータにあてはめて分析する場合は，
+
+1. 潜在経験年数の２乗$\text{Experience}^2$の変数を作成し
+2. 重回帰モデルとして分析する
+
+という手順で分析すればよい。
+
+まず，２乗の変数を作成する。
+
+`mutate(新しい変数の名前 = 既存の変数の名前^2)`のように書くことで任意の変数の2乗項を作成できる。
+
+```{r}
+# mutate関数で新しい変数を追加したデータをdfオブジェクトに代入
+df = CPS1985 %>% mutate(experience2 = experience^2)
+```
+
+次に，このデータフレーム`df`と新たな変数名`experience2`を使って`lm()`関数を書く。
+
+```{r}
+reg3 <- lm(formula = log(wage) ~ education + experience + experience2, data = df)
+```
+
+```{r, eval=F}
+stargazer(reg1, reg2, reg3, type = "text")
+```
+
+```{r, results='asis', echo=F}
+stargazer(reg1, reg2, reg3, type = "html")
+```
+
+

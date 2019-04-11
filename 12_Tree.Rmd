@@ -1,0 +1,250 @@
+---
+title: "機械学習３：決定木/アンサンブル学習"
+author: ""
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    fig_height: 4          # 画像サイズのデフォルトを設定
+    fig_width: 6           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+```
+
+$$
+% 定義
+\newcommand{\argmin}{\mathop{\rm arg~min}\limits}
+$$
+
+# 決定木
+
+## ツリーモデル
+
+**決定木**（decision tree）は説明変数の値に応じて条件分岐を繰り返して木のような構造をとるアルゴリズムである。
+
+以下の図は$x_1,x_2$という説明変数を使って目的変数$y$の分類を決定木によって行うときのイメージである。左側の図が木構造のモデルの様子を表しており，まず「$x_1<a$」であるかどうかによって分岐し，続いて$x_1<a$がYesであったほうの枝において「$x_2<b$」であるかどうかで分岐するようにし，最終的に予測を行う。右側の図はこの条件分岐によって生み出される識別境界を示している。木はノードとリンクから構成され，分岐の結節点を**ノード**（node），ノードとノードを結ぶ線をリンクという。
+
+![1552647653428](12_Tree.assets/1552647653428.png)
+
+
+
+
+
+## 学習規則
+
+線形回帰ではパラメータ$\beta$を推定して学習を行っていたが，決定木では最適な分割を推定することで学習を行う。
+
+決定木では**不純度**（impurity）と呼ばれる指標を用いて最適な分割を見つける。不純度には**ジニ係数**（gini index）
+$$
+I(t) = 1 - \sum_{i=1}^k {p(i|t)}^2
+$$
+などが使われる。ここで$t$はノード，$i$は目的変数の値で，$p(i|t)$はノード$t$の領域に属する学習用データのサンプルサイズ$N(t)$のうち目的変数が$i$の値をとるデータ数$N_i(t)$の割合
+
+$$
+p(i|t) = \frac{N_i(t)}{N(t)}
+$$
+である。あるノードの領域に属するサンプルが全て同じクラスに属する場合（異なるクラスのサンプルが混じらずに綺麗に分割できている場合）にはその不純度は0になる。
+
+そして，ノード$t$の不純度$I(t)$やサンプルサイズ$N(t)$と，ノード$t$から左右に分割される子ノード$t_{L},t_{R}$の不純度$I(t_L),I(t_R)$と子ノードの領域に属するサンプルサイズ$N(t_L),N(t_R)$を用いて算出される**情報利得**（information gain）
+$$
+I(t) - \left\{\frac{N(t_L)}{N(t)} I(t_{L}) + \frac{N(t_R)}{N(t)} I(t_{R})\right\}
+$$
+を最大化する分割，すなわち，分割後の子ノードの不純度を最も下げるような分割を採用する。
+
+
+<!-- ## 正則化 -->
+
+<!-- あまりにも細かく分割しすぎるとかえって過学習を招くため，ほどよいところで分割を止めなければならない。 -->
+
+
+## Rで実践
+
+### データの準備
+
+`{carData}`パッケージに含まれるタイタニック号の乗客データ`TitanicSurvival`を使う。
+
+```{r}
+# 準備
+library(tidyverse)
+set.seed(666)
+
+# データ読み込み
+library(carData)
+data("TitanicSurvival")
+head(TitanicSurvival)
+```
+
+このデータセットは1912年のタイタニック号の沈没事故の乗客の生死に関するデータで，次の変数が含まれている
+
+- `survived`：生存したかどうか
+- `sex`：性別
+- `age`：年齢（1歳に満たない幼児は小数）。263の欠損値を含む。
+- `passengerClass`：船室の等級
+
+このデータセットには欠損値が含まれているため，まず欠損値を除去する
+
+```{r}
+# NA（欠損値）を含む行を削除
+tita <- na.omit(TitanicSurvival)
+```
+
+そしてデータを学習用・テスト用に分割する。
+
+```{r}
+# ID列を追加
+df = tita %>% rownames_to_column("ID")
+
+# 80%を学習用データに
+train <- df %>% sample_frac(size = 0.8)
+
+# 学習用データに使っていないIDの行をテスト用データに
+test <- anti_join(df, train, by = "ID")
+
+# ID列は予測に使わないため削除しておく
+train <- train %>% select(-ID)
+test <- test %>% select(-ID)
+```
+
+
+### 決定木の実行
+
+決定木の実行には`{rpart}`パッケージを使う。決定木の作図用に`{partykit}`もインストールしておく。
+
+```{r, eval=F}
+# パッケージのインストール
+install.packages(c("rpart", "partykit"))
+```
+
+`rpart()`関数を用いて決定木を実行できる。`lm()`関数と同様に，`formula`の引数にモデルの構造すなわち被説明変数・説明変数の関係を記述し`data`の引数にデータのオブジェクトを入れる。
+
+
+```{r}
+# 決定木
+library(rpart)
+clf_tree <- rpart(survived ~ . , data = train)
+```
+
+`{partykit}`パッケージを使えば決定木を描くことができる。
+
+```{r, fig.height=6, fig.width=10}
+# 決定木のプロット
+library(partykit)
+plot(as.party(clf_tree))
+```
+
+まず性別で分岐し，男性の場合は年齢が9.5歳未満だと生存する割合が高くなるが，9.5歳以上だと生存する割合は低くなっている。
+女性の場合，船室の等級が1stや2ndであれば生存する割合が極めて高いが，3rdの場合は年齢が高いほど生存する割合は低くなっていることがわかる。
+
+決定木はこのようにデータの解釈・説明を行うことができる。そのため線形回帰などと並んでマーケティングの現場などビジネスにおいても使われる。
+
+```{r}
+# 予測
+y_pred = predict(clf_tree, test, type = "class")
+
+# 混同行列
+table(test$survived, y_pred)
+
+# 正解率
+library(MLmetrics)
+Accuracy(y_pred = y_pred, y_true = test$survived)
+```
+
+
+# ランダムフォレスト　
+
+決定木は予測モデルの解釈可能性が高いものの，単一の決定木では予測精度はあまり高くない。
+
+複数の予測モデルの結果を統合して答えを出す手法を**アンサンブル学習**（ensemble learning）という。決定木は予測精度が目的であるときには単体で使われることはほとんどなく，アンサンブルして使われる事が多い。
+
+決定木のアンサンブル学習で最も有名な手法が**ランダムフォレスト**（random forest）である。ランダムフォレストでは複数の決定木を使うが，その際に決定木間の相関を減らすために学習用データのサンプルから重複を許して無作為抽出したデータ（ブートストラップサンプル）を用い，さらに終端のノード以外のノードにおいてはあらかじめ決めておいた数だけの説明変数をランダムに選択して使用する。決定木の結果を多数決あるいは平均したものを最終的な予測値として採用する。
+
+
+## Rで実践
+
+`{randomForest}`パッケージを使う。
+
+```{r, eval=F}
+# パッケージのインストール
+install.packages("randomForest")
+```
+
+
+```{r}
+# ランダムフォレスト
+library(randomForest)
+clf_RF <- randomForest(survived ~ . , data = train)
+```
+
+予測値を見てみよう。
+
+```{r}
+# 予測
+y_pred = predict(clf_RF, test, type = "class")
+
+# 混同行列
+table(test$survived, y_pred)
+
+# 正解率
+library(MLmetrics)
+Accuracy(y_pred = y_pred, y_true = test$survived)
+```
+
+ランダムフォレストでは，`$importance`でジニ係数の減少に基づいて算出される**変数重要度**（variable importance）を確認することができる。これは構築した予測モデルにおいてそれぞれの説明変数がどの程度予測に寄与しているのかを教えてくれる。
+
+```{r}
+# 変数重要度
+clf_RF$importance
+```
+
+最も予測に寄与している説明変数は性別であることが分かる。
+
+説明変数が多いデータを扱うときは重要度を参考にして使用すべき説明変数を選び出すことができる。
+
+
+
+<!-- ```{r} -->
+<!-- library(caret) -->
+<!-- clf_RF <- train(form = survived ~ . , # survivedを目的変数に，残りのすべての列を説明変数にする -->
+<!--                 data = train, -->
+<!--                 method = "rf", # 決定木を指定 -->
+<!--                 trControl = trainControl(method = "cv"), -->
+<!--                 # tuneGrid = expand.grid(cp = 1:10 * 0.03)) -->
+<!--                 tuneLength = 10) -->
+<!-- clf_RF -->
+<!-- ``` -->
+
+
+<!-- ```{r} -->
+<!-- library(caret) -->
+<!-- clf_tree <- train(form = survived ~ . , # survivedを目的変数に，残りのすべての列を説明変数にする -->
+<!--                   data = train, -->
+<!--                   method = "rpart", # 決定木を指定 -->
+<!--                   trControl = trainControl(method = "cv"), -->
+<!--                   # tuneGrid = expand.grid(cp = 1:10 * 0.03), -->
+<!--                   tuneLength = 10) -->
+<!-- clf_tree -->
+
+<!-- # 決定木のプロット -->
+<!-- library(partykit) -->
+<!-- plot(as.party(clf_tree$finalModel)) -->
+<!-- ``` -->
+
+
+
