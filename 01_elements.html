@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="安藤道人（立教大学）　三田匡能" />
+<meta name="author" content="安藤道人（立教大学）　三田匡能(株式会社 GA technologies)" />
 
 
 <title>Rで学ぶ計量経済学と機械学習 1    Rの基礎</title>
@@ -1266,7 +1266,7 @@ window.buildTabsets = function(tocID) {
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; }
+a.sourceLine:empty { height: 1.2em; position: absolute; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -1279,11 +1279,13 @@ code.sourceCode { white-space: pre-wrap; }
 a.sourceLine { text-indent: -1em; padding-left: 1em; }
 }
 pre.numberSource a.sourceLine
-  { position: relative; left: -4em; }
+  { position: relative; }
+pre.numberSource a.sourceLine:empty
+  { position: absolute; }
 pre.numberSource a.sourceLine::before
   { content: attr(data-line-number);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all; display: inline-block;
+    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -1595,8 +1597,8 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 1<br> <br> Rの基礎</h1>
-<h4 class="author">安藤道人（立教大学）　三田匡能</h4>
-<h4 class="date">This version: 2019-04-11</h4>
+<h4 class="author">安藤道人（立教大学）　三田匡能(株式会社 GA technologies)</h4>
+<h4 class="date">This version: 2019-04-15</h4>
 
 </div>
 
@@ -1819,7 +1821,7 @@ div.tocify {
 <p>（RStudio Cloudではあまり意識しなくてもよいが，クラウドでなく手元のパソコンの中でRStudioを使う際には重要になる）</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co"># ワークスペース</span></a>
 <a class="sourceLine" id="cb32-2" data-line-number="2"><span class="kw">getwd</span>()  <span class="co"># ワークスペースを調べる（get working directory）</span></a></code></pre></div>
-<pre><code>## [1] &quot;/Users/Michi/Dropbox/Lectures/Econome_ml_with_R&quot;</code></pre>
+<pre><code>## [1] &quot;D:/Dropbox/Lectures/Econome_ml_with_R&quot;</code></pre>
 <div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="kw">setwd</span>(<span class="st">&quot;./&quot;</span>) <span class="co"># ワークスペースの場所を設定する</span></a>
 <a class="sourceLine" id="cb34-2" data-line-number="2"><span class="co"># &quot;./&quot;は現在のフォルダを指すのでsetwd(&quot;./&quot;) は実質なにも指定していない</span></a></code></pre></div>
 </div>

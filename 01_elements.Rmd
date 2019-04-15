@@ -1,6 +1,6 @@
 ---
 title: "Rで学ぶ計量経済学と機械学習 1<br> <br> Rの基礎"
-author: "安藤道人（立教大学）　三田匡能"
+author: "安藤道人（立教大学）　三田匡能(株式会社 GA technologies)"
 date: "This version: `r Sys.Date()`"
 output:
  html_document:
