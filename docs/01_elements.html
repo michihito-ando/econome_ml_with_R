@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="安藤道人（立教大学）　三田匡能(株式会社 GA technologies)" />
+<meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
 
 <title>Rで学ぶ計量経済学と機械学習 1    Rの基礎</title>
@@ -1266,7 +1266,7 @@ window.buildTabsets = function(tocID) {
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; position: absolute; }
+a.sourceLine:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -1279,13 +1279,11 @@ code.sourceCode { white-space: pre-wrap; }
 a.sourceLine { text-indent: -1em; padding-left: 1em; }
 }
 pre.numberSource a.sourceLine
-  { position: relative; }
-pre.numberSource a.sourceLine:empty
-  { position: absolute; }
+  { position: relative; left: -4em; }
 pre.numberSource a.sourceLine::before
   { content: attr(data-line-number);
-    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all;
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -1597,8 +1595,8 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 1<br> <br> Rの基礎</h1>
-<h4 class="author">安藤道人（立教大学）　三田匡能(株式会社 GA technologies)</h4>
-<h4 class="date">This version: 2019-04-15</h4>
+<h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)</h4>
+<h4 class="date">This version: 2019-04-23</h4>
 
 </div>
 
@@ -1765,29 +1763,29 @@ div.tocify {
 <h1><span class="header-section-number">5</span> データフレーム</h1>
 <p><strong>データフレーム</strong>（data frame）とは，Excelのワークシートのようにデータを表形式で保持するためのオブジェクトのこと。</p>
 <p>Rでは基本的にデータフレームを使ってデータ分析を行うことになる。</p>
-<p><img src="data:image/png;base64,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" /></p>
+<!-- ![](01_elements.assets/1549114133272.png) -->
 <div class="section level2">
 <h2><span class="header-section-number">5.1</span> データフレームの作成</h2>
 <div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1">df1 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(クラス =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</a>
-<a class="sourceLine" id="cb24-2" data-line-number="2">                     英語 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">77</span>, <span class="dv">90</span>, <span class="dv">79</span>),</a>
-<a class="sourceLine" id="cb24-3" data-line-number="3">                     現文 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">67</span>, <span class="dv">86</span>, <span class="dv">82</span>)) </a>
+<a class="sourceLine" id="cb24-2" data-line-number="2">                 　　英語 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</a>
+<a class="sourceLine" id="cb24-3" data-line-number="3">                     数学 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>))</a>
 <a class="sourceLine" id="cb24-4" data-line-number="4">df1</a></code></pre></div>
-<pre><code>##   クラス 英語 現文
-## 1      B   77   67
-## 2      A   90   86
-## 3      A   79   82</code></pre>
+<pre><code>##   クラス 英語 数学
+## 1      B   79   75
+## 2      A   91   81
+## 3      A   89   92</code></pre>
 </div>
 <div class="section level2">
 <h2><span class="header-section-number">5.2</span> データフレームの操作</h2>
 <p><code>df[行番号,列番号]</code>のように座標を指定して要素を取り出すことができる。</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">#データフレームの操作</span></a>
 <a class="sourceLine" id="cb26-2" data-line-number="2">df1[<span class="dv">1</span>,] <span class="co"># 1行目を表示</span></a></code></pre></div>
-<pre><code>##   クラス 英語 現文
-## 1      B   77   67</code></pre>
+<pre><code>##   クラス 英語 数学
+## 1      B   79   75</code></pre>
 <div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" data-line-number="1">df1[<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>, <span class="kw">c</span>(<span class="dv">1</span>,<span class="dv">2</span>)] <span class="co">#1,2行の1,2列を表示</span></a></code></pre></div>
 <pre><code>##   クラス 英語
-## 1      B   77
-## 2      A   90</code></pre>
+## 1      B   79
+## 2      A   91</code></pre>
 <p><code>df[&quot;列名&quot;]</code>や<code>df$クラス</code>のように列を指定することもできる</p>
 <div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1">df1[<span class="st">&quot;クラス&quot;</span>]</a></code></pre></div>
 <pre><code>##   クラス
@@ -1821,7 +1819,7 @@ div.tocify {
 <p>（RStudio Cloudではあまり意識しなくてもよいが，クラウドでなく手元のパソコンの中でRStudioを使う際には重要になる）</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co"># ワークスペース</span></a>
 <a class="sourceLine" id="cb32-2" data-line-number="2"><span class="kw">getwd</span>()  <span class="co"># ワークスペースを調べる（get working directory）</span></a></code></pre></div>
-<pre><code>## [1] &quot;D:/Dropbox/Lectures/Econome_ml_with_R&quot;</code></pre>
+<pre><code>## [1] &quot;/Users/Michi/Dropbox/Lectures/Econome_ml_with_R&quot;</code></pre>
 <div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="kw">setwd</span>(<span class="st">&quot;./&quot;</span>) <span class="co"># ワークスペースの場所を設定する</span></a>
 <a class="sourceLine" id="cb34-2" data-line-number="2"><span class="co"># &quot;./&quot;は現在のフォルダを指すのでsetwd(&quot;./&quot;) は実質なにも指定していない</span></a></code></pre></div>
 </div>
@@ -1842,11 +1840,11 @@ div.tocify {
 <h2><span class="header-section-number">6.4</span> colMeans()</h2>
 <p><code>colMeans()</code>はデータフレームの各列に対して平均値の計算（ベクトルの場合は<code>mean()</code>関数が使える）を行った結果を返す関数である</p>
 <div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>,<span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">3</span>)]) <span class="co"># 2,3行の2,3列の平均を表示</span></a></code></pre></div>
-<pre><code>## 英語 現文 
-## 84.5 84.0</code></pre>
+<pre><code>## 英語 数学 
+## 90.0 86.5</code></pre>
 <div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>,<span class="op">-</span><span class="kw">c</span>(<span class="dv">1</span>)])</a></code></pre></div>
-<pre><code>## 英語 現文 
-## 84.5 84.0</code></pre>
+<pre><code>## 英語 数学 
+## 90.0 86.5</code></pre>
 </div>
 </div>
 <div id="factor" class="section level1">
@@ -1856,7 +1854,7 @@ div.tocify {
 <pre><code>## [1] B A A
 ## Levels: A B</code></pre>
 <div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb43-1" data-line-number="1">df2<span class="op">$</span>英語</a></code></pre></div>
-<pre><code>## [1] 77 90 79</code></pre>
+<pre><code>## [1] 79 91 89</code></pre>
 <div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="kw">str</span>(df2<span class="op">$</span>クラス) <span class="co"># str() = structure</span></a></code></pre></div>
 <pre><code>##  Factor w/ 2 levels &quot;A&quot;,&quot;B&quot;: 2 1 1</code></pre>
 <p><code>str()</code>はデータの内部構造を表示する関数である。</p>
@@ -1864,14 +1862,14 @@ div.tocify {
 <p>データフレーム作成時（<code>data.frame()</code>）やcsvの読み込み時（<code>read.csv()</code>）には，文字列型のデータは因子型に自動的に変換する処理が<code>data.frame()</code>や<code>read.csv()</code>の関数ではデフォルト設定となっている。</p>
 <p>これを回避したい場合は，<code>stringsAsFactors = FALSE</code>という引数を追加して関数を実行すればよい。</p>
 <div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb47-1" data-line-number="1">df3 &lt;-<span class="st"> </span><span class="kw">data.frame</span>(クラス =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</a>
-<a class="sourceLine" id="cb47-2" data-line-number="2">                     英語 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">77</span>, <span class="dv">90</span>, <span class="dv">79</span>),</a>
-<a class="sourceLine" id="cb47-3" data-line-number="3">                     現文 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">67</span>, <span class="dv">86</span>, <span class="dv">82</span>),</a>
+<a class="sourceLine" id="cb47-2" data-line-number="2">                     英語 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</a>
+<a class="sourceLine" id="cb47-3" data-line-number="3">                     数学 =<span class="st"> </span><span class="kw">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>),</a>
 <a class="sourceLine" id="cb47-4" data-line-number="4">                     <span class="dt">stringsAsFactors =</span> <span class="ot">FALSE</span>)</a>
 <a class="sourceLine" id="cb47-5" data-line-number="5"><span class="kw">str</span>(df3)</a></code></pre></div>
 <pre><code>## 'data.frame':    3 obs. of  3 variables:
 ##  $ クラス: chr  &quot;B&quot; &quot;A&quot; &quot;A&quot;
-##  $ 英語  : num  77 90 79
-##  $ 現文  : num  67 86 82</code></pre>
+##  $ 英語  : num  79 91 89
+##  $ 数学  : num  75 81 92</code></pre>
 </div>
 <div class="section level1">
 <h1><span class="header-section-number">8</span> （参考）その他のタイプのオブジェクト</h1>
@@ -1892,10 +1890,10 @@ div.tocify {
 ## [1] &quot;A&quot; &quot;B&quot; &quot;C&quot;
 ## 
 ## $df
-##   クラス 英語 現文
-## 1      B   77   67
-## 2      A   90   86
-## 3      A   79   82
+##   クラス 英語 数学
+## 1      B   79   75
+## 2      A   91   81
+## 3      A   89   92
 ## 
 ## $list
 ## $list[[1]]
@@ -1911,10 +1909,10 @@ div.tocify {
 <p>要素に名前がついていれば<code>list$要素名</code>で参照できる</p>
 <div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co"># リストの中のdfという要素（データフレーム）の取り出し</span></a>
 <a class="sourceLine" id="cb51-2" data-line-number="2">list_ex<span class="op">$</span>df</a></code></pre></div>
-<pre><code>##   クラス 英語 現文
-## 1      B   77   67
-## 2      A   90   86
-## 3      A   79   82</code></pre>
+<pre><code>##   クラス 英語 数学
+## 1      B   79   75
+## 2      A   91   81
+## 3      A   89   92</code></pre>
 <p>要素に名前がついていない場合，要素の番号（<code>list[[i]]</code>）を指定して参照する</p>
 <div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co"># リストの中のlistという要素（リスト）の第一要素([[1]])の取り出し</span></a>
 <a class="sourceLine" id="cb53-2" data-line-number="2">list_ex<span class="op">$</span>list[[<span class="dv">1</span>]]</a></code></pre></div>
@@ -1941,10 +1939,10 @@ div.tocify {
 <p><code>as.matrix()</code>関数でデータフレームを行列にすることもできる。</p>
 <div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co"># データフレームの行列への変換</span></a>
 <a class="sourceLine" id="cb57-2" data-line-number="2"><span class="kw">as.matrix</span>(df1[,<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>])</a></code></pre></div>
-<pre><code>##      英語 現文
-## [1,]   77   67
-## [2,]   90   86
-## [3,]   79   82</code></pre>
+<pre><code>##      英語 数学
+## [1,]   79   75
+## [2,]   91   81
+## [3,]   89   92</code></pre>
 </div>
 </div>
 </div>
