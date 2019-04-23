@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2019-04-23" />
+<meta name="date" content="2019-04-24" />
 
 <title>Rで学ぶ計量経済学と機械学習 4    回帰分析</title>
 
@@ -1599,7 +1599,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 4<br> <br> 回帰分析</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)</h4>
-<h4 class="date">2019-04-23</h4>
+<h4 class="date">2019-04-24</h4>
 
 </div>
 
@@ -1642,7 +1642,7 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 </div>
 <div class="section level2">
 <h2><span class="header-section-number">1.2</span> 最小二乗法</h2>
-<p>線形回帰のパラメータ<span class="math inline">\(\beta_0, \beta_1\)</span>はデータ<span class="math inline">\(X_i,Y_i\)</span>から推定する。最も有名で非常に強力な推定方法は<strong>最小二乗法</strong>（least squares method）であり，これは推定したパラメータ<span class="math inline">\(\hat{\beta}_0, \hat{\beta}_1\)</span>からの予測値<span class="math inline">\(\hat{Y}_i\)</span>の実測値<span class="math inline">\(Y_i\)</span>との誤差二乗和<span class="math inline">\(\sum_{i=1}^n (Y_i - \hat{Y}_i)^2\)</span>を最小にするパラメータを使用する。</p>
+<p>線形回帰のパラメータ<span class="math inline">\(\beta_0, \beta_1\)</span>はデータ<span class="math inline">\(X_i,Y_i\)</span>から推定する。最も有名で強力な推定方法は<strong>最小二乗法</strong>（ordinary least squares method, OLS method）である。この方法では，実測値<span class="math inline">\(Y_i\)</span>と予測値<span class="math inline">\(\hat{Y}_i\)</span>との残差二乗和<span class="math inline">\(\sum_{i=1}^n (Y_i - \hat{Y}_i)^2\)</span>を最小化するように推定量<span class="math inline">\(\hat{\beta}_0, \hat{\beta}_1\)</span>を求める。</p>
 <p>最小二乗法による線形回帰は<code>lm()</code>関数で行うことができる。</p>
 <p>例えば，被説明変数を賃金<span class="math inline">\(\text{Wage}\)</span>，説明変数を教育年数<span class="math inline">\(\text{Education}\)</span>とする</p>
 <p><span class="math display">\[
@@ -1754,9 +1754,9 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 \ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i  + u_i
 \]</span></p>
 <p>は以下のコードで実行できる。</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1">reg1 &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
-<p>対数変換をしなかった線形回帰の結果<code>reg</code>と今回の<code>reg1</code>を<code>stargazer()</code>に入れることで，まとめて結果表示できる。</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">stargazer</span>(reg, reg1, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1">reg_logwage &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
+<p>対数変換をしなかった線形回帰の結果<code>reg</code>と今回の<code>reg_logwage</code>を<code>stargazer()</code>に入れることで，まとめて結果表示できる。</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">stargazer</span>(reg, reg_logwage, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===========================================================
 ##                                    Dependent variable:     
@@ -1790,9 +1790,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 \ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i + \beta_2 \text{Experience}_i + u_i
 \]</span></p>
 <p>をRで推定する場合，<code>lm()</code>関数の引数<code>formula</code>に<code>+ experience</code>を追加し，</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1">reg2 &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1">reg_multiple &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
 <p>と書けばよい。</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">stargazer</span>(reg1, reg2, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===================================================================
 ##                                   Dependent variable:              
@@ -1841,8 +1841,8 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 <div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co"># mutate関数で新しい変数を追加したデータをdfオブジェクトに代入</span></a>
 <a class="sourceLine" id="cb19-2" data-line-number="2">df =<span class="st"> </span>CPS1985 <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">experience2 =</span> experience<span class="op">^</span><span class="dv">2</span>)</a></code></pre></div>
 <p>次に，このデータフレーム<code>df</code>と新たな変数名<code>experience2</code>を使って<code>lm()</code>関数を書く。</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1">reg3 &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience <span class="op">+</span><span class="st"> </span>experience2, <span class="dt">data =</span> df)</a></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">stargazer</span>(reg1, reg2, reg3, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1">reg_mincer &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience <span class="op">+</span><span class="st"> </span>experience2, <span class="dt">data =</span> df)</a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <table style="text-align:center">
 <tr>
 <td colspan="4" style="border-bottom: 1px solid black">

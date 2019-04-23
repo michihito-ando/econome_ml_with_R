@@ -74,7 +74,7 @@ head(CPS1985)
 
 ## 最小二乗法
 
-線形回帰のパラメータ$\beta_0, \beta_1$はデータ$X_i,Y_i$から推定する。最も有名で非常に強力な推定方法は**最小二乗法**（least squares method）であり，これは推定したパラメータ$\hat{\beta}_0, \hat{\beta}_1$からの予測値$\hat{Y}_i$の実測値$Y_i$との誤差二乗和$\sum_{i=1}^n (Y_i - \hat{Y}_i)^2$を最小にするパラメータを使用する。
+線形回帰のパラメータ$\beta_0, \beta_1$はデータ$X_i,Y_i$から推定する。最も有名で強力な推定方法は**最小二乗法**（ordinary least squares method, OLS method）である。この方法では，実測値$Y_i$と予測値$\hat{Y}_i$との残差二乗和$\sum_{i=1}^n (Y_i - \hat{Y}_i)^2$を最小化するように推定量$\hat{\beta}_0, \hat{\beta}_1$を求める。
 
 最小二乗法による線形回帰は`lm()`関数で行うことができる。
 
@@ -175,13 +175,13 @@ $$
 は以下のコードで実行できる。
 
 ```{r}
-reg1 <- lm(formula = log(wage) ~ education, data = CPS1985)
+reg_logwage <- lm(formula = log(wage) ~ education, data = CPS1985)
 ```
 
-対数変換をしなかった線形回帰の結果`reg`と今回の`reg1`を`stargazer()`に入れることで，まとめて結果表示できる。
+対数変換をしなかった線形回帰の結果`reg`と今回の`reg_logwage`を`stargazer()`に入れることで，まとめて結果表示できる。
 
 ```{r}
-stargazer(reg, reg1, type = "text")
+stargazer(reg, reg_logwage, type = "text")
 ```
 
 
@@ -202,13 +202,13 @@ $$
 をRで推定する場合，`lm()`関数の引数`formula`に` + experience`を追加し，
 
 ```{r}
-reg2 <- lm(formula = log(wage) ~ education + experience, data = CPS1985)
+reg_multiple <- lm(formula = log(wage) ~ education + experience, data = CPS1985)
 ```
 
 と書けばよい。
 
 ```{r}
-stargazer(reg1, reg2, type = "text")
+stargazer(reg_logwage, reg_multiple, type = "text")
 ```
 
 
@@ -245,15 +245,15 @@ df = CPS1985 %>% mutate(experience2 = experience^2)
 次に，このデータフレーム`df`と新たな変数名`experience2`を使って`lm()`関数を書く。
 
 ```{r}
-reg3 <- lm(formula = log(wage) ~ education + experience + experience2, data = df)
+reg_mincer <- lm(formula = log(wage) ~ education + experience + experience2, data = df)
 ```
 
 ```{r, eval=F}
-stargazer(reg1, reg2, reg3, type = "text")
+stargazer(reg_logwage, reg_multiple, reg_mincer, type = "text")
 ```
 
 ```{r, results='asis', echo=F}
-stargazer(reg1, reg2, reg3, type = "html")
+stargazer(reg_logwage, reg_multiple, reg_mincer, type = "html")
 ```
 
 
