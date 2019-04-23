@@ -75,7 +75,7 @@ g # 表示
 
 `ggplotly()`関数を使うと，`{ggplot2}`で描いたグラフを動的なものに変換できる。
 
-**※R Studio Cloudでpgglotyを使うと、日本語表示がggplot2そのものよりも適切に表示されることがあるが、完完璧ではない。(2019.4.22時点)**
+**※R Studio Cloudで　`{ggplotly}`　を使うと、日本語表示は `{ggplot2}` そのものよりも適切に表示されるが、やはり少しおかしい。(2019.4.22時点)**
 
 ```{r, eval=F}
 install.packages("plotly")
