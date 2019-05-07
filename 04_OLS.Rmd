@@ -119,9 +119,9 @@ stargazer(reg, type = "text")
 `type = "html", out = "reg1.html"`とおけばhtml形式で保存できる
 
 ```{r, eval=F}
-stargazer(reg,             # 回帰分析の結果
-          type = "html",    # ファイル形式
-          out = "reg1.html")# 保存するファイル名
+stargazer(reg,               # 回帰分析の結果
+          type = "html",      # ファイル形式
+          out = "reg1.html")  # 保存するファイル名
 ```
 
 
@@ -136,7 +136,7 @@ stargazer(reg,             # 回帰分析の結果
 
 例えば，賃金のように「低い人（低所得者層）が多く，高い人（高所得者層）が少ない」ような分布はL字型のような右に歪んだ分布になる。こうした分布は対数変換を行うことで正規分布に近づく。
 
-```{r, echo=FALSE}
+```{r}
 library(tidyverse)
 library(gridExtra)
 
@@ -145,7 +145,9 @@ g1 <- ggplot(CPS1985, aes(x = wage))+
 g2 <- ggplot(CPS1985, aes(x = log(wage)))+
   geom_histogram(bins = 10)
 grid.arrange(g1, g2)
+```
 
+```{r, echo = FALSE}
 # g1 <- ggplot(CPS1985, aes(x = education, y = wage))+
 #   geom_point(alpha = 0.5)+
 #   geom_smooth(method = "loess", se = F)
@@ -239,7 +241,7 @@ $$
 
 ```{r}
 # mutate関数で新しい変数を追加したデータをdfオブジェクトに代入
-df = CPS1985 %>% mutate(experience2 = experience^2)
+df = CPS1985 %>% mutate(experience2 = experience^2) 
 ```
 
 次に，このデータフレーム`df`と新たな変数名`experience2`を使って`lm()`関数を書く。
@@ -248,12 +250,138 @@ df = CPS1985 %>% mutate(experience2 = experience^2)
 reg_mincer <- lm(formula = log(wage) ~ education + experience + experience2, data = df)
 ```
 
-```{r, eval=F}
+```{r}
 stargazer(reg_logwage, reg_multiple, reg_mincer, type = "text")
 ```
 
 ```{r, results='asis', echo=F}
-stargazer(reg_logwage, reg_multiple, reg_mincer, type = "html")
+#stargazer(reg_logwage, reg_multiple, reg_mincer, type = "html")
 ```
+
+# 不均一分散への対応
+
+## 不均一分散に対して頑健な標準誤差
+
+`lm`によるOLS推定における標準誤差は、誤差項の分散が均一（均一分散）であると仮定している。しかし、実際の計量経済分析において均一分散の仮定が満たされていると想定できるケースはまれであり、通常は、不均一分散に対して頑健な標準誤差(ロバスト標準誤差, heteroskedasticity robust standard error)を用いる。
+
+ `lm`関数にはロバスト標準誤差が実装されていないため、別途パッケージを用いる。ここでは、{sandwich} パッケージの`vcovHC`関数を用いる。なおsandwichという名称は、ロバスト標準誤差の推定量の式の形状から来ている。
+
+まず{sandwich}パッケージをインストールして読み込む。
+
+```{r, eval=F}
+install.packages("sandwich")
+```
+
+```{r}
+library(sandwich)
+```
+
+上記の3種類の重回帰モデルの推定結果の標準誤差を、ロバスト標準誤差に置き換える。
+
+まず、`vcovHC`関数を用いてロバスト標準誤差を得る。
+
+```{r}
+# (1) reg_lowage
+vcov_reg_lowage <- vcovHC(reg_logwage, type = "HC1")  # 分散共分散行列
+robustSE_reg_logwage <- sqrt(diag(vcov_reg_lowage)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
+
+# (2) reg_multiple
+vcov_reg_multiple <- vcovHC(reg_multiple, type = "HC1") # 分散共分散行列
+robustSE_reg_multiple <- sqrt(diag(vcov_reg_multiple)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
+
+# (3) reg_mincer
+vcov_reg_mincer <- vcovHC(reg_mincer, type = "HC1")  # 分散共分散行列
+robustSE_reg_mincer <- sqrt(diag(vcov_reg_mincer)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
+```
+
+ここで、`type = "HC1"`とは、ロバスト標準誤差の種類の指定であり、`HC1`は計量経済学でもっともよく使われるものである。
+
+{stargazer}で表を作成する際には、以下のように標準誤差をロバスト標準誤差に置き換える。
+
+```{R}
+stargazer(reg_logwage, reg_multiple, reg_mincer, 
+          se = list(robustSE_reg_logwage, robustSE_reg_multiple, robustSE_reg_mincer), # robust SEに置き換え
+          type = "text")
+```
+
+通常は、均一分散を仮定した標準誤差よりもロバスト標準誤差のほうが大きくなる傾向があるが、今回はほとんど変わらない。なお回帰係数の推定値は全く同じとなる。
+
+
+## 参考：不均一分散に対して頑健なF検定
+
+上の表において、F統計量は均一分散を仮定したもののままである。残念ながら、{stargazer}を使って不均一分散に対して頑健なF検定の結果を簡潔に表に示す方法はない。
+
+下記では、`lm`での回帰分析結果を利用して、不均一分散に対して頑健なF検定を行う方法だけ記す。
+
+まず`waldtest`関数を利用するため、{AER}パッケージを読み込む。
+
+```{R, eval=F}
+library(AER)
+```
+
+次に、F検定に使用する「制約なし」の回帰モデルを（説明変数を定数項のみに回帰するモデル）を実施し、オブジェクトに保存する。
+
+```{R}
+reg_noX <- lm(log(wage) ~ 1, data = CPS1985)
+```
+
+均一分散を仮定したF検定は以下のような形で行うことができる。上記の（均一分散下での）回帰分析結果と一致することが確認できる。
+
+```{R}
+# (1) reg_lowage
+waldtest(reg_logwage, reg_noX)
+
+# (2) reg_multiple
+waldtest(reg_multiple, reg_noX)
+
+# (3) reg_mincer
+waldtest(reg_mincer, reg_noX)
+```
+
+一方、不均一分散に対して頑健なF検定は、以下のように実施できる。
+
+```{R}
+# (1) reg_lowage
+waldtest(reg_logwage, reg_noX, 
+         vcov = vcovHC(reg_logwage, type = "HC1"))　# HC1を用いたF検定
+
+# (2) reg_multiple
+waldtest(reg_multiple, reg_noX, 
+         vcov = vcovHC(reg_multiple, type = "HC1")) # HC1を用いたF検定
+
+# (3) reg_mincer
+waldtest(reg_mincer, reg_noX, 
+         vcov = vcovHC(reg_mincer, type = "HC1"))　# HC1を用いたF検定
+```
+
+なお、上記の方法についてのさらに詳しい解説は、[このページ](http://eclr.humanities.manchester.ac.uk/index.php/R_robust_se)などを参照すること。ただし上記では、このサイトとは若干異なる方法でF検定を行っている。
+
+```{r, echo = FALSE}
+#setwd("D:/Dropbox/Lectures/Econome_ml_with_R")
+#Wwrite.csv(df, "04_OLS_df.csv")
+```
+
+
+# 参考文献
+
+回帰分析や均一分散/不均一分散については、「[計量経済学１](https://sites.google.com/site/michihito7ando/lectures/econome2018)」の講義資料などを参照すること。
+
+
+# 参考：Stataでの回帰分析
+
+Stataでは、不均一分散に対して頑健な回帰分析（ロバスト標準誤差およびロバストなF検定）はより簡単に実施できるというメリットはある。
+
+```
+* 均一分散を仮定した標準誤差
+reg log_wage education 
+reg log_wage education experience
+reg log_wage education experience experience2
+
+* 不均一分散に対して頑健な標準誤差(オプションにrobustと加えるだけ)
+reg log_wage education, robust
+reg log_wage education experience, robust
+reg log_wage education experience experience2, robust
+```
+
 
 
