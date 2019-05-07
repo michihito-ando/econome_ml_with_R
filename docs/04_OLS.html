@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2019-04-24" />
+<meta name="date" content="2019-05-07" />
 
 <title>Rで学ぶ計量経済学と機械学習 4    回帰分析</title>
 
@@ -1599,7 +1599,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 4<br> <br> 回帰分析</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)</h4>
-<h4 class="date">2019-04-24</h4>
+<h4 class="date">2019-05-07</h4>
 
 </div>
 
@@ -1709,9 +1709,9 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 ## ===============================================
 ## Note:               *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 <p><code>type = &quot;html&quot;, out = &quot;reg1.html&quot;</code>とおけばhtml形式で保存できる</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">stargazer</span>(reg,             <span class="co"># 回帰分析の結果</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">          <span class="dt">type =</span> <span class="st">&quot;html&quot;</span>,    <span class="co"># ファイル形式</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">          <span class="dt">out =</span> <span class="st">&quot;reg1.html&quot;</span>)<span class="co"># 保存するファイル名</span></a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">stargazer</span>(reg,               <span class="co"># 回帰分析の結果</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">          <span class="dt">type =</span> <span class="st">&quot;html&quot;</span>,      <span class="co"># ファイル形式</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">          <span class="dt">out =</span> <span class="st">&quot;reg1.html&quot;</span>)  <span class="co"># 保存するファイル名</span></a></code></pre></div>
 </div>
 </div>
 <div class="section level1">
@@ -1720,6 +1720,14 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 <h2><span class="header-section-number">2.1</span> 対数変換</h2>
 <p>データ分析の過程では，データを対数変換したい場合もある。</p>
 <p>例えば，賃金のように「低い人（低所得者層）が多く，高い人（高所得者層）が少ない」ような分布はL字型のような右に歪んだ分布になる。こうした分布は対数変換を行うことで正規分布に近づく。</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">library</span>(tidyverse)</a>
+<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="kw">library</span>(gridExtra)</a>
+<a class="sourceLine" id="cb13-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb13-4" data-line-number="4">g1 &lt;-<span class="st"> </span><span class="kw">ggplot</span>(CPS1985, <span class="kw">aes</span>(<span class="dt">x =</span> wage))<span class="op">+</span></a>
+<a class="sourceLine" id="cb13-5" data-line-number="5"><span class="st">  </span><span class="kw">geom_histogram</span>(<span class="dt">bins =</span> <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb13-6" data-line-number="6">g2 &lt;-<span class="st"> </span><span class="kw">ggplot</span>(CPS1985, <span class="kw">aes</span>(<span class="dt">x =</span> <span class="kw">log</span>(wage)))<span class="op">+</span></a>
+<a class="sourceLine" id="cb13-7" data-line-number="7"><span class="st">  </span><span class="kw">geom_histogram</span>(<span class="dt">bins =</span> <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb13-8" data-line-number="8"><span class="kw">grid.arrange</span>(g1, g2)</a></code></pre></div>
 <p><img src="data:image/png;base64,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" width="384" style="display: block; margin: auto;" /></p>
 <p>また，変数変換を行うことによって係数の解釈も次のように変わる。</p>
 <table>
@@ -1754,9 +1762,9 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 \ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i  + u_i
 \]</span></p>
 <p>は以下のコードで実行できる。</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1">reg_logwage &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1">reg_logwage &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
 <p>対数変換をしなかった線形回帰の結果<code>reg</code>と今回の<code>reg_logwage</code>を<code>stargazer()</code>に入れることで，まとめて結果表示できる。</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">stargazer</span>(reg, reg_logwage, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">stargazer</span>(reg, reg_logwage, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===========================================================
 ##                                    Dependent variable:     
@@ -1790,9 +1798,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 \ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i + \beta_2 \text{Experience}_i + u_i
 \]</span></p>
 <p>をRで推定する場合，<code>lm()</code>関数の引数<code>formula</code>に<code>+ experience</code>を追加し，</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1">reg_multiple &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1">reg_multiple &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
 <p>と書けばよい。</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===================================================================
 ##                                   Dependent variable:              
@@ -1838,284 +1846,195 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 <p>という手順で分析すればよい。</p>
 <p>まず，２乗の変数を作成する。</p>
 <p><code>mutate(新しい変数の名前 = 既存の変数の名前^2)</code>のように書くことで任意の変数の2乗項を作成できる。</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="co"># mutate関数で新しい変数を追加したデータをdfオブジェクトに代入</span></a>
-<a class="sourceLine" id="cb19-2" data-line-number="2">df =<span class="st"> </span>CPS1985 <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">experience2 =</span> experience<span class="op">^</span><span class="dv">2</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co"># mutate関数で新しい変数を追加したデータをdfオブジェクトに代入</span></a>
+<a class="sourceLine" id="cb20-2" data-line-number="2">df =<span class="st"> </span>CPS1985 <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">experience2 =</span> experience<span class="op">^</span><span class="dv">2</span>) </a></code></pre></div>
 <p>次に，このデータフレーム<code>df</code>と新たな変数名<code>experience2</code>を使って<code>lm()</code>関数を書く。</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1">reg_mincer &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience <span class="op">+</span><span class="st"> </span>experience2, <span class="dt">data =</span> df)</a></code></pre></div>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
-<table style="text-align:center">
-<tr>
-<td colspan="4" style="border-bottom: 1px solid black">
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td colspan="3">
-<em>Dependent variable:</em>
-</td>
-</tr>
-<tr>
-<td>
-</td>
-<td colspan="3" style="border-bottom: 1px solid black">
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td colspan="3">
-log(wage)
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-(1)
-</td>
-<td>
-(2)
-</td>
-<td>
-(3)
-</td>
-</tr>
-<tr>
-<td colspan="4" style="border-bottom: 1px solid black">
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-education
-</td>
-<td>
-0.077<sup>***</sup>
-</td>
-<td>
-0.096<sup>***</sup>
-</td>
-<td>
-0.090<sup>***</sup>
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-(0.008)
-</td>
-<td>
-(0.008)
-</td>
-<td>
-(0.008)
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-</td>
-<td>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-experience
-</td>
-<td>
-</td>
-<td>
-0.012<sup>***</sup>
-</td>
-<td>
-0.035<sup>***</sup>
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-</td>
-<td>
-(0.002)
-</td>
-<td>
-(0.006)
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-</td>
-<td>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-experience2
-</td>
-<td>
-</td>
-<td>
-</td>
-<td>
--0.001<sup>***</sup>
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-</td>
-<td>
-</td>
-<td>
-(0.0001)
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-</td>
-<td>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-Constant
-</td>
-<td>
-1.060<sup>***</sup>
-</td>
-<td>
-0.594<sup>***</sup>
-</td>
-<td>
-0.520<sup>***</sup>
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-(0.107)
-</td>
-<td>
-(0.124)
-</td>
-<td>
-(0.124)
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-</td>
-<td>
-</td>
-<td>
-</td>
-<td>
-</td>
-</tr>
-<tr>
-<td colspan="4" style="border-bottom: 1px solid black">
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-Observations
-</td>
-<td>
-534
-</td>
-<td>
-534
-</td>
-<td>
-534
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-R<sup>2</sup>
-</td>
-<td>
-0.145
-</td>
-<td>
-0.211
-</td>
-<td>
-0.238
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-Adjusted R<sup>2</sup>
-</td>
-<td>
-0.143
-</td>
-<td>
-0.209
-</td>
-<td>
-0.234
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-Residual Std. Error
-</td>
-<td>
-0.489 (df = 532)
-</td>
-<td>
-0.470 (df = 531)
-</td>
-<td>
-0.462 (df = 530)
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-F Statistic
-</td>
-<td>
-90.006<sup>***</sup> (df = 1; 532)
-</td>
-<td>
-71.214<sup>***</sup> (df = 2; 531)
-</td>
-<td>
-55.229<sup>***</sup> (df = 3; 530)
-</td>
-</tr>
-<tr>
-<td colspan="4" style="border-bottom: 1px solid black">
-</td>
-</tr>
-<tr>
-<td style="text-align:left">
-<em>Note:</em>
-</td>
-<td colspan="3" style="text-align:right">
-<sup><em></sup>p&lt;0.1; <sup><strong></sup>p&lt;0.05; <sup></strong></em></sup>p&lt;0.01
-</td>
-</tr>
-</table>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1">reg_mincer &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience <span class="op">+</span><span class="st"> </span>experience2, <span class="dt">data =</span> df)</a></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<pre><code>## 
+## ===========================================================================================
+##                                               Dependent variable:                          
+##                     -----------------------------------------------------------------------
+##                                                    log(wage)                               
+##                               (1)                     (2)                     (3)          
+## -------------------------------------------------------------------------------------------
+## education                  0.077***                0.096***                0.090***        
+##                             (0.008)                 (0.008)                 (0.008)        
+##                                                                                            
+## experience                                         0.012***                0.035***        
+##                                                     (0.002)                 (0.006)        
+##                                                                                            
+## experience2                                                                -0.001***       
+##                                                                            (0.0001)        
+##                                                                                            
+## Constant                   1.060***                0.594***                0.520***        
+##                             (0.107)                 (0.124)                 (0.124)        
+##                                                                                            
+## -------------------------------------------------------------------------------------------
+## Observations                  534                     534                     534          
+## R2                           0.145                   0.211                   0.238         
+## Adjusted R2                  0.143                   0.209                   0.234         
+## Residual Std. Error    0.489 (df = 532)        0.470 (df = 531)        0.462 (df = 530)    
+## F Statistic         90.006*** (df = 1; 532) 71.214*** (df = 2; 531) 55.229*** (df = 3; 530)
+## ===========================================================================================
+## Note:                                                           *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 </div>
 </div>
+</div>
+<div class="section level1">
+<h1><span class="header-section-number">3</span> 不均一分散への対応</h1>
+<div class="section level2">
+<h2><span class="header-section-number">3.1</span> 不均一分散に対して頑健な標準誤差</h2>
+<p><code>lm</code>によるOLS推定における標準誤差は、誤差項の分散が均一（均一分散）であると仮定している。しかし、実際の計量経済分析において均一分散の仮定が満たされていると想定できるケースはまれであり、通常は、不均一分散に対して頑健な標準誤差(ロバスト標準誤差, heteroskedasticity robust standard error)を用いる。</p>
+<p><code>lm</code>関数にはロバスト標準誤差が実装されていないため、別途パッケージを用いる。ここでは、{sandwich} パッケージの<code>vcovHC</code>関数を用いる。なおsandwichという名称は、ロバスト標準誤差の推定量の式の形状から来ている。</p>
+<p>まず{sandwich}パッケージをインストールして読み込む。</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="kw">install.packages</span>(<span class="st">&quot;sandwich&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="kw">library</span>(sandwich)</a></code></pre></div>
+<p>上記の3種類の重回帰モデルの推定結果の標準誤差を、ロバスト標準誤差に置き換える。</p>
+<p>まず、<code>vcovHC</code>関数を用いてロバスト標準誤差を得る。</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
+<a class="sourceLine" id="cb26-2" data-line-number="2">vcov_reg_lowage &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_logwage, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></a>
+<a class="sourceLine" id="cb26-3" data-line-number="3">robustSE_reg_logwage &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_lowage)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a>
+<a class="sourceLine" id="cb26-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb26-5" data-line-number="5"><span class="co"># (2) reg_multiple</span></a>
+<a class="sourceLine" id="cb26-6" data-line-number="6">vcov_reg_multiple &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_multiple, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>) <span class="co"># 分散共分散行列</span></a>
+<a class="sourceLine" id="cb26-7" data-line-number="7">robustSE_reg_multiple &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_multiple)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a>
+<a class="sourceLine" id="cb26-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb26-9" data-line-number="9"><span class="co"># (3) reg_mincer</span></a>
+<a class="sourceLine" id="cb26-10" data-line-number="10">vcov_reg_mincer &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_mincer, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></a>
+<a class="sourceLine" id="cb26-11" data-line-number="11">robustSE_reg_mincer &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_mincer)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a></code></pre></div>
+<p>ここで、<code>type = &quot;HC1&quot;</code>とは、ロバスト標準誤差の種類の指定であり、<code>HC1</code>は計量経済学でもっともよく使われるものである。</p>
+<p>{stargazer}で表を作成する際には、以下のように標準誤差をロバスト標準誤差に置き換える。</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, </a>
+<a class="sourceLine" id="cb27-2" data-line-number="2">          <span class="dt">se =</span> <span class="kw">list</span>(robustSE_reg_logwage, robustSE_reg_multiple, robustSE_reg_mincer), <span class="co"># robust SEに置き換え</span></a>
+<a class="sourceLine" id="cb27-3" data-line-number="3">          <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<pre><code>## 
+## ===========================================================================================
+##                                               Dependent variable:                          
+##                     -----------------------------------------------------------------------
+##                                                    log(wage)                               
+##                               (1)                     (2)                     (3)          
+## -------------------------------------------------------------------------------------------
+## education                  0.077***                0.096***                0.090***        
+##                             (0.008)                 (0.008)                 (0.008)        
+##                                                                                            
+## experience                                         0.012***                0.035***        
+##                                                     (0.002)                 (0.006)        
+##                                                                                            
+## experience2                                                                -0.001***       
+##                                                                            (0.0001)        
+##                                                                                            
+## Constant                   1.060***                0.594***                0.520***        
+##                             (0.106)                 (0.118)                 (0.122)        
+##                                                                                            
+## -------------------------------------------------------------------------------------------
+## Observations                  534                     534                     534          
+## R2                           0.145                   0.211                   0.238         
+## Adjusted R2                  0.143                   0.209                   0.234         
+## Residual Std. Error    0.489 (df = 532)        0.470 (df = 531)        0.462 (df = 530)    
+## F Statistic         90.006*** (df = 1; 532) 71.214*** (df = 2; 531) 55.229*** (df = 3; 530)
+## ===========================================================================================
+## Note:                                                           *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
+<p>通常は、均一分散を仮定した標準誤差よりもロバスト標準誤差のほうが大きくなる傾向があるが、今回はほとんど変わらない。なお回帰係数の推定値は全く同じとなる。</p>
+</div>
+<div id="f" class="section level2">
+<h2><span class="header-section-number">3.2</span> 参考：不均一分散に対して頑健なF検定</h2>
+<p>上の表において、F統計量は均一分散を仮定したもののままである。残念ながら、{stargazer}を使って不均一分散に対して頑健なF検定の結果を簡潔に表に示す方法はない。</p>
+<p>下記では、<code>lm</code>での回帰分析結果を利用して、不均一分散に対して頑健なF検定を行う方法だけ記す。</p>
+<p>まず<code>waldtest</code>関数を利用するため、{AER}パッケージを読み込む。</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="kw">library</span>(AER)</a></code></pre></div>
+<p>次に、F検定に使用する「制約なし」の回帰モデルを（説明変数を定数項のみに回帰するモデル）を実施し、オブジェクトに保存する。</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1">reg_noX &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
+<p>均一分散を仮定したF検定は以下のような形で行うことができる。上記の（均一分散下での）回帰分析結果と一致することが確認できる。</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
+<a class="sourceLine" id="cb31-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_noX)</a></code></pre></div>
+<pre><code>## Wald test
+## 
+## Model 1: log(wage) ~ education
+## Model 2: log(wage) ~ 1
+##   Res.Df Df      F    Pr(&gt;F)    
+## 1    532                        
+## 2    533 -1 90.006 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
+<a class="sourceLine" id="cb33-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_noX)</a></code></pre></div>
+<pre><code>## Wald test
+## 
+## Model 1: log(wage) ~ education + experience
+## Model 2: log(wage) ~ 1
+##   Res.Df Df      F    Pr(&gt;F)    
+## 1    531                        
+## 2    533 -2 71.214 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
+<a class="sourceLine" id="cb35-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_noX)</a></code></pre></div>
+<pre><code>## Wald test
+## 
+## Model 1: log(wage) ~ education + experience + experience2
+## Model 2: log(wage) ~ 1
+##   Res.Df Df      F    Pr(&gt;F)    
+## 1    530                        
+## 2    533 -3 55.229 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<p>一方、不均一分散に対して頑健なF検定は、以下のように実施できる。</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
+<a class="sourceLine" id="cb37-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_noX, </a>
+<a class="sourceLine" id="cb37-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_logwage, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<pre><code>## Wald test
+## 
+## Model 1: log(wage) ~ education
+## Model 2: log(wage) ~ 1
+##   Res.Df Df      F    Pr(&gt;F)    
+## 1    532                        
+## 2    533 -1 90.416 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
+<a class="sourceLine" id="cb39-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_noX, </a>
+<a class="sourceLine" id="cb39-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_multiple, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)) <span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<pre><code>## Wald test
+## 
+## Model 1: log(wage) ~ education + experience
+## Model 2: log(wage) ~ 1
+##   Res.Df Df      F    Pr(&gt;F)    
+## 1    531                        
+## 2    533 -2 77.265 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
+<a class="sourceLine" id="cb41-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_noX, </a>
+<a class="sourceLine" id="cb41-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_mincer, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<pre><code>## Wald test
+## 
+## Model 1: log(wage) ~ education + experience + experience2
+## Model 2: log(wage) ~ 1
+##   Res.Df Df      F    Pr(&gt;F)    
+## 1    530                        
+## 2    533 -3 53.462 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<p>なお、上記の方法についてのさらに詳しい解説は、<a href="http://eclr.humanities.manchester.ac.uk/index.php/R_robust_se">このページ</a>などを参照すること。ただし上記では、このサイトとは若干異なる方法でF検定を行っている。</p>
+</div>
+</div>
+<div class="section level1">
+<h1><span class="header-section-number">4</span> 参考文献</h1>
+<p>回帰分析や均一分散/不均一分散については、「<a href="https://sites.google.com/site/michihito7ando/lectures/econome2018">計量経済学１</a>」の講義資料などを参照すること。</p>
+</div>
+<div id="stata" class="section level1">
+<h1><span class="header-section-number">5</span> 参考：Stataでの回帰分析</h1>
+<p>Stataでは、不均一分散に対して頑健な回帰分析（ロバスト標準誤差およびロバストなF検定）はより簡単に実施できるというメリットはある。</p>
+<pre><code>* 均一分散を仮定した標準誤差
+reg log_wage education 
+reg log_wage education experience
+reg log_wage education experience experience2
+
+* 不均一分散に対して頑健な標準誤差(オプションにrobustと加えるだけ)
+reg log_wage education, robust
+reg log_wage education experience, robust
+reg log_wage education experience experience2, robust</code></pre>
 </div>
 
 
