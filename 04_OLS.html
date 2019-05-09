@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2019-05-07" />
+<meta name="date" content="2019-05-09" />
 
 <title>Rで学ぶ計量経済学と機械学習 4    回帰分析</title>
 
@@ -1599,7 +1599,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 4<br> <br> 回帰分析</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)</h4>
-<h4 class="date">2019-05-07</h4>
+<h4 class="date">2019-05-09</h4>
 
 </div>
 
@@ -1941,13 +1941,11 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 <h2><span class="header-section-number">3.2</span> 参考：不均一分散に対して頑健なF検定</h2>
 <p>上の表において、F統計量は均一分散を仮定したもののままである。残念ながら、{stargazer}を使って不均一分散に対して頑健なF検定の結果を簡潔に表に示す方法はない。</p>
 <p>下記では、<code>lm</code>での回帰分析結果を利用して、不均一分散に対して頑健なF検定を行う方法だけ記す。</p>
-<p>まず<code>waldtest</code>関数を利用するため、{AER}パッケージを読み込む。</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="kw">library</span>(AER)</a></code></pre></div>
-<p>次に、F検定に使用する「制約なし」の回帰モデルを（説明変数を定数項のみに回帰するモデル）を実施し、オブジェクトに保存する。</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1">reg_noX &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
-<p>均一分散を仮定したF検定は以下のような形で行うことができる。上記の（均一分散下での）回帰分析結果と一致することが確認できる。</p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
-<a class="sourceLine" id="cb31-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_noX)</a></code></pre></div>
+<p>次に、F検定に使用する「制約なし」の回帰モデル（被説明変数を定数項のみに回帰するモデル）を実行し、オブジェクトに保存する。</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1">reg_no_X &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> CPS1985)　<span class="co"># no_X:説明変数なし</span></a></code></pre></div>
+<p>均一分散を仮定したF検定は、{AER}パッケージの<code>waldtest</code>関数を使って、以下のような形で行うことができる。上記の（均一分散下での）回帰分析でのF検定の結果と一致することが確認できる。</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
+<a class="sourceLine" id="cb30-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_no_X)</a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education
@@ -1957,8 +1955,8 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -1 90.006 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
-<a class="sourceLine" id="cb33-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_noX)</a></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
+<a class="sourceLine" id="cb32-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_no_X)</a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience
@@ -1968,8 +1966,8 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -2 71.214 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
-<a class="sourceLine" id="cb35-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_noX)</a></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
+<a class="sourceLine" id="cb34-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_no_X)</a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience + experience2
@@ -1980,9 +1978,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p>一方、不均一分散に対して頑健なF検定は、以下のように実施できる。</p>
-<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
-<a class="sourceLine" id="cb37-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_noX, </a>
-<a class="sourceLine" id="cb37-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_logwage, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
+<a class="sourceLine" id="cb36-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_no_X, </a>
+<a class="sourceLine" id="cb36-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_logwage, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education
@@ -1992,9 +1990,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -1 90.416 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
-<a class="sourceLine" id="cb39-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_noX, </a>
-<a class="sourceLine" id="cb39-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_multiple, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)) <span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
+<a class="sourceLine" id="cb38-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_no_X, </a>
+<a class="sourceLine" id="cb38-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_multiple, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)) <span class="co"># HC1を用いたF検定</span></a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience
@@ -2004,9 +2002,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -2 77.265 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<div class="sourceCode" id="cb41"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb41-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
-<a class="sourceLine" id="cb41-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_noX, </a>
-<a class="sourceLine" id="cb41-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_mincer, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
+<a class="sourceLine" id="cb40-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_no_X, </a>
+<a class="sourceLine" id="cb40-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_mincer, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience + experience2
@@ -2016,6 +2014,7 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -3 53.462 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<p>F値が均一分散を仮定したものとは異なっていることが確認できる。</p>
 <p>なお、上記の方法についてのさらに詳しい解説は、<a href="http://eclr.humanities.manchester.ac.uk/index.php/R_robust_se">このページ</a>などを参照すること。ただし上記では、このサイトとは若干異なる方法でF検定を行っている。</p>
 </div>
 </div>

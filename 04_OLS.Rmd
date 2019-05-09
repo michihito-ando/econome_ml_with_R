@@ -313,46 +313,42 @@ stargazer(reg_logwage, reg_multiple, reg_mincer,
 
 下記では、`lm`での回帰分析結果を利用して、不均一分散に対して頑健なF検定を行う方法だけ記す。
 
-まず`waldtest`関数を利用するため、{AER}パッケージを読み込む。
-
-```{R, eval=F}
-library(AER)
-```
-
-次に、F検定に使用する「制約なし」の回帰モデルを（説明変数を定数項のみに回帰するモデル）を実施し、オブジェクトに保存する。
+次に、F検定に使用する「制約なし」の回帰モデル（被説明変数を定数項のみに回帰するモデル）を実行し、オブジェクトに保存する。
 
 ```{R}
-reg_noX <- lm(log(wage) ~ 1, data = CPS1985)
+reg_no_X <- lm(log(wage) ~ 1, data = CPS1985)　# no_X:説明変数なし
 ```
 
-均一分散を仮定したF検定は以下のような形で行うことができる。上記の（均一分散下での）回帰分析結果と一致することが確認できる。
+均一分散を仮定したF検定は、{AER}パッケージの`waldtest`関数を使って、以下のような形で行うことができる。上記の（均一分散下での）回帰分析でのF検定の結果と一致することが確認できる。
 
 ```{R}
 # (1) reg_lowage
-waldtest(reg_logwage, reg_noX)
+waldtest(reg_logwage, reg_no_X)
 
 # (2) reg_multiple
-waldtest(reg_multiple, reg_noX)
+waldtest(reg_multiple, reg_no_X)
 
 # (3) reg_mincer
-waldtest(reg_mincer, reg_noX)
+waldtest(reg_mincer, reg_no_X)
 ```
 
 一方、不均一分散に対して頑健なF検定は、以下のように実施できる。
 
 ```{R}
 # (1) reg_lowage
-waldtest(reg_logwage, reg_noX, 
+waldtest(reg_logwage, reg_no_X, 
          vcov = vcovHC(reg_logwage, type = "HC1"))　# HC1を用いたF検定
 
 # (2) reg_multiple
-waldtest(reg_multiple, reg_noX, 
+waldtest(reg_multiple, reg_no_X, 
          vcov = vcovHC(reg_multiple, type = "HC1")) # HC1を用いたF検定
 
 # (3) reg_mincer
-waldtest(reg_mincer, reg_noX, 
+waldtest(reg_mincer, reg_no_X, 
          vcov = vcovHC(reg_mincer, type = "HC1"))　# HC1を用いたF検定
 ```
+
+F値が均一分散を仮定したものとは異なっていることが確認できる。
 
 なお、上記の方法についてのさらに詳しい解説は、[このページ](http://eclr.humanities.manchester.ac.uk/index.php/R_robust_se)などを参照すること。ただし上記では、このサイトとは若干異なる方法でF検定を行っている。
 
