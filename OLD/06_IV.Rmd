@@ -1,0 +1,253 @@
+---
+title: "計量経済学２：操作変数法"
+author: ""
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    fig_height: 3.5          # 画像サイズのデフォルトを設定
+    fig_width: 5           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+```
+
+# データの用意
+
+前回と同じく，架空のデータを生成して分析を行う。
+
+前回は個人の所得$Y$と学歴$X$・能力$A$との関係についての架空データを次のように生成した（ただし$\varepsilon$は測定誤差などを反映した撹乱項）
+
+$$
+Y = 200 + 10A + 500X + \varepsilon
+$$
+
+- 所得の切片は200万円
+- 能力が1上がると所得は10上昇する
+    - 能力は0から100まで均等に分布する
+- 大卒だと所得が500万円上昇する
+- 大卒になる条件は2つあり，どちらかの条件を満たせば大卒になるとする
+    - 条件1：能力が 80 以上の約 2 万人の中から約 1 万人がランダムに選ばれて大卒となる。
+    - 条件2：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる（約1万人が合格する）
+
+
+```{r, echo=F}
+library(DiagrammeR)
+grViz("digraph dot{
+graph[rankdir = LR]
+
+node[shape = circle, fontname = 'Yu Gothic']
+
+edge[fontname = 'Yu Gothic']
+能力A -> 所得Y [label='10']
+能力A -> 学歴X [label='80以上の中からランダム']
+能力A -> テストの点 [label='能力を部分的に反映']
+テストの点 -> 学歴X [label='180点以上かどうか']
+学歴X -> 所得Y [label='500']
+
+{rank = same; 能力A; テストの点; 学歴X}
+}")
+```
+
+今回は前回のデータに新たな変数を加える。**「30％の確率でランダムに選ばれた人が大学の授業料を免除される」**という制度があるとし，選ばれた人のうち90%の人が大学に進学するとする。
+
+```{r, echo=F}
+library(DiagrammeR)
+grViz("digraph dot{
+graph[rankdir = LR]
+
+node[shape = circle, fontname = 'Yu Gothic']
+
+edge[fontname = 'Yu Gothic']
+能力A -> 所得Y [label='10']
+能力A -> 学歴X [label='80以上の中からランダム']
+能力A -> テストの点 [label='能力を部分的に反映']
+テストの点 -> 学歴X [label='180点以上かどうか']
+学歴X -> 所得Y [label='500']
+学費免除Z -> 学歴X [label='30％の確率でランダム']
+{rank = same; 能力A; テストの点; 学歴X}
+}")
+```
+
+
+```{r}
+# 事前準備 --------------------
+# パッケージの読み込み
+library(tidyverse)
+# 乱数の種を固定
+set.seed(0)
+
+# データの生成 ----------------
+n = 100000
+# 能力は0から100まで均等に分布
+ability = runif(n, min = 0, max = 100)
+
+# IDとabilityをデータフレームに格納する
+df = data_frame(ID = 1:n, ability)
+
+# 大卒フラグ
+## 条件１：能力が 80 以上の約 2 万人の中から約 1 万人がランダムに選ばれて大卒となる。
+college = df %>% filter(ability >= 80) %>% sample_frac(0.5) # 大卒の人
+college["is_college1"] = 1
+no_college = anti_join(df, college, by = c("ID","ability")) # 大卒じゃない人
+no_college["is_college1"] = 0
+df = bind_rows(college, no_college) %>% arrange(ID) # 両者を結合
+
+## 条件２：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる
+### １万人くらいが該当するようにする
+df["score"] = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10)
+df["is_college2"] = 1*(df["score"] >= 180)
+
+# ここまで前回と同じ ------------
+# ここから追加部分 --------------
+# 条件３：学費免除制度
+exemption = df %>% sample_frac(0.3) # 30%の人がランダムに選ばれる
+use_exemption = exemption %>% sample_frac(0.9) # 90%の人が学費免除を利用して進学
+use_exemption["is_exemption"] = 1
+
+notuse_exemption = anti_join(exemption, use_exemption, by = "ID") # 残りの10%
+notuse_exemption["is_exemption"] = 0
+exemption = bind_rows(use_exemption, notuse_exemption) %>% arrange(ID) # 両者を結合
+
+no_exemption = anti_join(df, exemption, by = "ID") # 選ばれなかった70%
+no_exemption["is_exemption"] = 0
+df = bind_rows(exemption, no_exemption) %>% arrange(ID) # 両者を結合
+
+
+# ３つの条件のいずれかに該当していれば大卒とする
+df = df %>% mutate(is_college = case_when(is_college1 == 1 | is_college2 == 1 | is_exemption == 1 ~ 1, # "|"はorの記号
+                                          TRUE ~ 0)) # それ以外は0
+
+# 所得
+df["income"] = 200 + 10*df["ability"] + 500*df["is_college"] + rnorm(n, sd = 50)
+
+# 最初の6行
+head(df)
+```
+
+こうして生成したデータの所得と能力・学歴・テストの点数の関係をプロットすると次のようになる。
+
+```{r, echo=F}
+# 塗り分けプロット
+# plot
+ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "大卒(条件1)",
+                                           is_college2 == 1 ~ "大卒(条件2)",
+                                           is_exemption == 1 ~ "大卒(学費免除)",
+                                           is_college == 0 ~ "非大卒")),
+       aes(x = ability, y = income, color = education))+
+  geom_point(alpha = 0.5)+
+  labs(title = "能力と所得")
+
+ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "大卒(条件1)",
+                                           is_college2 == 1 ~ "大卒(条件2)",
+                                           is_exemption == 1 ~ "大卒(学費免除)",
+                                           is_college == 0 ~ "非大卒")),
+       aes(x = score, y = income, color = education))+
+  geom_point(alpha = 0.5)+
+  labs(title = "テストの点数と所得")
+```
+
+
+以下では「学歴（大卒になること）が所得をどれだけ上昇させるのか」を推定することを目的として分析していくことにする。
+
+
+# 操作変数法の概要
+
+
+前回，回帰分析などで学歴の効果を推定しようとした際には，能力が所得に影響を与えているにもかかわらず能力のデータを入手することができず，学歴の効果が過大に推定されることが問題であった。
+
+操作変数法（instrumental variable method）は，効果を知りたい変数（学歴$X$）の決定要因であり，かつ，回帰モデルの誤差項（能力$A$などの欠落変数もここに含まれる）とは相関しない変数である操作変数（学費免除$Z$）を用いて推定する方法である。
+
+
+```{r, echo=F}
+library(DiagrammeR)
+grViz("digraph dot{
+graph[rankdir = LR]
+
+node[shape = circle, fontname = 'Yu Gothic']
+
+edge[fontname = 'Yu Gothic']
+誤差項 -> {所得Y; 学歴X}
+学歴X -> 所得Y
+学費免除Z -> 学歴X
+{rank = same; 誤差項; 学歴X}
+}")
+```
+
+
+## 操作変数法の求め方
+
+求め方が２種類存在する（両者の推定量は一致する）
+
+1. 二段階最小二乗法：学歴$X$の変動のうち、学費免除$Z$の変動による変動分$\hat{X}$を推計し、学歴$X$→所得$Y$の因果効果を推定することができる。
+2. 誘導型推定：学費免除→所得の因果効果，学費免除→学歴の因果効果は推定できるので，以下のように推定する
+
+$$
+学歴X\to 所得Y \text{の因果効果} = \frac{学費免除Z \to 所得Y\text{の因果効果}}{学費免除Z \to 学歴X\text{の因果効果}}
+$$
+
+
+# Rで実践
+
+## `lm()`で実行
+
+まずは理解のために誘導型推定のほうを単純にOLSで実行していく。
+
+以下のように二段階で推定する。
+
+- 第一段階（first stage）：$X_i =\pi_0 + \pi_1 Z_i + v_i$
+- 誘導型（reduced form）：$Y_i = \gamma_0 + \gamma_1 Z_i + w_i$
+
+求めたい因果効果は
+
+$$
+学歴X\to 所得Y \text{の因果効果} = \frac{\gamma_1}{\pi_1} = \frac{\text{誘導型の}Z_i \text{の係数}}{\text{第一段階の}Z_i\text{の係数}}
+$$
+
+となる。
+
+```{r}
+# 第一段階推定
+fs = lm(is_college ~ is_exemption, data = df)
+
+# 誘導型推定
+rf = lm(income ~ is_exemption, data = df)
+
+# 係数同士を割る
+rf$coefficients[2] / fs$coefficients[2]
+```
+
+学歴（大卒）が所得に与える効果を推定できている。
+
+
+## `ivreg()`で実行
+
+`{AER}`パッケージには操作変数法による回帰を行う`ivreg()`という関数がある。こちらを実行すればより簡単に操作変数法を実行することができる。（内部では二段階最小二乗法を行っている）
+
+```{r}
+library(AER)
+library(stargazer)
+iv = ivreg(formula = income ~ is_college | is_exemption, # 被説明変数 ~ 説明変数 | 操作変数　と指定
+           data = df)
+stargazer(iv, type = "text")
+```
+
+
+
+

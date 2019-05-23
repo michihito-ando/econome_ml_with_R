@@ -34,7 +34,7 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 データから因果関係を推定するということは，データ生成過程（Data generating process: DGP）を理解しようという試みでもある。そこで今回は、データ生成過程があらかじめ分かっている架空のデータを自分で生成し、それを分析していく。
 
-個人の所得$Y$と学歴$X$（大卒か否か）と能力$A$との関係について、以下のようなDGPを持つ架空データを次のように生成する（ただし$\varepsilon$は測定誤差などを反映した撹乱項）。このDGPは現実的なものではないが、理解しやすいようにできるだけ単純に設定したものを用いる。
+個人の所得$Y$と学歴$X$（大卒か否か）と能力$A$との関係について、以下のようなDGPを持つ架空データを次のように生成する（ただし$\varepsilon$は撹乱項）。このDGPは現実的なものではないが、理解しやすいようにできるだけ単純に設定したものを用いる。
 
 $$
 Y = 200 + 10A + 500X+ \varepsilon
@@ -122,7 +122,7 @@ no_university_df["university"] = 0
 df <- bind_rows(university_df, no_university_df) %>% arrange(ID) # 両者を結合
 
 # 所得変数（income)の作成：上記のDGP(母集団回帰モデル）に基づいて生成
-df["income"] <- 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, sd = 50)
+df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, mean = 0, sd = 50)  # 誤差項は平均=0、SD=50
 
 # 最初の6行
 head(df)

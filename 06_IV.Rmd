@@ -1,6 +1,7 @@
 ---
-title: "計量経済学２：操作変数法"
-author: ""
+title: "Rで学ぶ計量経済学と機械学習 5<br> <br> 計量経済学２：操作変数法"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+
 date: "`r Sys.Date()`"
 output:
  html_document:
@@ -38,133 +39,152 @@ $$
 Y = 200 + 10A + 500X + \varepsilon
 $$
 
-- 所得の切片は200万円
-- 能力が1上がると所得は10上昇する
-    - 能力は0から100まで均等に分布する
+- サンプルサイズは10,000人
+- 能力は0から100まで均等に分布する
+- 能力が1上がると所得は10万円上昇する
+- 能力が80 以上の約 2,000人中から約 1,000人がランダムに選ばれて大卒となる。
 - 大卒だと所得が500万円上昇する
-- 大卒になる条件は2つあり，どちらかの条件を満たせば大卒になるとする
-    - 条件1：能力が 80 以上の約 2 万人の中から約 1 万人がランダムに選ばれて大卒となる。
-    - 条件2：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる（約1万人が合格する）
+- 切片は200万円（能力=0、非大卒の平均給与）
 
 
 ```{r, echo=F}
+#install.packages("Diagrammes")
 library(DiagrammeR)
 grViz("digraph dot{
 graph[rankdir = LR]
 
 node[shape = circle, fontname = 'Yu Gothic']
 
-edge[fontname = 'Yu Gothic']
+edge[fontname = 'Yu Gothic', fontsize = 10]
 能力A -> 所得Y [label='10']
-能力A -> 学歴X [label='80以上の中からランダム']
-能力A -> テストの点 [label='能力を部分的に反映']
-テストの点 -> 学歴X [label='180点以上かどうか']
+能力A -> 学歴X [label='A≧80からランダム抽出']
 学歴X -> 所得Y [label='500']
 
-{rank = same; 能力A; テストの点; 学歴X}
+{rank = same; 能力A; 学歴X}
 }")
 ```
 
-今回は前回のデータに新たな変数を加える。**「30％の確率でランダムに選ばれた人が大学の授業料を免除される」**という制度があるとし，選ばれた人のうち90%の人が大学に進学するとする。
+今回は、前回のデータに新たな変数を加える。**「能力に関係なく、30％の確率でランダムに選ばれた人が学費を免除され、入学を許可される」**という制度があるとし，さらに、**ここで学費免除で選ばれた人のうち、50%の人が大学を卒業する**とする。
+
 
 ```{r, echo=F}
+#install.packages("Diagrammes")
 library(DiagrammeR)
 grViz("digraph dot{
 graph[rankdir = LR]
 
 node[shape = circle, fontname = 'Yu Gothic']
 
-edge[fontname = 'Yu Gothic']
+edge[fontname = 'Yu Gothic', fontsize = 10]
 能力A -> 所得Y [label='10']
-能力A -> 学歴X [label='80以上の中からランダム']
-能力A -> テストの点 [label='能力を部分的に反映']
-テストの点 -> 学歴X [label='180点以上かどうか']
+能力A -> 学歴X [label='A≧80からランダム抽出']
 学歴X -> 所得Y [label='500']
-学費免除Z -> 学歴X [label='30％の確率でランダム']
-{rank = same; 能力A; テストの点; 学歴X}
+学費免除Z -> 学歴X [label='50％の確率で大学を卒業']
+
+{rank = same; 能力A; 学歴X}
 }")
 ```
 
+
+データ生成過程は、以下のように設定できる。
 
 ```{r}
 # 事前準備 --------------------
+
 # パッケージの読み込み
 library(tidyverse)
-# 乱数の種を固定
+
+# 乱数の種を固定　=>　毎回同じように乱数を発生させるようにする。0を他の数値に変えると異なる乱数となる。
 set.seed(0)
 
+
 # データの生成 ----------------
-n = 100000
-# 能力は0から100まで均等に分布
-ability = runif(n, min = 0, max = 100)
 
-# IDとabilityをデータフレームに格納する
-df = data_frame(ID = 1:n, ability)
+# n:サンプルサイズ
+n <- 10000
 
-# 大卒フラグ
-## 条件１：能力が 80 以上の約 2 万人の中から約 1 万人がランダムに選ばれて大卒となる。
-college = df %>% filter(ability >= 80) %>% sample_frac(0.5) # 大卒の人
-college["is_college1"] = 1
-no_college = anti_join(df, college, by = c("ID","ability")) # 大卒じゃない人
-no_college["is_college1"] = 0
-df = bind_rows(college, no_college) %>% arrange(ID) # 両者を結合
+# 能力は0から100まで均等に分布。#runifは一様分布を発生させる関数。標本規模n、最小値0、最大値100
+ability <- runif(n, min = 0, max = 100) 
 
-## 条件２：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる
-### １万人くらいが該当するようにする
-df["score"] = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10)
-df["is_college2"] = 1*(df["score"] >= 180)
+# IDとabilityをデータフレームに格納する。
+# 以下の"tibble()"はtidyverseにおけるデータフレームを作成する関数。
+# 代わりに"data.frame()"を用いても構わない。
+
+df <- tibble(ID = 1:n, ability)
+
+# 大卒ダミーの作成
+# 能力が 80 以上の約 2000人の中から約 1000人をランダムに選ばれて、大卒にする。
+# dfからdplyr::filter()で抽出し、sample_fram()でさらに半分をランダムに抽出する。
+university_df <- df %>% filter(ability >= 80) %>% sample_frac(0.5) # 大卒の人
+
+# university_df のデータフレームに、universityという変数を作成し、すべて1とする。
+university_df["university"] = 1
+
+# dfからdplyr::anti_join()を用いて"university_df"とマッチしなかった人を抽出する。
+no_university_df <- anti_join(df, university_df, by = c("ID","ability")) # 大卒ではない人
+
+# no_university_dfのデータフレームに、universityという変数を作成し、すべて0とする。
+no_university_df["university"] = 0
+
+# university_dfとno_university_dfを、dplyr::bind_rowsを用いて結合してあたらしいdfとし、ID順で並べる
+df_temp1 <- bind_rows(university_df, no_university_df) %>% arrange(ID) # 両者を結合
 
 # ここまで前回と同じ ------------
 # ここから追加部分 --------------
-# 条件３：学費免除制度
-exemption = df %>% sample_frac(0.3) # 30%の人がランダムに選ばれる
-use_exemption = exemption %>% sample_frac(0.9) # 90%の人が学費免除を利用して進学
-use_exemption["is_exemption"] = 1
+# 条件３：学費免除制度とそれによる卒業
 
-notuse_exemption = anti_join(exemption, use_exemption, by = "ID") # 残りの10%
-notuse_exemption["is_exemption"] = 0
-exemption = bind_rows(use_exemption, notuse_exemption) %>% arrange(ID) # 両者を結合
+# 前回はsample_frac()を用いてランダムに大卒サンプルを抽出し、また結合するという方法を用いた。
+# 今回は二項分布の乱数を発生させるrbinom()を用いて、
+# 元のデータフレームに学費免除ダミー変数を追加したり、大卒ダミー変数を修正したりする。
 
-no_exemption = anti_join(df, exemption, by = "ID") # 選ばれなかった70%
-no_exemption["is_exemption"] = 0
-df = bind_rows(exemption, no_exemption) %>% arrange(ID) # 両者を結合
+# df_tempの個体は、能力に関係なく、30%の確率で学費免除（exemption = 1）となる
+# rbinom(n, m, p): 成功確率pの試行をm回試みたときの成功回数の分布をnを生成
+df_temp2 <- df_temp1 %>% mutate(exemption = rbinom(n, 1, 0.3)) 
 
+# 学費免除（exemption=1）のときには、50%の確率で卒業できる（university=1）
+# ただし、能力が80以上のときには学費免除の有無に関わりなく卒業できるものとする。
+# mutate()の中でcase_when()を使う
+# case_when()の場合分けでの数字生成がnumericで行われるように、as.numeric()の中でrbinomを使って0,1の乱数を生成
+df <- df_temp2 %>% 
+  mutate(university = case_when(exemption == 1 ~ as.numeric(rbinom(n, 1, 0.5)), # exemption=1なら50%の確率で1
+                                university == 1 ~ 1, #すでにuniversity=1なら1
+                                TRUE ~ 0)) # それ以外は0
 
-# ３つの条件のいずれかに該当していれば大卒とする
-df = df %>% mutate(is_college = case_when(is_college1 == 1 | is_college2 == 1 | is_exemption == 1 ~ 1, # "|"はorの記号
-                                          TRUE ~ 0)) # それ以外は0
-
-# 所得
-df["income"] = 200 + 10*df["ability"] + 500*df["is_college"] + rnorm(n, sd = 50)
+# 所得の生成
+df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, mean = 0, sd = 50)  # 誤差項は平均=0、SD=50
 
 # 最初の6行
 head(df)
+
 ```
 
-こうして生成したデータの所得と能力・学歴・テストの点数の関係をプロットすると次のようになる。
+
+生成したデータの記述統計を`Hmisc::describe`で表示し、どのくらいが学費免除および大卒になったかチェックしてみる。
+
+```{r}
+library(Hmisc)
+describe(df)
+```
+
+こうして生成したデータの所得と能力・学歴・テストの点数の関係をプロットすると次のようになる。前回と異なり、`ability`が80を下回っても、学費補助によって大学を卒業し、所得が上昇している人々がいることが分かる。
 
 ```{r, echo=F}
 # 塗り分けプロット
-# plot
-ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "大卒(条件1)",
-                                           is_college2 == 1 ~ "大卒(条件2)",
-                                           is_exemption == 1 ~ "大卒(学費免除)",
-                                           is_college == 0 ~ "非大卒")),
-       aes(x = ability, y = income, color = education))+
-  geom_point(alpha = 0.5)+
-  labs(title = "能力と所得")
 
-ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "大卒(条件1)",
-                                           is_college2 == 1 ~ "大卒(条件2)",
-                                           is_exemption == 1 ~ "大卒(学費免除)",
-                                           is_college == 0 ~ "非大卒")),
-       aes(x = score, y = income, color = education))+
-  geom_point(alpha = 0.5)+
-  labs(title = "テストの点数と所得")
+# plot
+
+## 大卒か否かのラベルをデータフレームに加える
+df <- df %>% mutate(edu_label =
+                      case_when(university == 1 ~ "Grad.", university == 0 ~ "Not grad."))
+
+## 散布図を描く with 大卒ラベル
+ggplot(df, aes(x = ability, y = income, color = edu_label)) + 
+         geom_point(alpha = 0.5)+ 
+         labs(title = "Ability and Income")
 ```
 
 
-以下では「学歴（大卒になること）が所得をどれだけ上昇させるのか」を推定することを目的として分析していくことにする。
+以下では、「**学歴（大卒になること）が所得をどれだけ上昇させるのか**」を推定することを目的として分析していく。
 
 
 # 操作変数法の概要
@@ -172,44 +192,53 @@ ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "大卒(条件1)",
 
 前回，回帰分析などで学歴の効果を推定しようとした際には，能力が所得に影響を与えているにもかかわらず能力のデータを入手することができず，学歴の効果が過大に推定されることが問題であった。
 
-操作変数法（instrumental variable method）は，効果を知りたい変数（学歴$X$）の決定要因であり，かつ，回帰モデルの誤差項（能力$A$などの欠落変数もここに含まれる）とは相関しない変数である操作変数（学費免除$Z$）を用いて推定する方法である。
-
-
-```{r, echo=F}
-library(DiagrammeR)
-grViz("digraph dot{
-graph[rankdir = LR]
-
-node[shape = circle, fontname = 'Yu Gothic']
-
-edge[fontname = 'Yu Gothic']
-誤差項 -> {所得Y; 学歴X}
-学歴X -> 所得Y
-学費免除Z -> 学歴X
-{rank = same; 誤差項; 学歴X}
-}")
-```
+**操作変数法（instrumental variable method、IV method）**は，効果を測りたい処置変数（学歴$X$）を通じてのみアウトカム変数（所得$Y$)に影響を与える変数である。そのような変数が存在することは多くないが、今回の場合は学費免除ダミー$Z$を操作変数として用いることができる。
 
 
 ## 操作変数法の求め方
 
-求め方が２種類存在する（両者の推定量は一致する）
+ベーシックな操作変数推定値は、以下の２種類のやり方によって求めることができる（両者の推定値は一致する）。
 
-1. 二段階最小二乗法：学歴$X$の変動のうち、学費免除$Z$の変動による変動分$\hat{X}$を推計し、学歴$X$→所得$Y$の因果効果を推定することができる。
-2. 誘導型推定：学費免除→所得の因果効果，学費免除→学歴の因果効果は推定できるので，以下のように推定する
+1. **二段階最小二乗法(TSLS)**：学歴$X$の変動のうち、学費免除$Z$の変動による変動分$\hat{X}$を推計し（第一段階）、$\hat{X}$→所得$Y$の因果効果を推定する（第二段階）。
+2. **誘導型推定値を第一段階推定値で割る**：学費免除→学歴の因果効果（第一段階）、学費免除→所得の因果効果（誘導型）はそれぞれ回帰分析で推定できるので，この二つの推定値を利用して、以下のように推定する
 
 $$
 学歴X\to 所得Y \text{の因果効果} = \frac{学費免除Z \to 所得Y\text{の因果効果}}{学費免除Z \to 学歴X\text{の因果効果}}
 $$
 
+実際には、第一段階の推定結果を開示しつも、操作変数推定値およびその標準誤差は二段階最小二乗法(TSLS)によって求めることがほとんどである。
+
+なお二段階最小二乗法を用いる場合は、手動で二段階の推定するのではなく、下記で提示するパッケージなどを使うこと。自ら$\hat{X}$を推定し、それを$Y$に回帰して推定値と標準誤差を得ると、誤った標準誤差を算出することになる。
+
 
 # Rで実践
 
-## `lm()`で実行
+## 欠落変数を無視した回帰分析
 
-まずは理解のために誘導型推定のほうを単純にOLSで実行していく。
+まず、欠落変数（能力$A$)を無視して、$Y$を$X$に回帰してみる。単純な単回帰に加えて、学費補助$Z$をコントロール変数に加えた重回帰分析も行ってみる。
 
-以下のように二段階で推定する。
+{stargazer}パッケージを読み混む。
+
+```{r}
+library(stargazer)
+```
+
+回帰分析結果は以下のようになる。
+
+```{r}
+reg_biased1 = lm(income ~ university, data = df)
+reg_biased2 = lm(income ~ university + exemption, data = df)
+
+stargazer(reg_biased1, reg_biased2, type = "text")
+```
+
+「大卒になることによる所得上昇の効果」は、約`r round(reg_biased1$coefficients[2], 0)`（万円）および約`r round(reg_biased2$coefficients[2], 0)`（万円）と過大推定される。
+
+## 誘導型推定値を第一段階推定値で割る
+
+二段階最小二乗法を実施する前に、操作変数法をより深く理解するために、第一段階推定と誘導型推定を単純にOLSで実行し、両者の推定値より操作変数推定値を求めてみよう。
+
+それぞれ、以下の回帰式で推定できる。
 
 - 第一段階（first stage）：$X_i =\pi_0 + \pi_1 Z_i + v_i$
 - 誘導型（reduced form）：$Y_i = \gamma_0 + \gamma_1 Z_i + w_i$
@@ -222,32 +251,53 @@ $$
 
 となる。
 
+
+第一段階の推定結果は以下のようになる。
+
 ```{r}
-# 第一段階推定
-fs = lm(is_college ~ is_exemption, data = df)
+first_stage = lm(university ~ exemption, data = df)
 
-# 誘導型推定
-rf = lm(income ~ is_exemption, data = df)
-
-# 係数同士を割る
-rf$coefficients[2] / fs$coefficients[2]
+stargazer(first_stage, type = "text")
 ```
 
-学歴（大卒）が所得に与える効果を推定できている。
+学歴ダミーの係数推定値は、約`r round(first_stage$coefficients[2], 2)`である。本モデルは線形確率モデルであるため、この結果は、学費免除になると大卒になる確率が約40%上昇することを示している。
+
+なお、データ生成過程では学費免除者の約50%(10000×0.3×0.5で約1500人）が大卒になると設定したが、なぜここでは40%と推定されるのだろうか。
+
+それは、学費免除者の中でも、能力が80以上のものの半分（3000×0.2×0.5で約300人）は学費免除とは関係なく大卒となるため、学費免除の「因果効果」は、1500/3000=0.5ではなく、(1500-300)/3000=0.4となるからである。第一段階推定値はこの値を正確に推定している。
+
+一方、誘導型の推定結果は以下のようになる。
+
+```{r}
+reduced_form = lm(income ~ exemption, data = df)
+
+stargazer(reduced_form, type = "text")
+```
+
+学歴ダミーの係数推定値は、約`r round(reduced_form$coefficients[2], 0)`であり、これは、「学費免除にあたると（大卒になることを通じて）平均所得が約`r round(reduced_form$coefficients[2], 0)`万円上昇する」ことを意味している。つまり誘導形推定値は、「学費免除の所得に対する平均処置効果」である。
+
+最後に、両者の係数を割ると、操作変数推定値を得ることができる。
+
+```{r}
+reduced_form$coefficients[2] / first_stage$coefficients[2]
+```
+
+「学歴（大卒）が所得に与える効果」である500万を正確に推定できている。ただし、このような方法では、標準誤差を得ることはできない。
 
 
-## `ivreg()`で実行
+## 二段階最小二乗法(TSLS)を実行する
 
 `{AER}`パッケージには操作変数法による回帰を行う`ivreg()`という関数がある。こちらを実行すればより簡単に操作変数法を実行することができる。（内部では二段階最小二乗法を行っている）
 
 ```{r}
 library(AER)
-library(stargazer)
-iv = ivreg(formula = income ~ is_college | is_exemption, # 被説明変数 ~ 説明変数 | 操作変数　と指定
+
+iv_reg = ivreg(formula = income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数　と指定
            data = df)
-stargazer(iv, type = "text")
+stargazer(iv_reg, type = "text")
 ```
 
+TSLS推定値は、約`r round(iv_reg$coefficients[2],0)`であり、先に求めた値とも一致する。
 
 
 
