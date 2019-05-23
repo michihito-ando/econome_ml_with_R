@@ -1,5 +1,5 @@
 ---
-title: "Rで学ぶ計量経済学と機械学習 5<br> <br> 計量経済学２：操作変数法"
+title: "Rで学ぶ計量経済学と機械学習 6<br> <br> 計量経済学２：操作変数法"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 
 date: "`r Sys.Date()`"
