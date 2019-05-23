@@ -3877,11 +3877,11 @@ Y = 200 + 10A + 500X + \varepsilon
 <li>大卒だと所得が500万円上昇する</li>
 <li>切片は200万円（能力=0、非大卒の平均給与）</li>
 </ul>
-<div id="htmlwidget-ab86890e31c8fd2dcf9a" style="width:480px;height:336px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-ab86890e31c8fd2dcf9a">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
-<p>今回は、前回のデータに新たな変数を加える。<strong>「能力に関係なく、30％の確率でランダムに選ばれた人が学費を免除され、入学を許可される」</strong>という制度があるとし，さらに、<strong>ここで学費免除で選ばれた人のうち、50%の人が大学を卒業する</strong>とする。</p>
-<div id="htmlwidget-1291162ddcc6d42610b5" style="width:480px;height:336px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-1291162ddcc6d42610b5">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n学費免除Z -> 学歴X [label=\"50％の確率で大学を卒業\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-60434b821bd67a2614ff" style="width:480px;height:336px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-60434b821bd67a2614ff">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<p>今回は、前回のデータに新たな変数を加える。<strong>「能力に関係なく、30％の確率でランダムに選ばれた人が学費を免除され、入学を許可される」</strong>という制度があるとし，さらに、<strong>「学費免除に選ばれた人は、50%の確率で大学を卒業できる」</strong>（ただし能力が80以上の条件で選ばれて大卒となった人はこの法則の対象外）とする。</p>
+<div id="htmlwidget-511b3c5af4ac166bd2cc" style="width:480px;height:336px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-511b3c5af4ac166bd2cc">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n学費免除Z -> 学歴X [label=\"50％の確率で大学を卒業\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>データ生成過程は、以下のように設定できる。</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co"># 事前準備 --------------------</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"></a>
@@ -4160,6 +4160,7 @@ Y = 200 + 10A + 500X + \varepsilon
 ## ===============================================
 ## Note:               *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 <p>TSLS推定値は、約500であり、先に求めた値とも一致する。</p>
+<p>なお、ここでは実行していないが、二段階最小二乗法においても、不均一分散に対して頑健な標準誤差（ロバスト標準誤差）を使うことが望ましい。</p>
 </div>
 </div>
 
