@@ -33,7 +33,7 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 前回と同じく，架空のデータを生成して分析を行う。
 
-前回は個人の所得$Y$と学歴$X$・能力$A$との関係についての架空データを次のように生成した（ただし$\varepsilon$は測定誤差などを反映した撹乱項）
+前回は個人の所得$Y$と学歴$X$・能力$A$との関係についての架空データを次のように生成した（ただし$\varepsilon$は誤差項）。
 
 $$
 Y = 200 + 10A + 500X + \varepsilon

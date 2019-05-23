@@ -3865,7 +3865,7 @@ div.tocify {
 <div class="section level1">
 <h1><span class="header-section-number">1</span> データの用意</h1>
 <p>前回と同じく，架空のデータを生成して分析を行う。</p>
-<p>前回は個人の所得<span class="math inline">\(Y\)</span>と学歴<span class="math inline">\(X\)</span>・能力<span class="math inline">\(A\)</span>との関係についての架空データを次のように生成した（ただし<span class="math inline">\(\varepsilon\)</span>は測定誤差などを反映した撹乱項）</p>
+<p>前回は個人の所得<span class="math inline">\(Y\)</span>と学歴<span class="math inline">\(X\)</span>・能力<span class="math inline">\(A\)</span>との関係についての架空データを次のように生成した（ただし<span class="math inline">\(\varepsilon\)</span>は誤差項）。</p>
 <p><span class="math display">\[
 Y = 200 + 10A + 500X + \varepsilon
 \]</span></p>
@@ -3877,11 +3877,11 @@ Y = 200 + 10A + 500X + \varepsilon
 <li>大卒だと所得が500万円上昇する</li>
 <li>切片は200万円（能力=0、非大卒の平均給与）</li>
 </ul>
-<div id="htmlwidget-e48cf1dea8f82fe855c3" style="width:480px;height:336px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-e48cf1dea8f82fe855c3">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-beab04e65015693dd861" style="width:480px;height:336px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-beab04e65015693dd861">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>今回は、前回のデータに新たな変数を加える。<strong>「能力に関係なく、30％の確率でランダムに選ばれた人が学費を免除され、入学を許可される」</strong>という制度があるとし，さらに、<strong>「学費免除に選ばれた人は、50%の確率で大学を卒業できる」</strong>（ただし能力が80以上の条件で選ばれて大卒となった人はこの法則の対象外）とする。</p>
-<div id="htmlwidget-6998e13f12b71d632fce" style="width:480px;height:336px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-6998e13f12b71d632fce">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n学費免除Z -> 学歴X [label=\"50％の確率で大学を卒業\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-0590dcfece924066408e" style="width:480px;height:336px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-0590dcfece924066408e">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n学費免除Z -> 学歴X [label=\"50％の確率で大学を卒業\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>データ生成過程は、以下のように設定できる。</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co"># 事前準備 --------------------</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"></a>
