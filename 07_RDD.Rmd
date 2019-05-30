@@ -1,52 +1,50 @@
 ---
-title: "è¨ˆé‡çµŒæ¸ˆå­¦ï¼“ï¼šå›å¸°ä¸é€£ç¶šãƒ‡ã‚¶ã‚¤ãƒ³"
-author: ""
+title: "R‚ÅŠw‚ÔŒv—ÊŒoÏŠw‚Æ‹@ŠBŠwK 7<br> <br> Œv—ÊŒoÏŠw‚RF‰ñ‹A•s˜A‘±ƒfƒUƒCƒ“"
+author: "ˆÀ“¡“¹li—§‹³‘åŠwj@O“c‹§”\ (Š”®‰ïĞ GA technologies)"
 date: "`r Sys.Date()`"
 output:
  html_document:
     css : R_style.css
-    self_contained: true   # ç”»åƒãªã©ã®åŸ‹ã‚è¾¼ã¿ 
+    self_contained: true   # ‰æ‘œ‚È‚Ç‚Ì–„‚ß‚İ 
     #theme: cosmo
-    highlight: haddock     # Rã‚¹ã‚¯ãƒªãƒ—ãƒˆã®ãƒã‚¤ãƒ©ã‚¤ãƒˆå½¢å¼
-    #code_folding: 'hide'  # Rã‚³ãƒ¼ãƒ‰ã®æŠ˜ã‚ŠãŸãŸã¿è¡¨ç¤ºã‚’è¨­å®š
+    highlight: haddock     # RƒXƒNƒŠƒvƒg‚ÌƒnƒCƒ‰ƒCƒgŒ`®
+    #code_folding: 'hide'  # RƒR[ƒh‚ÌÜ‚è‚½‚½‚İ•\¦‚ğİ’è
     toc: true
-    toc_depth: 2           # è¦‹å‡ºã—ã®è¡¨ç¤ºã¨ãã®æ·±ã•ã‚’æŒ‡å®š
-    toc_float: true        # è¦‹å‡ºã—ã‚’æ¨ªã«è¡¨ç¤ºã—ç¶šã‘ã‚‹
-    number_sections: true # è¦‹å‡ºã—ã”ã¨ã«ç•ªå·ã‚’æŒ¯ã‚‹
-    # df_print: paged        # head()ã®å‡ºåŠ›ã‚’notebookçš„ãªã‚‚ã®ã«ï¼ˆtibbleã¨ç›¸æ€§è‰¯ï¼‰
-    latex_engine: xelatex  # zxjatypeãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã‚’ä½¿ç”¨ã™ã‚‹ãŸã‚ã«å¤‰æ›´
-    fig_height: 4          # ç”»åƒã‚µã‚¤ã‚ºã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚’è¨­å®š
-    fig_width: 6           # ç”»åƒã‚µã‚¤ã‚ºã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã‚’è¨­å®š
+    toc_depth: 2           # Œ©o‚µ‚Ì•\¦‚Æ‚»‚Ì[‚³‚ğw’è
+    toc_float: true        # Œ©o‚µ‚ğ‰¡‚É•\¦‚µ‘±‚¯‚é
+    number_sections: true # Œ©o‚µ‚²‚Æ‚É”Ô†‚ğU‚é
+    # df_print: paged        # head()‚Ìo—Í‚ğnotebook“I‚È‚à‚Ì‚Éitibble‚Æ‘Š«—Çj
+    latex_engine: xelatex  # zxjatypeƒpƒbƒP[ƒW‚ğg—p‚·‚é‚½‚ß‚É•ÏX
+    fig_height: 4          # ‰æ‘œƒTƒCƒY‚ÌƒfƒtƒHƒ‹ƒg‚ğİ’è
+    fig_width: 6           # ‰æ‘œƒTƒCƒY‚ÌƒfƒtƒHƒ‹ƒg‚ğİ’è
     dev: png
 classoption: xelatex,ja=standard
 editor_options: 
   chunk_output_type: console
 ---
 
-
 ```{r include = FALSE}
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
 
 
-# ãƒ‡ãƒ¼ã‚¿ã®ç”¨æ„
+# ƒf[ƒ^
 
-ä»Šå›ã¯å‰ã€…å›ã¨åŒã˜ãƒ‡ãƒ¼ã‚¿ã‚’ç”Ÿæˆã—ã¦åˆ†æã—ã¦ã„ãã€‚
+## ƒf[ƒ^¶¬‰ß’ö
+‘OX‰ñ‚Æ“¯‚¶ƒf[ƒ^‚ğ¶¬‚µ‚Ä•ªÍ‚µ‚Ä‚¢‚­B
 
-å€‹äººã®æ‰€å¾—$Y$ã¨å­¦æ­´$X$ãƒ»èƒ½åŠ›$A$ã¨ã®é–¢ä¿‚ã«ã¤ã„ã¦ã®æ¶ç©ºãƒ‡ãƒ¼ã‚¿ã‚’æ¬¡ã®ã‚ˆã†ã«ç”Ÿæˆã™ã‚‹ï¼ˆãŸã ã—$\varepsilon$ã¯æ¸¬å®šèª¤å·®ãªã©ã‚’åæ˜ ã—ãŸæ’¹ä¹±é …ï¼‰
+‚·‚È‚í‚¿AŒÂl‚ÌŠ“¾$Y$‚ÆŠw—ğ$X$E”\—Í$A$‚Æ‚ÌŠÖŒW‚É‚Â‚¢‚Ä‚Ì‰Ë‹óƒf[ƒ^‚ğŸ‚Ì‚æ‚¤‚É¶¬‚·‚éB‚½‚¾‚µA¡‰ñ‚Í`n=10000`‚Æ‚·‚éB
 
 $$
 Y = 200 + 10A + 500X+ \varepsilon
 $$
 
-- ã‚µãƒ³ãƒ—ãƒ«ã¯10ä¸‡äºº
-- åˆ‡ç‰‡ã¯200ä¸‡å††
-- èƒ½åŠ›ãŒ1ä¸ŠãŒã‚‹ã¨æ‰€å¾—ã¯10ä¸Šæ˜‡ã™ã‚‹
-- èƒ½åŠ›ã¯0ã‹ã‚‰100ã¾ã§å‡ç­‰ã«åˆ†å¸ƒã™ã‚‹
-- å¤§å’ã ã¨æ‰€å¾—ãŒ500ä¸‡å††ä¸Šæ˜‡ã™ã‚‹
-- å¤§å’ã«ãªã‚‹æ¡ä»¶ã¯2ã¤ã‚ã‚Šï¼Œã©ã¡ã‚‰ã‹ã®æ¡ä»¶ã‚’æº€ãŸã›ã°å¤§å’ã«ãªã‚‹ã¨ã™ã‚‹
-    - æ¡ä»¶1ï¼šèƒ½åŠ›ãŒ 80 ä»¥ä¸Šã®ç´„ 2 ä¸‡äººã®ä¸­ã‹ã‚‰ç´„ 1 ä¸‡äººãŒãƒ©ãƒ³ãƒ€ãƒ ã«é¸ã°ã‚Œã¦å¤§å’ã¨ãªã‚‹ã€‚
-    - æ¡ä»¶2ï¼šèƒ½åŠ›ã‚’éƒ¨åˆ†çš„ã«åæ˜ ã—ãŸå­¦åŠ›ãƒ†ã‚¹ãƒˆã®ç‚¹æ•°ãŒ 180 ç‚¹ä»¥ä¸Šã§ã‚ã‚Œã°å¤§å’ã¨ãªã‚‹ï¼ˆç´„1ä¸‡äººãŒåˆæ ¼ã™ã‚‹ï¼‰
+- ƒTƒ“ƒvƒ‹‚Í1–œl
+- Ø•Ğ‚Í200–œ‰~
+- ”\—Í‚ª1ã‚ª‚é‚ÆŠ“¾‚Í10ã¸‚·‚é
+- ”\—Í‚Í0‚©‚ç100‚Ü‚Å‹Ï“™‚É•ª•z‚·‚é
+- ‘å‘²‚¾‚ÆŠ“¾‚ª500–œ‰~ã¸‚·‚é
+- ”\—Í‚ğ•”•ª“I‚É”½‰f‚µ‚½Šw—ÍƒeƒXƒg‚Ì“_”‚ª 180 “_ˆÈã‚Å‚ ‚ê‚Î‘å‘²‚Æ‚È‚éi–ñ1–œl‚ª‡Ši‚·‚éj
 
 
 ```{r, echo=F}
@@ -57,156 +55,335 @@ graph[rankdir = LR]
 node[shape = circle, fontname = 'Yu Gothic']
 
 edge[fontname = 'Yu Gothic']
-èƒ½åŠ›A -> æ‰€å¾—Y [label='10']
-èƒ½åŠ›A -> å­¦æ­´X [label='80ä»¥ä¸Šã®ä¸­ã‹ã‚‰ãƒ©ãƒ³ãƒ€ãƒ ']
-èƒ½åŠ›A -> ãƒ†ã‚¹ãƒˆã®ç‚¹ [label='èƒ½åŠ›ã‚’éƒ¨åˆ†çš„ã«åæ˜ ']
-ãƒ†ã‚¹ãƒˆã®ç‚¹ -> å­¦æ­´X [label='180ç‚¹ä»¥ä¸Šã‹ã©ã†ã‹']
-å­¦æ­´X -> æ‰€å¾—Y [label='500']
+”\—ÍA -> Š“¾Y [label='10']
+”\—ÍA -> ƒeƒXƒg‚Ì“_ [label='”\—Í‚ğ•”•ª“I‚É”½‰f']
+ƒeƒXƒg‚Ì“_ -> Šw—ğX [label='180“_ˆÈã‚©‚Ç‚¤‚©']
+Šw—ğX -> Š“¾Y [label='500']
 
-{rank = same; èƒ½åŠ›A; ãƒ†ã‚¹ãƒˆã®ç‚¹; å­¦æ­´X}
+{rank = same; ”\—ÍA; ƒeƒXƒg‚Ì“_; Šw—ğX}
 }")
 ```
 
 
-
 ```{r}
-# äº‹å‰æº–å‚™ --------------------
-# ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ã®èª­ã¿è¾¼ã¿
+# –‘O€”õ --------------------
+# ƒpƒbƒP[ƒW‚Ì“Ç‚İ‚İ
 library(tidyverse)
-# ä¹±æ•°ã®ç¨®ã‚’å›ºå®š
+# —”‚Ìí‚ğŒÅ’è
 set.seed(0)
 
-# ãƒ‡ãƒ¼ã‚¿ã®ç”Ÿæˆ ----------------
-n = 100000
-# èƒ½åŠ›ã¯0ã‹ã‚‰100ã¾ã§å‡ç­‰ã«åˆ†å¸ƒ
-ability = runif(n, min = 0, max = 100)
+# ƒf[ƒ^‚Ì¶¬ ----------------
+n <- 10000
+# ”\—Í‚Í0‚©‚ç100‚Ü‚Å‹Ï“™‚É•ª•z
+ability <- runif(n, min = 0, max = 100)
 
-# IDã¨abilityã‚’ãƒ‡ãƒ¼ã‚¿ãƒ•ãƒ¬ãƒ¼ãƒ ã«æ ¼ç´ã™ã‚‹
-df = data_frame(ID = 1:n, ability)
+# ID‚Æability‚ğƒf[ƒ^ƒtƒŒ[ƒ€‚ÉŠi”[‚·‚é
+df <- tibble(ID = 1:n, ability)
 
-# å¤§å’ãƒ•ãƒ©ã‚°
-## æ¡ä»¶ï¼‘ï¼šèƒ½åŠ›ãŒ 80 ä»¥ä¸Šã®ç´„ 2 ä¸‡äººã®ä¸­ã‹ã‚‰ç´„ 1 ä¸‡äººãŒãƒ©ãƒ³ãƒ€ãƒ ã«é¸ã°ã‚Œã¦å¤§å’ã¨ãªã‚‹ã€‚
-college = df %>% filter(ability >= 80) %>% sample_frac(0.5) # å¤§å’ã®äºº
-college["is_college1"] = 1
-no_college = anti_join(df, college, by = c("ID","ability")) # å¤§å’ã˜ã‚ƒãªã„äºº
-no_college["is_college1"] = 0
-df = bind_rows(college, no_college) %>% arrange(ID) # ä¸¡è€…ã‚’çµåˆ
+# ‘å‘²ƒtƒ‰ƒO
+## ğŒF”\—Í‚ğ•”•ª“I‚É”½‰f‚µ‚½Šw—ÍƒeƒXƒg‚Ì“_”‚ª 180 “_ˆÈã‚Å‚ ‚ê‚Î‘å‘²‚Æ‚È‚é
+## 10%‚­‚ç‚¢‚ªŠY“–‚·‚é‚æ‚¤‚Éœ“ˆÓ“I‚Éİ’è
+## ability‚Æscore‚ÌŠÖŒW‚Í”ñüŒ`‚È‚à‚Ì‚Æ‚·‚é
+## ¡‰ñ‚Ímutate()‚Æcase_when()‚ğg—p‚µ‚Äì¬
 
-## æ¡ä»¶ï¼’ï¼šèƒ½åŠ›ã‚’éƒ¨åˆ†çš„ã«åæ˜ ã—ãŸå­¦åŠ›ãƒ†ã‚¹ãƒˆã®ç‚¹æ•°ãŒ 180 ç‚¹ä»¥ä¸Šã§ã‚ã‚Œã°å¤§å’ã¨ãªã‚‹
-### ï¼‘ä¸‡äººãã‚‰ã„ãŒè©²å½“ã™ã‚‹ã‚ˆã†ã«ã™ã‚‹
-df["score"] = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10)
-df["is_college2"] = 1*(df["score"] >= 180)
+#Šw—ÍƒeƒXƒg‚Ì“_” score
+df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+#‘å‘²ƒ_ƒ~[ university (score 180“_ˆÈã=1)
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
+#Š“¾ income
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
 
-## ï¼’ã¤ã®æ¡ä»¶ã®ã„ãšã‚Œã‹ã«è©²å½“ã—ã¦ã„ã‚Œã°å¤§å’ã¨ã™ã‚‹
-df = df %>% mutate(is_college = case_when(is_college1 == 1 | is_college2 == 1 ~ 1, # "|"ã¯orã®è¨˜å·
-                                          TRUE ~ 0)) # ãã‚Œä»¥å¤–ã¯0
-# æ‰€å¾—
-df["income"] = 200 + 10*df["ability"] + 500*df["is_college"] + rnorm(n, sd = 50)
+##‚±‚ê‚Ü‚Å‚Æ“¯‚¶‚â‚è•û‚¾‚ÆAˆÈ‰º‚Ì’Ê‚èB
+#df["score"] = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10)
+#df["university"] = 1*(df["score"] >= 180)
+#df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, sd = 50)
 
-# æœ€åˆã®6è¡Œ
+# Å‰‚Ì6s
 head(df)
 ```
 
-ã“ã†ã—ã¦ç”Ÿæˆã—ãŸãƒ‡ãƒ¼ã‚¿ã®æ‰€å¾—ã¨èƒ½åŠ›ãƒ»å­¦æ­´ãƒ»ãƒ†ã‚¹ãƒˆã®ç‚¹æ•°ã®é–¢ä¿‚ã‚’ãƒ—ãƒ­ãƒƒãƒˆã™ã‚‹ã¨æ¬¡ã®ã‚ˆã†ã«ãªã‚‹ã€‚
+## ƒOƒ‰ƒt‚Æ‹Lq“Œv
 
-```{r, echo=F}
-# å¡—ã‚Šåˆ†ã‘ãƒ—ãƒ­ãƒƒãƒˆ
-# plot
-ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "å¤§å’(æ¡ä»¶1)",
-                                           is_college2 == 1 ~ "å¤§å’(æ¡ä»¶2)",
-                                           is_college == 0 ~ "éå¤§å’")),
-       aes(x = ability, y = income, color = education))+
-  geom_point(alpha = 0.5)+
-  labs(title = "èƒ½åŠ›ã¨æ‰€å¾—")
-
-ggplot(df %>% mutate(education = case_when(is_college1 == 1 ~ "å¤§å’(æ¡ä»¶1)",
-                                           is_college2 == 1 ~ "å¤§å’(æ¡ä»¶2)",
-                                           is_college == 0 ~ "éå¤§å’")),
-       aes(x = score, y = income, color = education))+
-  geom_point(alpha = 0.5)+
-  labs(title = "ãƒ†ã‚¹ãƒˆã®ç‚¹æ•°ã¨æ‰€å¾—")
-```
-
-
-ä»¥ä¸‹ã§ã¯ã€Œå­¦æ­´ï¼ˆå¤§å’ã«ãªã‚‹ã“ã¨ï¼‰ãŒæ‰€å¾—ã‚’ã©ã‚Œã ã‘ä¸Šæ˜‡ã•ã›ã‚‹ã®ã‹ã€ã‚’çŸ¥ã‚‹ã“ã¨ã‚’ç›®çš„ã¨ã—ã¦åˆ†æã—ã¦ã„ãã“ã¨ã«ã™ã‚‹ã€‚
-
-
-
-# å›å¸°ä¸é€£ç¶šãƒ‡ã‚¶ã‚¤ãƒ³
-
-## æ¦‚è¦
+‚±‚¤‚µ‚Ä¶¬‚µ‚½ƒf[ƒ^‚ÌŠ“¾‚Æ”\—ÍEŠw—ğEƒeƒXƒg‚Ì“_”‚ÌŠÖŒW‚ğƒvƒƒbƒg‚·‚é‚ÆŸ‚Ì‚æ‚¤‚É‚È‚éB
 
 ```{r}
-temp <- df %>% 
-         mutate(education = case_when(is_college2 == 1 ~ "å¤§å’(æ¡ä»¶2)",
-                                      is_college == 0 ~ "éå¤§å’")) %>% 
-         filter(!is.na(education))
+# “h‚è•ª‚¯ƒvƒƒbƒg
 
-ggplot(temp,
-       aes(x = score, y = income, color = education, fill = education))+
-  geom_point(alpha = 0.5)+
-  geom_smooth(method="lm",se=F, color="black", alpha = 0.5)+
-  labs(title = "å¤§å’ï¼ˆæ¡ä»¶2ï¼‰ã¨éå¤§å’ã®ã‚¹ã‚³ã‚¢ã¨æ‰€å¾—")
+## ‘å‘²‚©”Û‚©‚Ìƒ‰ƒxƒ‹‚ğƒf[ƒ^ƒtƒŒ[ƒ€‚É‰Á‚¦‚é
+df <- df %>% mutate(edu_label =
+                      case_when(university == 1 ~ "Grad.", university == 0 ~ "Not grad."))
+
+## U•z}‚ğ•`‚­ with ‘å‘²ƒ‰ƒxƒ‹
+ggplot(df, aes(x = ability, y = income, color = edu_label)) + 
+         geom_point(alpha = 0.5)+ 
+         labs(title = "Ability and Income")
 ```
 
-æ¡ä»¶2ã§å¤§å’ã«ãªã£ãŸäººã®å ´åˆã‚’è¦‹ã¦ã„ãã¨ï¼Œãƒ†ã‚¹ãƒˆã®ç‚¹æ•°ãŒã‚ã‚‹é–¾å€¤ï¼ˆ180ç‚¹ï¼‰ã‚’è¶…ãˆã‚‹ç‚¹ã§æ‰€å¾—ã«ã‚¸ãƒ£ãƒ³ãƒ—ãŒã¿ã‚‰ã‚Œã‚‹ã€‚
-**å›å¸°ä¸é€£ç¶šãƒ‡ã‚¶ã‚¤ãƒ³**(regression discontinuity design: RDD)ã¯ã“ã†ã—ãŸé–¾å€¤ã‚’ä¼´ã†DGPã‚’åˆ©ç”¨ã™ã‚‹èª¿æŸ»è¨­è¨ˆï¼ˆãƒ‡ã‚¶ã‚¤ãƒ³ï¼‰ã§ï¼Œä»¥ä¸‹ã®ã‚ˆã†ãªãƒ­ã‚¸ãƒƒã‚¯ã‚’ã‚‚ã¨ã«åˆ†æã‚’è¡Œã†ã€‚
+‚Ü‚½Aƒf[ƒ^‚Ì‹Lq“Œv‚ÍˆÈ‰º‚Ì‚æ‚¤‚É‚È‚éB
 
-- ã‚¹ã‚³ã‚¢ãŒ180ç‚¹ã«ãªã‚‹ç‚¹ã§å¤§å’ã«ãªã‚Œã‚‹ã‹ã©ã†ã‹ã‚’æ±ºã‚ã‚‹ã¨ã„ã†ã®ã¯äººç‚ºçš„ãªåˆ¶åº¦ã§ã‚ã‚Šï¼Œãã®èƒŒæ™¯ã§å€‹ã€…äººã®èƒ½åŠ›ã¯é€£ç¶šçš„ã«åˆ†å¸ƒã—ã¦ã„ã‚‹ï¼ˆ179ç‚¹ã§ä¸åˆæ ¼ã ã£ãŸäººã¨180ç‚¹ã§åˆæ ¼ã—ãŸäººã¨ã§èƒ½åŠ›ã«å¤§å·®ã¯ãªã„ï¼‰ã¨è€ƒãˆã‚‰ã‚Œã‚‹
-- èƒ½åŠ›$A$ãŒæ‰€å¾—$Y$ã«ä¸ãˆã‚‹å½±éŸ¿ã‚‚é–¾å€¤å‘¨è¾ºã§ä¸é€£ç¶šã«å¤‰åŒ–ã™ã‚‹ã¨ã¯è€ƒãˆé›£ã„
-- ã—ãŸãŒã£ã¦ï¼Œã“ã®é–¾å€¤ã«ãŠã„ã¦æ‰€å¾—ã«æ˜ç¢ºãªã‚¸ãƒ£ãƒ³ãƒ—ãŒã‚ã‚‹ç†ç”±ã¯å¤§å’ã®åŠ¹æœä»¥å¤–ã«ã¯è€ƒãˆã‚‰ã‚Œãªã„
+```{r}
+library(Hmisc)
+describe(df)
+```
+
+# ƒ‚ƒ“ƒeƒJƒ‹ƒEƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ““ü–å
+
+## (Œ‡—•Ï”‚ğ–³‹‚µ‚½)‰ñ‹A•ªÍ
+
+Ÿ‚ÉAŒ‡—•Ï”i”\—Í$A$)‚ğ–³‹‚µ‚ÄA$Y$‚ğ$X$‚É‰ñ‹A‚µ‚Ä‚İ‚éB‘O‰ñ“¯—lA’Pƒ‚È’P‰ñ‹A‚É‰Á‚¦‚ÄAŠw—ÍƒeƒXƒg‚Ì“_”‚ğƒRƒ“ƒgƒ[ƒ‹•Ï”‚É‰Á‚¦‚½d‰ñ‹A•ªÍ‚às‚Á‚Ä‚İ‚éB
+
+{stargazer}ƒpƒbƒP[ƒW‚ğ“Ç‚İ¬‚ŞB
+
+```{r}
+library(stargazer)
+```
+
+‰ñ‹A•ªÍŒ‹‰Ê‚ÍˆÈ‰º‚Ì‚æ‚¤‚É‚È‚éB
+
+```{r}
+reg1 = lm(income ~ university, data = df)
+reg2 = lm(income ~ university + score, data = df)
+
+stargazer(reg1, reg2, type = "text")
+```
+
+u‘å‘²‚É‚È‚é‚±‚Æ‚É‚æ‚éŠ“¾ã¸‚ÌŒø‰Êv‚ÍA’P‰ñ‹A•ªÍ(`reg1`)‚¾‚Æ–ñ`r round(reg1$coefficients[2], 0)`i–œ‰~j‚Æ‰ß‘å„’è‚³‚ê‚éB
+
+`score`‚ğŠÜ‚ß‚½d‰ñ‹A•ªÍ(`reg2`)‚¾‚Æ‚¨‚æ‚Ñ–ñ`r round(reg2$coefficients[2], 0)`i–œ‰~j‚Æ‚È‚éB
+
+## ƒ‚ƒ“ƒeƒJƒ‹ƒEƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‚Æ‚Í
+
+`score`‚ğŠÜ‚ß‚½d‰ñ‹A•ªÍ(`reg2`)‚É‚¨‚¯‚é–ñ`r round(reg2$coefficients[2], 0)`i–œ‰~j‚Æ‚¢‚¤ŒW”„’è’l‚ÍA500i–œ‰~j‚É”äŠr“I‹ß‚¢‚ªA‚±‚ê‚ÍAŠw—ÍƒeƒXƒg‚Ì“_”(`score')‚ğƒRƒ“ƒg\ƒ‹‚·‚é‚±‚Æ‚É‚æ‚Á‚ÄŒ‡—•Ï”ƒoƒCƒAƒX‚ªŠ®‘S‚Éœ‹‚Å‚«‚½Œ‹‰Ê‚È‚Ì‚¾‚ë‚¤‚©H
+
+‚±‚Ì‚±‚Æ‚ğA—˜_“I‚É‚Å‚Í‚È‚­AŠî–{“I‚ÈƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‚É‚æ‚èŒŸØ‚µ‚Ä‚İ‚æ‚¤B
+
+‚à‚µã‹L‚Ìd‰ñ‹Aƒ‚ƒfƒ‹(`reg2`)‚É‚¨‚¯‚éOLS„’è—Ê‚ª³‚µ‚¢‚Ì‚Å‚ ‚ê‚ÎAã‹L‚Ì`r round(reg2$coefficients[2], 0)`i–œ‰~j‚Æ500i–œ‰~j‚Ì·‚Íu‚½‚Ü‚½‚Üv¶‚¶‚½‚É‚·‚¬‚È‚¢‚Æ‚¢‚¤‚±‚Æ‚É‚È‚éB
+
+‚µ‚½‚ª‚Á‚ÄA“¯—l‚Ìƒf[ƒ^¶¬‚Æ‰ñ‹A•ªÍ‚ğ‰½•S‰ñE‰½ç‰ñ‚ÆÀ{‚·‚ê‚ÎA`university`‚ÌŒW”‚ÌOLS„’è’l‚Í500(–œ‰~)‚ğ’†S‚É³‹K•ª•z‚·‚é‚Í‚¸‚Å‚ ‚éB‚±‚ê‚ğÀÛ‚É{s‚µ‚Ä‚İ‚é‚Ì‚ªAƒ‚ƒ“ƒeƒJƒ‹ƒEƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‚Å‚ ‚éB
+
+## ƒ‚ƒ“ƒeƒJƒ‹ƒEƒVƒ~ƒ…ƒŒ[ƒVƒ‡‚ÌÀ{
+
+‰º‹L‚Å‚ÍAã‹L‚Ìƒf[ƒ^¶¬‚Æ‰ñ‹A•ªÍ(`reg2`)‚ğƒ‹[ƒv‚É‚æ‚Á‚Ä1000‰ñŒJ‚è•Ô‚µA‚»‚ÌŒ‹‰Ê‚ğ•Û‘¶‚·‚éB
+
+```{R results = "hide"}
+#ƒ^ƒl‚Ìİ’è
+set.seed(0) 
+
+# ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“Œ‹‰Ê‚ğ“ü‚ê‚éu” v‚Ìì¬
+coef <- rep(NA,1000)
+
+# “¯‚¶‰ñ‹A•ªÍ(ã‚Ìreg2)‚ğ1000‰ñŒJ‚è‚©‚¦‚·B
+
+for(i in 1:1000){ # for‚É‚æ‚éƒ‹[ƒvB1000‰ñŒJ‚è•Ô‚·
+# ƒf[ƒ^¶¬
+n <- 10000
+ability <- runif(n, min = 0, max = 100) # ”\—Í‚Í0‚©‚ç100‚Ü‚Å‹Ï“™‚É•ª•z
+df <- tibble(ID = 1:n, ability) # ID‚Æability‚ğƒf[ƒ^ƒtƒŒ[ƒ€‚ÉŠi”[‚·‚é
+df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
+# ‰ñ‹A
+reg2 <- lm(income ~ university + score, data = df)
+
+# ‰ñ‹AŒW”„’è’l‚Ì•Û‘¶
+coef[i] = reg2$coefficients[2] 
+}
+```
+
+ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“Œ‹‰Êi`university`‚ÌŒW”„’è’l‚Ì•½‹ÏA•W€•Î·AƒqƒXƒgƒOƒ‰ƒ€j‚ÍˆÈ‰º‚Ì‚æ‚¤‚É‚È‚éB
+
+```{R}
+#•½‹ÏA•W€Œë·
+mean(coef)
+sd(coef)
+
+# ƒqƒXƒgƒOƒ‰ƒ€
+hist(coef)
+```
+
+•½‹Ï‚Í`r round(mean(coef), 1)`A•W€•Î·‚Í`r round(sd(coef), 1)`‚Å‚ ‚èAã‹L‚Ì`reg2`‚Ì‰ñ‹AŒW”’l‚Æ‚»‚Ì•W€Œë·‚Æ‹ß‚¢B
+
+‚»‚µ‚ÄA`reg2`‚ğ1000‰ñ{s‚µ‚Ä“¾‚½`university`‚ÌŒW”„Œv’l‚Ì•½‹Ï‚ª`r round(mean(coef), 1)`‚Å‚ ‚èA500‚©‚ç\•ª—£‚ê‚Ä‚¢‚é‚±‚Æ‚æ‚èA`reg2`‚Ì‰ñ‹Aƒ‚ƒfƒ‹‚Ì`university`‚ÌOLS„’è—Ê‚É‚àƒoƒCƒAƒX‚ª‚ ‚é‚±‚Æ‚à•ª‚©‚éB
 
 
-<!-- æ•°å¼ã§è¨˜è¿°ã™ã‚‹ã¨ï¼Œå‡¦ç½®å¤‰æ•°ï¼ˆåŠ¹æœã‚’çŸ¥ã‚ŠãŸã„ç›®çš„ã®å¤‰æ•°ï¼‰ã§ã‚ã‚‹å­¦æ­´$X$ã¯ï¼ˆæ¡ä»¶2ã§å¤§å’ã«ãªã£ãŸäººã«é™ã£ã¦ã¯ï¼‰ãƒ†ã‚¹ãƒˆã®ç‚¹æ•°$S$ãŒé–¾å€¤$c$ã‚’è¶…ãˆã‚‹ã‹ã©ã†ã‹ã«ã‚ˆã£ã¦æ±ºã¾ã‚‹ã€‚ -->
+# ‰ñ‹A•s˜A‘±ƒfƒUƒCƒ“
 
-<!-- $$ -->
-<!-- X_i =  -->
-<!-- \begin{cases} -->
-<!-- 1 & \text{if } S_i \geq c \\  -->
-<!-- 0 & \text{if } S_i < c -->
-<!-- \end{cases} -->
-<!-- \\ -->
-<!-- $$ -->
+`ability`•Ï”‚ª‚È‚¢ŒÀ‚èA’Êí‚Ì‰ñ‹A•ªÍ‚Å‚Í„’èŒ‹‰Ê‚ÉƒoƒCƒAƒX‚ª¶‚¶‚Ä‚µ‚Ü‚¤B‚»‚±‚ÅAu”\—Í‚ğ•”•ª“I‚É”½‰f‚µ‚½Šw—ÍƒeƒXƒg‚Ì“_”‚ª 180 “_ˆÈã‚Å‚ ‚ê‚Î‘å‘²‚Æ‚È‚év‚Æ‚¢‚¤ğŒ‚ğ—˜—p‚µ‚½•ªÍ‚ğl‚¦‚éB
 
-<!-- ãã—ã¦ã“ã‚Œã¯ï¼Œç·šå½¢å›å¸°ãƒ¢ãƒ‡ãƒ«ã§ã¯ -->
+‚Ü‚¸–`“ª‚Ìƒf[ƒ^‚ğ‚à‚¤ˆê“x¶¬‚³‚¹‚éB
 
-<!-- $$ -->
-<!-- Y_i = \alpha + \beta S_i + \rho X_i + \eta_i -->
-<!-- $$ -->
+```{r}
+# ƒf[ƒ^¶¬
+set.seed(0)
+n <- 10000
+ability <- runif(n, min = 0, max = 100)
+df <- tibble(ID = 1:n, ability)
+df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+```
+
+X²‚ğŠw—ÍƒeƒXƒg‚Ì“_”(`score`)AY²‚ğŠ“¾(`income`)‚Æ‚µ‚ÄU•z}‚ğ•`‚­‚ÆA‰º‹L‚Ì‚æ‚¤‚É‚È‚éB
+
+```{r}
+# “h‚è•ª‚¯ƒvƒƒbƒg
+
+## ‘å‘²‚©”Û‚©‚Ìƒ‰ƒxƒ‹‚ğƒf[ƒ^ƒtƒŒ[ƒ€‚É‰Á‚¦‚é
+df <- df %>% mutate(edu_label =
+                      case_when(university == 1 ~ "Grad.", university == 0 ~ "Not grad."))
+
+## U•z}‚ğ•`‚­ with ‘å‘²ƒ‰ƒxƒ‹
+ggplot(df, aes(x = score, y = income, color = edu_label)) + 
+         geom_point(alpha = 0.5) + 
+         labs(title = "Score and Income")
+```
+
+ƒeƒXƒg‚Ì“_”(`score`)‚Ìè‡’li180“_j‚ğ‹«‚ÉAŠ“¾‚ª‘S‘Ì“I‚ÉãU‚êiƒWƒƒƒ“ƒvj‚µ‚Ä‚¢‚éB‚±‚ê‚ÍAŠw—ÍƒeƒXƒg‚Å180“_‚ğ‘å‘²‚Æ‚¨‚È‚èAŠ“¾‚ªã¸‚·‚é‚©‚ç‚Å‚ ‚éB
+
+**‰ñ‹A•s˜A‘±ƒfƒUƒCƒ“**(regression discontinuity design: RD design, RDD)‚Í‚±‚¤‚µ‚½è‡’l‚ğ”º‚¤ƒf[ƒ^¶¬‰ß’ö(DGP)‚ğ—˜—p‚·‚é’²¸İŒviƒfƒUƒCƒ“j‚ÅCˆÈ‰º‚Ì‚æ‚¤‚ÈƒƒWƒbƒN‚ğ‚à‚Æ‚É•ªÍ‚ğs‚¤B
+
+- ƒXƒRƒA‚ª180“_‚É‚È‚éè‡’l‚Å‘å‘²‚É‚È‚ê‚é‚©‚Ç‚¤‚©‚Æ‚¢‚¤u•s˜A‘±‚È•Ï‰»v‚ğŒˆ‚ß‚é‚Æ‚¢‚¤‚Ì‚Ílˆ×“I‚È§“x‚Å‚ ‚èC‚»‚Ì”wŒi‚É‚ ‚éŒÂXl‚ÌŠ“¾‚ÌŒˆ’è—vˆöi‚±‚±‚Å‚Í”\—Í$A$‚Ì‚İ‚¾‚ªAˆê”Ê“I‚É‚Í‚ ‚ç‚ä‚éŒˆ’è—vˆöj‚Íu˜A‘±“Iv‚É•ª•z‚µ‚Ä‚¢‚é‚Í‚¸B
+- ‚µ‚½‚ª‚Á‚ÄC‚±‚Ìè‡’l‚É‚¨‚¢‚ÄŠ“¾‚É–¾Šm‚ÈƒWƒƒƒ“ƒvi•s˜A‘±«j‚ª‚ ‚é——R‚ÍA‚±‚Ìè‡’l‚Å“¯‚¶‚­•s˜A‘±‚É•Ï‰»‚µ‚Ä‚¢‚éu‘å‘²v‚Æ‚¢‚¤—vˆöˆÈŠO‚É‚Íl‚¦‚ç‚ê‚È‚¢
+
+## RDƒfƒUƒCƒ“‚É‚æ‚é„’è
+
+RDƒfƒUƒCƒ“‚Ì„’è‚ÍA‚æ‚è‚“x‚ÈRD„’è•û–@‚ğˆµ‚¤ƒpƒbƒP[ƒW‚ª‘¶İ‚·‚é‚ªA`lm`ŠÖ”‚ğg‚Á‚½d‰ñ‹A•ªÍ‚Å„’è‚Å‚«‚éB
+
+Šî–{“I‚É‚Íè‡’li‚±‚±‚Å‚Í`score=180`)‚Å‚ÌuƒWƒƒƒ“ƒvv‚Ì‘å‚«‚³‚ğ„’è‚·‚ê‚Î‚æ‚¢B
+
+‚à‚Á‚Æ‚àŠÈ’P‚È•û–@‚ÍAüŒ`‰ñ‹A•ªÍ‚Å‚±‚ÌƒWƒƒƒ“ƒv‚ğ„’è‚·‚é‚±‚Æ‚Å‚ ‚éB‚Ü‚¸‚ÍŠÈ•Ö‚ÉA`ggplot2`‚ğg‚Á‚ÄAƒOƒ‰ƒt‚ğg‚Á‚Ä‚±‚ÌƒWƒƒƒ“ƒv‚ğŠm”F‚µ‚Ä‚İ‚æ‚¤B
 
 
+```{R}
+## U•z}‚ğ•`‚­ with ‘å‘²ƒ‰ƒxƒ‹
+ggplot(df, aes(x = score, y = income, color = edu_label, group = edu_label)) + 
+         geom_point(alpha = 0.5)+ 
+         labs(title = "Score and Income") +
+         geom_smooth(method = lm, se = TRUE, color = "black") # group=edu_label‚²‚Æ‚Ì‰ñ‹A’¼ü, SE‚ ‚è
+```
 
 
+ã}‚Ì‚æ‚¤‚ÈRD•ªÍ‚ğüŒ`RD(linear RD)‚ÆŒÄ‚ÑAˆÈ‰º‚Ì‚æ‚¤‚É„’è‚Å‚«‚éB
 
-## Rã§å®Ÿè·µ
+```{r}
+# è‡’l=0‚Æ‚È‚é‚æ‚¤‚ÉŠ„“–•Ï”(score_gap)‚ğì‚è’¼‚·
+df <- df %>% mutate(score_gap = score - 180)
 
-RDDã¯é–¾å€¤å‘¨è¾ºã®ãƒ‡ãƒ¼ã‚¿ã‚’ä½¿ã£ãŸå›å¸°åˆ†æã§ã‚ã‚‹å±€æ‰€ç·šå½¢å›å¸°ï¼ˆlocal linear regressionï¼‰ãªã©ã‚’ä½¿ã†ã€‚
+# üŒ`RD: X²‚Éscore_gap‚ğ—p‚¢‚é‚±‚Æ‚É‚æ‚èAyØ•Ğ‚Ì•Ï‰»‚·‚È‚í‚¿universityƒ_ƒ~[‚ÌŒW”‚ğã}‚ÌuƒWƒƒƒ“ƒvv‚Ì‘å‚«‚³‚Æ‰ğß‚Å‚«‚éB
+linear_RD <- lm(income ~ university + score_gap + score_gap*university, data = df) 
+stargazer(linear_RD, type = "text")
+```
+
+`university`‚ÌŒW”‚Íè‡’l‚Å‚ÌƒWƒƒƒ“ƒv‚Ì‘å‚«‚³A`score`‚ÌŒW”‚Íè‡’l¶‘¤‚Ì‰ñ‹A’¼ü‚ÌŒX‚«A`score:university`‚ÌŒW”‚Íè‡’l¶‘¤‚Æè‡’l‰E‘¤‚Ì‰ñ‹A’¼ü‚ÌŒX‚«‚Ì•Ï‰»‚Å‚ ‚éB`university`‚ÌŒW”„’è’l‚Í500‚É‹ß‚¢B
+
+## ‘½€®RD
+
+è‡’l‚Å‚ÌƒWƒƒƒ“ƒv‚Ì‘å‚«‚³‚ğ‘ª‚è‚½‚¢‚¾‚¯‚È‚Ì‚ÉAè‡’l‚Ì¶‰E‚É‚¨‚¯‚é`score`‚Æ`income`‚ÌŠÖŒW‚ğüŒ`‰ñ‹Aƒ‚ƒfƒ‹‚Å‘¨‚¦‚é‚Ì‚Í“KØ‚Å‚Í‚È‚¢‚©‚à‚µ‚ê‚È‚¢B
+
+‚½‚¾‚µAloess‹Èü‚ğ—p‚¢‚Äè‡’l‚Ì¶‰E‚É‚¨‚¯‚é`score`‚Æ`income`‚ÌŠÖŒW‚ğƒtƒŒƒLƒVƒuƒ‹‚È‹Èü‚Å‘¨‚¦‚Ä‚İ‚Ä‚àAƒWƒƒƒ“ƒv‚Ì‘å‚«‚³‚Í‚ ‚Ü‚è•Ï‚í‚ç‚È‚¢‚æ‚¤‚ÉŒ©‚¦‚éB
+
+```{R}
+## U•z}‚ğ•`‚­ with ‘å‘²ƒ‰ƒxƒ‹
+ggplot(df, aes(x = score, y = income, color = edu_label, group = edu_label)) + 
+         geom_point(alpha = 0.5)+ 
+         labs(title = "Score and Income") +
+         geom_smooth(method = lm, se = TRUE, color = "black") + # group=edu_label‚²‚Æ‚Ì‰ñ‹A’¼ü, SE‚ ‚è
+         geom_smooth(method = loess, se = TRUE, color = "black")   # group=edu_label‚²‚Æ‚Ìloess‹Èü, SE‚ ‚è
+```
+
+‚»‚±‚ÅAè‡’l‚Ì¶‰E‚É‚¨‚¯‚é`score`‚Æ`income`‚ÌŠÖŒW‚ğA‚»‚ê‚¼‚êˆÙ‚È‚é“ñŸAOŸAlŸ‹Èü‚Å‚Æ‚ç‚¦‚½‘½€®RD‚ğ„’è‚µ‚Ä‚İ‚éB
+
+```{r}
+# “ñŸ‘½€®RD, I(score_gap^2)‚Íscore_gap^2
+secondpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = df) 
+
+# OŸ‘½€®RD,  I(score_gap^3)‚Íscore_gap^3
+thirdpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) + I(score_gap^3) +
+               score_gap*university + I(score_gap^2)*university + I(score_gap^3)*university, data = df) 
+
+# lŸ‘½€®RD, I(score_gap^4)‚Íscore_gap^4
+fourthpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) + I(score_gap^3) + I(score_gap^4) +
+               + score_gap*university + I(score_gap^2)*university +
+               + I(score_gap^3)*university + I(score_gap^4)*university , data = df) 
+
+# ˆêŸ~lŸ‘½€®RD
+stargazer(linear_RD, secondpoly_RD, thirdpoly_RD, fourthpoly_RD, type = "text", digits = 1, df = FALSE) # •‚ğ‹·‚­‚·‚é‚½‚ßAdigits=1, df=FALSE‚Æ‚·‚é
+```
+
+‚Ç‚ÌŒ‹‰Ê‚àA`university`‚ÌŒW”„’è’l‚ÍA‚¾‚¢‚½‚¢500‘OŒã‚É‚È‚éB‚½‚¾‚µA‘½€®‚ÌŸŒ³‚ğ‘å‚«‚­‚µ‚Ä‚¢‚­‚Ù‚ÇA•W€Œë·‚à‘å‚«‚­‚È‚éB
+
+## ‹ÇŠüŒ`RD
+
+‚à‚¤ˆê‚Â‚Ìl‚¦•û‚Æ‚µ‚ÄAè‡’l‚©‚ç‰“‚´‚©‚é‚Ù‚ÇAè‡’l‚Å‚ÌƒWƒƒƒ“ƒv‚Ì‘å‚«‚³‚ğ‘ª‚é‚É‚Í•s•K—v‚Èî•ñ‚Æ‚È‚éB‚µ‚½‚ª‚Á‚ÄAüŒ`ƒ‚ƒfƒ‹‚Å‚ÌRD‚ğg‚¢‚Â‚ÂA„’è‚É—p‚¢‚éƒTƒ“ƒvƒ‹‚ğè‡’l‹ß–T‚Ì‚à‚Ì‚ÉŒÀ’è‚·‚ê‚Î‚æ‚¢‚Ì‚Å‚Í‚È‚¢‚©‚Æl‚¦‚éB
+
+‚±‚Ìl‚¦•û‚É]‚Á‚ÄAè‡’l‘OŒã‚Ìƒoƒ“ƒh•(bandwidth)‚ğİ’è‚µA‚»‚Ìƒoƒ“ƒh•‚Ì“à•”‚ÌƒTƒ“ƒvƒ‹‚¾‚¯‚ğg‚Á‚ÄüŒ`RD‚ğs‚¤B
+
+```{r}
+# ƒoƒ“ƒh•=50
+band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
+band30_RD <- lm(income ~ university + score_gap + score_gap*university, data = band30_df) 
+
+# ƒoƒ“ƒh•=10
+band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
+band10_RD <- lm(income ~ university + score_gap + score_gap*university, data = band10_df) 
+
+# ƒoƒ“ƒh•=5
+band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
+band5_RD <- lm(income ~ university + score_gap + score_gap*university, data = band5_df) 
+
+# ƒoƒ“ƒh•=1
+band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
+band1_RD <- lm(income ~ university + score_gap + score_gap*university, data = band1_df) 
+
+stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
+```
+
+ƒoƒ“ƒh•‚ª10‚â5‚Ìê‡‚Í`university` ‚ÌŒW”„’è’l‚Í500‚É‹ß‚¢‚ªAƒoƒ“ƒh•‚ğ1‚É‚Ü‚Å‹·‚ß‚é‚ÆA„’è’l‚Í‚©‚È‚è‘å‚«‚­‚È‚Á‚Ä‚µ‚Ü‚Á‚Ä‚¢‚éB
+‚Ü‚½A•W€Œë·‚àƒoƒ“ƒh•‚ğ‹·‚ß‚é‚²‚Æ‚É‘å‚«‚­‚È‚éB
+
+ˆê”Ê“I‚ÉARD„’è‚ÍAè‡’l‘OŒã‚ÌƒTƒ“ƒvƒ‹ƒTƒCƒY‚ª\•ª‚É‘å‚«‚­‚È‚¢‚Æ„’èŒ‹‰Ê‚Í•sˆÀ’è‚É‚È‚è‚ª‚¿‚Å‚ ‚éBˆê•û‚ÅAƒTƒ“ƒvƒ‹ƒTƒCƒY‚ğŠm•Û‚·‚é‚½‚ß‚Éè‡’l‚ğ‘å‚«‚­‚·‚é‚ÆƒoƒCƒAƒX‚ª¶‚¶‚é‰Â”\«‚ª‚‚­‚È‚èAè‡’l‚ğ‘å‚«‚­‚·‚é‚±‚Æ‚É‚æ‚éƒoƒCƒAƒX‚ğ‚Ÿ‘½€®‚É‚æ‚Á‚ÄƒRƒ“ƒgƒ[ƒ‹‚µ‚æ‚¤‚Æ‚·‚é‚Æ‘½€®‚É‚æ‚è„’èŒ‹‰Ê‚Í•sˆÀ’è‚É‚È‚éB
+
+‚½‚ß‚µ‚ÉˆÈ‰º‚Å‚ÍAƒTƒ“ƒvƒ‹ƒTƒCƒY‚ğ100”{‚·‚È‚í‚¿n=1000,000‚É‚µ‚Ä‹ÇŠüŒ`RD‚ğ„’è‚µ‚È‚¨‚µ‚½Œ‹‰Ê‚Å‚ ‚éB
 
 
 ```{r}
-# æ¡ä»¶2ã®å¤§å’è€…ã¨éå¤§å’è€…ã®ã¿ã‚’å–ã‚Šå‡ºã™
-df_rdd = df %>% filter(is_college2 == 1 | is_college == 0)
+# ƒf[ƒ^¶¬
+set.seed(0)
+n <- 1000000
+ability <- runif(n, min = 0, max = 100)
+df <- tibble(ID = 1:n, ability)
+df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+#Š„“–•Ï”score_gap‚Ìì¬
+df <- df %>% mutate(score_gap = score - 180)
+# ƒoƒ“ƒh•=50
+band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
+band30_RD <- lm(income ~ university + score_gap + score_gap*university, data = band30_df) 
+# ƒoƒ“ƒh•=10
+band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
+band10_RD <- lm(income ~ university + score_gap + score_gap*university, data = band10_df) 
+# ƒoƒ“ƒh•=5
+band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
+band5_RD <- lm(income ~ university + score_gap + score_gap*university, data = band5_df) 
+# ƒoƒ“ƒh•=1
+band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
+band1_RD <- lm(income ~ university + score_gap + score_gap*university, data = band1_df) 
 
-# é–¾å€¤å‘¨è¾ºã®ã‚µãƒ³ãƒ—ãƒ«ã®å–ã‚Šå‡ºã—
-h = 1  # ãƒãƒ³ãƒ‰å¹…ï¼šé–¾å€¤å‘¨è¾ºã®ã©ã®ç¨‹åº¦ã®å¹…ã®ãƒ‡ãƒ¼ã‚¿ã‚’ä½¿ã†ã‹
-c = 180 # é–¾å€¤
-df_local = df_rdd %>% filter(c - h <= score & score < c + h)
+stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
 ```
 
-å–ã‚Šå‡ºã—ãŸé–¾å€¤å‘¨è¾ºã®ãƒ‡ãƒ¼ã‚¿ã®åˆ†å¸ƒã¯æ¬¡ã®ã‚ˆã†ã«ãªã£ã¦ã„ã‚‹
+ƒoƒ“ƒh•50‚¾‚Æ­‚µ‰º•ûƒoƒCƒAƒX‚ª‚ ‚é‚æ‚¤‚ÉŒ©‚¦‚é‚ªAƒoƒ“ƒh•‚ğ10ˆÈ‰º‚É‚·‚é‚ÆA‚Ù‚Ú500‚É‚È‚éB
 
-```{r}
-# plot
-ggplot(df_local, aes(x = score, y = income))+
-  geom_point()
-```
+‚È‚¨ARD„’è‚ÌÅ“K‚È•û–@‚É‚Â‚¢‚Ä‚Í—lX‚Èê–å“I‹c˜_‚ª‚È‚³‚êAR‚ÌƒpƒbƒP[ƒW‚à’ñ‹Ÿ‚³‚ê‚Ä‚¢‚éi{rdrobust}ƒpƒbƒP[ƒW‚È‚ÇjB‚½‚¾Aã‹L‚Ì•û–@‚ÅA`lm`ŠÖ”‚ğg‚Á‚ÄŠî–{“I‚ÈRD„’è‚ğs‚¤‚±‚Æ‚ª‰Â”\‚Å‚ ‚éB
 
+‚Ü‚½•W€Œë·‚É‚Â‚¢‚Ä‚àA‚±‚±‚Å‚ÍC³‚µ‚È‚©‚Á‚½‚ªAƒƒoƒXƒg•W€Œë·‚É’u‚«Š·‚¦‚é‚Ù‚¤‚ª–]‚Ü‚µ‚¢B
 
-```{r}
-# å±€æ‰€ç·šå½¢å›å¸°
-llr <- lm(income ~ score + is_college, data = df_local) 
-stargazer::stargazer(llr, type = "text")
-```
+# Ql•¶Œ£
 
-æ¯”è¼ƒçš„500ã«è¿‘ã„å€¤ã‚’æ¨å®šã™ã‚‹ã“ã¨ãŒã§ããŸ
+ˆÀ“¡“¹li2015) u[‘½d‰ñ‹A•ªÍ‚Æ‰ñ‹A•s˜A‘±ƒfƒUƒCƒ“](https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf)v w“ú–{˜J“­Œ¤‹†Gx No.657 pp.12-13 
+ˆÀ“¡“¹luŒv—ÊŒoÏŠw‚QvuŒv—ÊŒoÏ“Á˜_‚Qv‚Ìu‰ñ‹A•s˜A‘±ƒfƒUƒCƒ“v‚Ìu‹`‘—¿
+]
 
