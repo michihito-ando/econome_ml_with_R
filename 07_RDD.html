@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2019-05-31" />
+<meta name="date" content="2019-06-07" />
 
 <title>Rで学ぶ計量経済学と機械学習 7    計量経済学３：回帰不連続デザイン</title>
 
@@ -3857,7 +3857,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 7<br> <br> 計量経済学３：回帰不連続デザイン</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)</h4>
-<h4 class="date">2019-05-31</h4>
+<h4 class="date">2019-06-07</h4>
 
 </div>
 
@@ -3879,8 +3879,8 @@ Y = 200 + 10A + 500X+ \varepsilon
 <li>大卒だと所得が500万円上昇する</li>
 <li>能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる（約1万人が合格する）</li>
 </ul>
-<div id="htmlwidget-2e3309a4f6ac8ef9e015" style="width:576px;height:384px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-2e3309a4f6ac8ef9e015">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\"]\n能力A -> 所得Y [label=\"10\"]\n能力A -> テストの点 [label=\"能力を部分的に反映\"]\nテストの点 -> 学歴X [label=\"180点以上かどうか\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; テストの点; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-55e29b0bd946d9d51ae2" style="width:576px;height:384px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-55e29b0bd946d9d51ae2">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\"]\n能力A -> 所得Y [label=\"10\"]\n能力A -> テストの点 [label=\"能力を部分的に反映\"]\nテストの点 -> 学歴X [label=\"180点以上かどうか\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; テストの点; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" data-line-number="1"><span class="co"># 事前準備 --------------------</span></a>
 <a class="sourceLine" id="cb1-2" data-line-number="2"><span class="co"># パッケージの読み込み</span></a>
 <a class="sourceLine" id="cb1-3" data-line-number="3"><span class="kw">library</span>(tidyverse)</a>
@@ -4043,7 +4043,7 @@ Y = 200 + 10A + 500X+ \varepsilon
 <p>したがって、同様のデータ生成と回帰分析を何百回・何千回と実施すれば、<code>university</code>の係数のOLS推定値は500(万円)を中心に正規分布するはずである。これを実際に施行してみるのが、モンテカルロ・シミュレーションである。</p>
 </div>
 <div class="section level2">
-<h2><span class="header-section-number">2.3</span> モンテカルロ・シミュレーショの実施</h2>
+<h2><span class="header-section-number">2.3</span> モンテカルロ・シミュレーションの実行</h2>
 <p>下記では、上記のデータ生成と回帰分析(<code>reg2</code>)をループによって1000回繰り返し、その結果を保存する。</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">#タネの設定</span></a>
 <a class="sourceLine" id="cb9-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">0</span>) </a>
@@ -4233,7 +4233,7 @@ Y = 200 + 10A + 500X+ \varepsilon
 </div>
 <div id="rd" class="section level2">
 <h2><span class="header-section-number">3.3</span> 局所線形RD</h2>
-<p>もう一つの考え方として、閾値から遠ざかるほど、閾値でのジャンプの大きさを測るには不必要な情報となる。したがって、線形モデルでのRDを使いつつ、推定に用いるサンプルを閾値近傍のものに限定すればよいのではないかと考える。</p>
+<p>もう一つの考え方として、閾値から遠ざかるほど、閾値でのジャンプの大きさを測るには不必要な情報となる。したがって、線形モデルでのRDを使いつつ、推定に用いるサンプルを閾値近傍の局所的（local)なものに限定すればよいのではないかと考える。</p>
 <p>この考え方に従って、閾値前後のバンド幅(bandwidth)を設定し、そのバンド幅の内部のサンプルだけを使って線形RDを行う。</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1"><span class="co"># バンド幅=50</span></a>
 <a class="sourceLine" id="cb23-2" data-line-number="2">band30_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">30</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">30</span>) </a>
@@ -4281,7 +4281,7 @@ Y = 200 + 10A + 500X+ \varepsilon
 ## Note:                            *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 <p>バンド幅が10や5の場合は<code>university</code> の係数推定値は500に近いが、バンド幅を1にまで狭めると、推定値はかなり大きくなってしまっている。 また、標準誤差もバンド幅を狭めるごとに大きくなる。</p>
 <p>一般的に、RD推定は、閾値前後のサンプルサイズが十分に大きくないと推定結果は不安定になりがちである。一方で、サンプルサイズを確保するために閾値を大きくするとバイアスが生じる可能性が高くなり、閾値を大きくすることによるバイアスを高次多項式によってコントロールしようとすると多項式により推定結果は不安定になる。</p>
-<p>ためしに以下では、サンプルサイズを100倍すなわちn=1000,000にして局所線形RDを推定しなおした結果である。</p>
+<p>ためしに以下では、サンプルサイズを100倍すなわちn=1000,000にして局所線形RDを推定してみる。</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="co"># データ生成</span></a>
 <a class="sourceLine" id="cb25-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">0</span>)</a>
 <a class="sourceLine" id="cb25-3" data-line-number="3">n &lt;-<span class="st"> </span><span class="dv">1000000</span></a>
@@ -4290,22 +4290,27 @@ Y = 200 + 10A + 500X+ \varepsilon
 <a class="sourceLine" id="cb25-6" data-line-number="6">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">score =</span> <span class="dv">30</span> <span class="op">*</span><span class="st"> </span><span class="kw">log10</span>(ability) <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dt">mean =</span> <span class="dv">115</span>, <span class="dt">sd =</span> <span class="dv">10</span>))</a>
 <a class="sourceLine" id="cb25-7" data-line-number="7">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">university =</span> <span class="kw">case_when</span>(score <span class="op">&gt;=</span><span class="st"> </span><span class="dv">180</span> <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span><span class="dv">0</span>))</a>
 <a class="sourceLine" id="cb25-8" data-line-number="8">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">income =</span> <span class="dv">200</span> <span class="op">+</span><span class="st"> </span><span class="dv">10</span><span class="op">*</span>ability <span class="op">+</span><span class="st"> </span><span class="dv">500</span><span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dt">sd =</span> <span class="dv">50</span>))</a>
-<a class="sourceLine" id="cb25-9" data-line-number="9"><span class="co">#割当変数score_gapの作成</span></a>
-<a class="sourceLine" id="cb25-10" data-line-number="10">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">score_gap =</span> score <span class="op">-</span><span class="st"> </span><span class="dv">180</span>)</a>
-<a class="sourceLine" id="cb25-11" data-line-number="11"><span class="co"># バンド幅=50</span></a>
-<a class="sourceLine" id="cb25-12" data-line-number="12">band30_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">30</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">30</span>) </a>
-<a class="sourceLine" id="cb25-13" data-line-number="13">band30_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st"> </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span>score_gap<span class="op">*</span>university, <span class="dt">data =</span> band30_df) </a>
-<a class="sourceLine" id="cb25-14" data-line-number="14"><span class="co"># バンド幅=10</span></a>
-<a class="sourceLine" id="cb25-15" data-line-number="15">band10_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">10</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">10</span>) </a>
-<a class="sourceLine" id="cb25-16" data-line-number="16">band10_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st"> </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span>score_gap<span class="op">*</span>university, <span class="dt">data =</span> band10_df) </a>
-<a class="sourceLine" id="cb25-17" data-line-number="17"><span class="co"># バンド幅=5</span></a>
-<a class="sourceLine" id="cb25-18" data-line-number="18">band5_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">5</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">5</span>) </a>
-<a class="sourceLine" id="cb25-19" data-line-number="19">band5_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st"> </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span>score_gap<span class="op">*</span>university, <span class="dt">data =</span> band5_df) </a>
-<a class="sourceLine" id="cb25-20" data-line-number="20"><span class="co"># バンド幅=1</span></a>
-<a class="sourceLine" id="cb25-21" data-line-number="21">band1_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">1</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">1</span>) </a>
-<a class="sourceLine" id="cb25-22" data-line-number="22">band1_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st"> </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span>score_gap<span class="op">*</span>university, <span class="dt">data =</span> band1_df) </a>
-<a class="sourceLine" id="cb25-23" data-line-number="23"></a>
-<a class="sourceLine" id="cb25-24" data-line-number="24"><span class="kw">stargazer</span>(band30_RD, band10_RD, band5_RD, band1_RD, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>,  <span class="dt">digits =</span> <span class="dv">1</span>, <span class="dt">df =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<a class="sourceLine" id="cb25-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb25-10" data-line-number="10"><span class="co">#割当変数score_gapの作成</span></a>
+<a class="sourceLine" id="cb25-11" data-line-number="11">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">score_gap =</span> score <span class="op">-</span><span class="st"> </span><span class="dv">180</span>)</a>
+<a class="sourceLine" id="cb25-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb25-13" data-line-number="13"><span class="co"># バンド幅=50</span></a>
+<a class="sourceLine" id="cb25-14" data-line-number="14">band30_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">30</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">30</span>) </a>
+<a class="sourceLine" id="cb25-15" data-line-number="15">band30_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st"> </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span>score_gap<span class="op">*</span>university, <span class="dt">data =</span> band30_df) </a>
+<a class="sourceLine" id="cb25-16" data-line-number="16"></a>
+<a class="sourceLine" id="cb25-17" data-line-number="17"><span class="co"># バンド幅=10</span></a>
+<a class="sourceLine" id="cb25-18" data-line-number="18">band10_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">10</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">10</span>) </a>
+<a class="sourceLine" id="cb25-19" data-line-number="19">band10_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st"> </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span>score_gap<span class="op">*</span>university, <span class="dt">data =</span> band10_df) </a>
+<a class="sourceLine" id="cb25-20" data-line-number="20"></a>
+<a class="sourceLine" id="cb25-21" data-line-number="21"><span class="co"># バンド幅=5</span></a>
+<a class="sourceLine" id="cb25-22" data-line-number="22">band5_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">5</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">5</span>) </a>
+<a class="sourceLine" id="cb25-23" data-line-number="23">band5_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st"> </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span>score_gap<span class="op">*</span>university, <span class="dt">data =</span> band5_df) </a>
+<a class="sourceLine" id="cb25-24" data-line-number="24"></a>
+<a class="sourceLine" id="cb25-25" data-line-number="25"><span class="co"># バンド幅=1</span></a>
+<a class="sourceLine" id="cb25-26" data-line-number="26">band1_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">1</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">1</span>) </a>
+<a class="sourceLine" id="cb25-27" data-line-number="27">band1_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st"> </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span>score_gap<span class="op">*</span>university, <span class="dt">data =</span> band1_df) </a>
+<a class="sourceLine" id="cb25-28" data-line-number="28"></a>
+<a class="sourceLine" id="cb25-29" data-line-number="29"><span class="kw">stargazer</span>(band30_RD, band10_RD, band5_RD, band1_RD, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>,  <span class="dt">digits =</span> <span class="dv">1</span>, <span class="dt">df =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
 <pre><code>## 
 ## ======================================================================
 ##                                     Dependent variable:               
@@ -4334,13 +4339,158 @@ Y = 200 + 10A + 500X+ \varepsilon
 ## ======================================================================
 ## Note:                                      *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 <p>バンド幅50だと少し下方バイアスがあるように見えるが、バンド幅を10以下にすると、ほぼ500になる。</p>
-<p>なお、RD推定の最適な方法については様々な専門的議論がなされ、Rのパッケージも提供されている（{rdrobust}パッケージなど）。ただ、上記の方法で、<code>lm</code>関数を使って基本的なRD推定を行うことが可能である。</p>
-<p>また標準誤差についても、ここでは修正しなかったが、ロバスト標準誤差に置き換えるほうが望ましい。</p>
+</div>
+<div id="rd" class="section level2">
+<h2><span class="header-section-number">3.4</span> 局所多項式RD</h2>
+<p>サンプルを閾値近傍のものに限定した局所的な分析と多項式（高次元）回帰モデルを組み合わせることもできる。ただし、局所回帰と高次元回帰モデルを組み合わせると標準誤差が大きく傾向があるので、ここでは二次多項式回帰のみを用いてみる。</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="co"># データ生成</span></a>
+<a class="sourceLine" id="cb27-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb27-3" data-line-number="3">n &lt;-<span class="st"> </span><span class="dv">10000</span></a>
+<a class="sourceLine" id="cb27-4" data-line-number="4">ability &lt;-<span class="st"> </span><span class="kw">runif</span>(n, <span class="dt">min =</span> <span class="dv">0</span>, <span class="dt">max =</span> <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb27-5" data-line-number="5">df &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">ID =</span> <span class="dv">1</span><span class="op">:</span>n, ability)</a>
+<a class="sourceLine" id="cb27-6" data-line-number="6">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">score =</span> <span class="dv">30</span> <span class="op">*</span><span class="st"> </span><span class="kw">log10</span>(ability) <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dt">mean =</span> <span class="dv">115</span>, <span class="dt">sd =</span> <span class="dv">10</span>))</a>
+<a class="sourceLine" id="cb27-7" data-line-number="7">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">university =</span> <span class="kw">case_when</span>(score <span class="op">&gt;=</span><span class="st"> </span><span class="dv">180</span> <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span><span class="dv">0</span>))</a>
+<a class="sourceLine" id="cb27-8" data-line-number="8">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">income =</span> <span class="dv">200</span> <span class="op">+</span><span class="st"> </span><span class="dv">10</span><span class="op">*</span>ability <span class="op">+</span><span class="st"> </span><span class="dv">500</span><span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dt">sd =</span> <span class="dv">50</span>))</a>
+<a class="sourceLine" id="cb27-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb27-10" data-line-number="10"><span class="co">#割当変数score_gapの作成</span></a>
+<a class="sourceLine" id="cb27-11" data-line-number="11">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">score_gap =</span> score <span class="op">-</span><span class="st"> </span><span class="dv">180</span>)</a>
+<a class="sourceLine" id="cb27-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb27-13" data-line-number="13"><span class="co"># バンド幅=50</span></a>
+<a class="sourceLine" id="cb27-14" data-line-number="14">band30_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">30</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">30</span>) </a>
+<a class="sourceLine" id="cb27-15" data-line-number="15">band30_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st">  </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb27-16" data-line-number="16"><span class="st">              </span>score_gap<span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>)<span class="op">*</span>university, <span class="dt">data =</span> band30_df) </a>
+<a class="sourceLine" id="cb27-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb27-18" data-line-number="18"><span class="co"># バンド幅=10</span></a>
+<a class="sourceLine" id="cb27-19" data-line-number="19">band10_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">10</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">10</span>) </a>
+<a class="sourceLine" id="cb27-20" data-line-number="20">band10_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st">  </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb27-21" data-line-number="21"><span class="st">              </span>score_gap<span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>)<span class="op">*</span>university, <span class="dt">data =</span> band10_df)</a>
+<a class="sourceLine" id="cb27-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb27-23" data-line-number="23"><span class="co"># バンド幅=5</span></a>
+<a class="sourceLine" id="cb27-24" data-line-number="24">band5_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">5</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">5</span>) </a>
+<a class="sourceLine" id="cb27-25" data-line-number="25">band5_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st">  </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb27-26" data-line-number="26"><span class="st">              </span>score_gap<span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>)<span class="op">*</span>university, <span class="dt">data =</span> band5_df)</a>
+<a class="sourceLine" id="cb27-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb27-28" data-line-number="28"><span class="co"># バンド幅=1</span></a>
+<a class="sourceLine" id="cb27-29" data-line-number="29">band1_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">1</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">1</span>) </a>
+<a class="sourceLine" id="cb27-30" data-line-number="30">band1_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st">  </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb27-31" data-line-number="31"><span class="st">              </span>score_gap<span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>)<span class="op">*</span>university, <span class="dt">data =</span> band1_df)</a>
+<a class="sourceLine" id="cb27-32" data-line-number="32"></a>
+<a class="sourceLine" id="cb27-33" data-line-number="33"><span class="kw">stargazer</span>(band30_RD, band10_RD, band5_RD, band1_RD, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>,  <span class="dt">digits =</span> <span class="dv">1</span>, <span class="dt">df =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## 
+## ================================================================
+##                                    Dependent variable:          
+##                          ---------------------------------------
+##                                          income                 
+##                             (1)        (2)       (3)      (4)   
+## ----------------------------------------------------------------
+## university                519.3***   510.8***  527.5*** 556.4***
+##                            (16.3)     (22.2)    (29.2)   (61.5) 
+##                                                                 
+## score_gap                  9.2***     13.0**     -2.0    142.9  
+##                            (1.3)      (6.3)     (18.0)  (207.0) 
+##                                                                 
+## I(score_gap2)             -0.2***      0.1       -3.3    167.7  
+##                            (0.04)     (0.6)     (3.4)   (197.4) 
+##                                                                 
+## university:score_gap        -5.0      -10.2      -7.1    -337.4 
+##                            (4.1)      (11.1)    (28.0)  (286.0) 
+##                                                                 
+## university:I(score_gap2)    0.1        0.04      6.6     -57.7  
+##                            (0.2)      (1.1)     (5.6)   (276.9) 
+##                                                                 
+## Constant                  931.2***   941.9***  931.5*** 950.7***
+##                            (8.8)      (14.7)    (20.3)   (46.0) 
+##                                                                 
+## ----------------------------------------------------------------
+## Observations               8,071      3,128     1,534     327   
+## R2                          0.6        0.6       0.7      0.7   
+## Adjusted R2                 0.6        0.6       0.7      0.7   
+## Residual Std. Error        224.5      206.1     195.5    186.5  
+## F Statistic              2,288.5*** 1,075.9*** 583.7*** 124.8***
+## ================================================================
+## Note:                                *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
+<p>全体としてRD推定値(<code>university</code>の係数推定値）は500よりも大きくなり、とりわけもっともバンド幅が小さいときには500から大きく離れている。</p>
+<p>ここでも、サンプルサイズを100倍(100万人)にするとどうなるか見てみよう。</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1"><span class="co"># データ生成</span></a>
+<a class="sourceLine" id="cb29-2" data-line-number="2"><span class="kw">set.seed</span>(<span class="dv">0</span>)</a>
+<a class="sourceLine" id="cb29-3" data-line-number="3">n &lt;-<span class="st"> </span><span class="dv">1000000</span></a>
+<a class="sourceLine" id="cb29-4" data-line-number="4">ability &lt;-<span class="st"> </span><span class="kw">runif</span>(n, <span class="dt">min =</span> <span class="dv">0</span>, <span class="dt">max =</span> <span class="dv">100</span>)</a>
+<a class="sourceLine" id="cb29-5" data-line-number="5">df &lt;-<span class="st"> </span><span class="kw">tibble</span>(<span class="dt">ID =</span> <span class="dv">1</span><span class="op">:</span>n, ability)</a>
+<a class="sourceLine" id="cb29-6" data-line-number="6">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">score =</span> <span class="dv">30</span> <span class="op">*</span><span class="st"> </span><span class="kw">log10</span>(ability) <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dt">mean =</span> <span class="dv">115</span>, <span class="dt">sd =</span> <span class="dv">10</span>))</a>
+<a class="sourceLine" id="cb29-7" data-line-number="7">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">university =</span> <span class="kw">case_when</span>(score <span class="op">&gt;=</span><span class="st"> </span><span class="dv">180</span> <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="ot">TRUE</span> <span class="op">~</span><span class="st"> </span><span class="dv">0</span>))</a>
+<a class="sourceLine" id="cb29-8" data-line-number="8">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">income =</span> <span class="dv">200</span> <span class="op">+</span><span class="st"> </span><span class="dv">10</span><span class="op">*</span>ability <span class="op">+</span><span class="st"> </span><span class="dv">500</span><span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">rnorm</span>(n, <span class="dt">sd =</span> <span class="dv">50</span>))</a>
+<a class="sourceLine" id="cb29-9" data-line-number="9"></a>
+<a class="sourceLine" id="cb29-10" data-line-number="10"><span class="co">#割当変数score_gapの作成</span></a>
+<a class="sourceLine" id="cb29-11" data-line-number="11">df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">score_gap =</span> score <span class="op">-</span><span class="st"> </span><span class="dv">180</span>)</a>
+<a class="sourceLine" id="cb29-12" data-line-number="12"></a>
+<a class="sourceLine" id="cb29-13" data-line-number="13"><span class="co"># バンド幅=50</span></a>
+<a class="sourceLine" id="cb29-14" data-line-number="14">band30_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">30</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">30</span>) </a>
+<a class="sourceLine" id="cb29-15" data-line-number="15">band30_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st">  </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb29-16" data-line-number="16"><span class="st">              </span>score_gap<span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>)<span class="op">*</span>university, <span class="dt">data =</span> band30_df) </a>
+<a class="sourceLine" id="cb29-17" data-line-number="17"></a>
+<a class="sourceLine" id="cb29-18" data-line-number="18"><span class="co"># バンド幅=10</span></a>
+<a class="sourceLine" id="cb29-19" data-line-number="19">band10_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">10</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">10</span>) </a>
+<a class="sourceLine" id="cb29-20" data-line-number="20">band10_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st">  </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb29-21" data-line-number="21"><span class="st">              </span>score_gap<span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>)<span class="op">*</span>university, <span class="dt">data =</span> band10_df)</a>
+<a class="sourceLine" id="cb29-22" data-line-number="22"></a>
+<a class="sourceLine" id="cb29-23" data-line-number="23"><span class="co"># バンド幅=5</span></a>
+<a class="sourceLine" id="cb29-24" data-line-number="24">band5_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">5</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">5</span>) </a>
+<a class="sourceLine" id="cb29-25" data-line-number="25">band5_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st">  </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb29-26" data-line-number="26"><span class="st">              </span>score_gap<span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>)<span class="op">*</span>university, <span class="dt">data =</span> band5_df)</a>
+<a class="sourceLine" id="cb29-27" data-line-number="27"></a>
+<a class="sourceLine" id="cb29-28" data-line-number="28"><span class="co"># バンド幅=1</span></a>
+<a class="sourceLine" id="cb29-29" data-line-number="29">band1_df &lt;-<span class="st"> </span>df <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">-</span><span class="dv">1</span> <span class="op">&lt;=</span><span class="st"> </span>score_gap <span class="op">&amp;</span><span class="st"> </span>score_gap <span class="op">&lt;</span><span class="st"> </span><span class="dv">1</span>) </a>
+<a class="sourceLine" id="cb29-30" data-line-number="30">band1_RD &lt;-<span class="st"> </span><span class="kw">lm</span>(income <span class="op">~</span><span class="st">  </span>university <span class="op">+</span><span class="st"> </span>score_gap <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>) <span class="op">+</span><span class="st">  </span></a>
+<a class="sourceLine" id="cb29-31" data-line-number="31"><span class="st">              </span>score_gap<span class="op">*</span>university <span class="op">+</span><span class="st"> </span><span class="kw">I</span>(score_gap<span class="op">^</span><span class="dv">2</span>)<span class="op">*</span>university, <span class="dt">data =</span> band1_df)</a>
+<a class="sourceLine" id="cb29-32" data-line-number="32"></a>
+<a class="sourceLine" id="cb29-33" data-line-number="33"><span class="kw">stargazer</span>(band30_RD, band10_RD, band5_RD, band1_RD, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>,  <span class="dt">digits =</span> <span class="dv">1</span>, <span class="dt">df =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## 
+## =========================================================================
+##                                        Dependent variable:               
+##                          ------------------------------------------------
+##                                               income                     
+##                              (1)          (2)         (3)         (4)    
+## -------------------------------------------------------------------------
+## university                 496.5***    498.7***    496.6***    506.0***  
+##                             (1.6)        (2.3)       (3.1)       (6.7)   
+##                                                                          
+## score_gap                   8.0***      7.9***      11.6***      -15.4   
+##                             (0.1)        (0.6)       (1.8)      (21.5)   
+##                                                                          
+## I(score_gap2)              -0.2***      -0.2***       0.5        -14.5   
+##                            (0.004)       (0.1)       (0.3)      (20.7)   
+##                                                                          
+## university:score_gap         -0.7        -1.2       -6.4**       12.1    
+##                             (0.4)        (1.1)       (2.9)      (31.0)   
+##                                                                          
+## university:I(score_gap2)    0.1***        0.1        -0.3        23.5    
+##                             (0.02)       (0.1)       (0.6)      (30.1)   
+##                                                                          
+## Constant                   927.4***    926.3***    929.7***    921.3***  
+##                             (0.9)        (1.5)       (2.1)       (4.7)   
+##                                                                          
+## -------------------------------------------------------------------------
+## Observations               804,974      313,249     155,905     31,170   
+## R2                           0.6          0.6         0.6         0.6    
+## Adjusted R2                  0.6          0.6         0.6         0.6    
+## Residual Std. Error         222.8        206.7       200.2       197.1   
+## F Statistic              220,962.3*** 99,613.5*** 52,936.3*** 10,192.8***
+## =========================================================================
+## Note:                                         *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
+<p>どの推定値も500にかなり近くなる。</p>
 </div>
 </div>
 <div class="section level1">
-<h1><span class="header-section-number">4</span> 参考文献</h1>
-<p>安藤道人（2015) 「<a href="https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf">多重回帰分析と回帰不連続デザイン</a>」 『日本労働研究雑誌』 No.657 pp.12-13 安藤道人「計量経済学２」「計量経済特論２」の「回帰不連続デザイン」の講義資料 ]</p>
+<h1><span class="header-section-number">4</span> 補足</h1>
+<p>上記の一連の分析からもわかるように、RD推定値は、設定としてRDデザインの適用がふさわしい場合においても、サンプルサイズ、バンド幅、多項式回帰モデルの設定などによって結果が大きくかわりうる。</p>
+<p>RD推定の最適な方法については様々な専門的議論がなされ、Rのパッケージも提供されている（{rdrobust}パッケージなど）。</p>
+<p>ただし上記の方法で、<code>lm</code>関数を使って基本的なRD推定を行うことが可能であるし、この作業によって、何をどう分析しているのかを理解することは重要である。</p>
+<p>また標準誤差についても、ここでは修正しなかったが、ロバスト標準誤差に置き換えるほうが望ましい。</p>
+</div>
+<div class="section level1">
+<h1><span class="header-section-number">5</span> 参考文献</h1>
+<p>安藤道人（2015) 「<a href="https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf">多重回帰分析と回帰不連続デザイン</a>」 『日本労働研究雑誌』 No.657 pp.12-13</p>
+<p>安藤道人「計量経済学２」あるいは「計量経済特論２」の「回帰不連続デザイン」の<a href="https://sites.google.com/site/michihito7ando/lectures">講義資料</a></p>
 </div>
 
 

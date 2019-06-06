@@ -161,7 +161,7 @@ stargazer(reg1, reg2, type = "text")
 
 したがって、同様のデータ生成と回帰分析を何百回・何千回と実施すれば、`university`の係数のOLS推定値は500(万円)を中心に正規分布するはずである。これを実際に施行してみるのが、モンテカルロ・シミュレーションである。
 
-## モンテカルロ・シミュレーショの実施
+## モンテカルロ・シミュレーションの実行
 
 下記では、上記のデータ生成と回帰分析(`reg2`)をループによって1000回繰り返し、その結果を保存する。
 
@@ -316,7 +316,7 @@ stargazer(linear_RD, secondpoly_RD, thirdpoly_RD, fourthpoly_RD, type = "text", 
 
 ## 局所線形RD
 
-もう一つの考え方として、閾値から遠ざかるほど、閾値でのジャンプの大きさを測るには不必要な情報となる。したがって、線形モデルでのRDを使いつつ、推定に用いるサンプルを閾値近傍のものに限定すればよいのではないかと考える。
+もう一つの考え方として、閾値から遠ざかるほど、閾値でのジャンプの大きさを測るには不必要な情報となる。したがって、線形モデルでのRDを使いつつ、推定に用いるサンプルを閾値近傍の局所的（local)なものに限定すればよいのではないかと考える。
 
 この考え方に従って、閾値前後のバンド幅(bandwidth)を設定し、そのバンド幅の内部のサンプルだけを使って線形RDを行う。
 
@@ -345,7 +345,7 @@ stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, 
 
 一般的に、RD推定は、閾値前後のサンプルサイズが十分に大きくないと推定結果は不安定になりがちである。一方で、サンプルサイズを確保するために閾値を大きくするとバイアスが生じる可能性が高くなり、閾値を大きくすることによるバイアスを高次多項式によってコントロールしようとすると多項式により推定結果は不安定になる。
 
-ためしに以下では、サンプルサイズを100倍すなわちn=1000,000にして局所線形RDを推定しなおした結果である。
+ためしに以下では、サンプルサイズを100倍すなわちn=1000,000にして局所線形RDを推定してみる。
 
 
 ```{r}
@@ -357,17 +357,22 @@ df <- tibble(ID = 1:n, ability)
 df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
 df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
 df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
 #割当変数score_gapの作成
 df <- df %>% mutate(score_gap = score - 180)
+
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
 band30_RD <- lm(income ~ university + score_gap + score_gap*university, data = band30_df) 
+
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
 band10_RD <- lm(income ~ university + score_gap + score_gap*university, data = band10_df) 
+
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
 band5_RD <- lm(income ~ university + score_gap + score_gap*university, data = band5_df) 
+
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
 band1_RD <- lm(income ~ university + score_gap + score_gap*university, data = band1_df) 
@@ -377,13 +382,103 @@ stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, 
 
 バンド幅50だと少し下方バイアスがあるように見えるが、バンド幅を10以下にすると、ほぼ500になる。
 
-なお、RD推定の最適な方法については様々な専門的議論がなされ、Rのパッケージも提供されている（{rdrobust}パッケージなど）。ただ、上記の方法で、`lm`関数を使って基本的なRD推定を行うことが可能である。
+
+## 局所多項式RD
+
+サンプルを閾値近傍のものに限定した局所的な分析と多項式（高次元）回帰モデルを組み合わせることもできる。ただし、局所回帰と高次元回帰モデルを組み合わせると標準誤差が大きく傾向があるので、ここでは二次多項式回帰のみを用いてみる。
+
+```{r}
+# データ生成
+set.seed(0)
+n <- 10000
+ability <- runif(n, min = 0, max = 100)
+df <- tibble(ID = 1:n, ability)
+df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
+#割当変数score_gapの作成
+df <- df %>% mutate(score_gap = score - 180)
+
+# バンド幅=50
+band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
+band30_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = band30_df) 
+
+# バンド幅=10
+band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
+band10_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = band10_df)
+
+# バンド幅=5
+band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
+band5_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = band5_df)
+
+# バンド幅=1
+band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
+band1_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = band1_df)
+
+stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
+```
+
+全体としてRD推定値(`university`の係数推定値）は500よりも大きくなり、とりわけもっともバンド幅が小さいときには500から大きく離れている。
+
+ここでも、サンプルサイズを100倍(100万人)にするとどうなるか見てみよう。
+
+```{r}
+# データ生成
+set.seed(0)
+n <- 1000000
+ability <- runif(n, min = 0, max = 100)
+df <- tibble(ID = 1:n, ability)
+df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
+#割当変数score_gapの作成
+df <- df %>% mutate(score_gap = score - 180)
+
+# バンド幅=50
+band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
+band30_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = band30_df) 
+
+# バンド幅=10
+band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
+band10_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = band10_df)
+
+# バンド幅=5
+band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
+band5_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = band5_df)
+
+# バンド幅=1
+band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
+band1_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
+              score_gap*university + I(score_gap^2)*university, data = band1_df)
+
+stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
+```
+
+どの推定値も500にかなり近くなる。
+
+# 補足
+
+上記の一連の分析からもわかるように、RD推定値は、設定としてRDデザインの適用がふさわしい場合においても、サンプルサイズ、バンド幅、多項式回帰モデルの設定などによって結果が大きくかわりうる。
+
+RD推定の最適な方法については様々な専門的議論がなされ、Rのパッケージも提供されている（{rdrobust}パッケージなど）。
+
+ただし上記の方法で、`lm`関数を使って基本的なRD推定を行うことが可能であるし、この作業によって、何をどう分析しているのかを理解することは重要である。
 
 また標準誤差についても、ここでは修正しなかったが、ロバスト標準誤差に置き換えるほうが望ましい。
 
 # 参考文献
 
-安藤道人（2015) 「[多重回帰分析と回帰不連続デザイン](https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf)」 『日本労働研究雑誌』 No.657 pp.12-13 
-安藤道人「計量経済学２」「計量経済特論２」の「回帰不連続デザイン」の講義資料
-]
+安藤道人（2015) 「[多重回帰分析と回帰不連続デザイン](https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf)」 『日本労働研究雑誌』 No.657 pp.12-13
+
+安藤道人「計量経済学２」あるいは「計量経済特論２」の「回帰不連続デザイン」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)
+
 
