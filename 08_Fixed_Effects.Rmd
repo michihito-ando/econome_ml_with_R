@@ -211,6 +211,7 @@ Grunfeld %>% ggplot(aes(x = capital, y = inv, colour = as.factor(firm))) + geom_
 # 企業価値(X1)と 資本ストック(X2)
 Grunfeld %>% ggplot(aes(x = value, y = capital, colour = as.factor(firm))) + geom_point()
 ```
+
 ## 固定効果モデルの推定
 
 投資総額を企業価値、資本ストック、個体固定効果、時間固定効果に回帰する。
