@@ -68,7 +68,7 @@ $$
 以下のような個体固定効果モデルを考える。
 
 $$
-Y_{it} = \beta_0 + \beta_1 X_{it} +\theta_i + u_{it}
+Y_{it} = \beta_0 + \beta_1 X_{it} +\theta_i + \varepsilon_{it}
 $$
 
 パネルデータを用いることができる場合、以下の３つの方法によって個体固定効果（entity fixed effects）$\theta_i$を除去することができる。
@@ -95,7 +95,7 @@ $$
 最小二乗ダミー変数推定（Least Squares Dummy Variables (LSDV) 推定）とも呼ばれる。
 
 $$
-Y_{it} = \beta_0 + \beta_1 X_{it} + \gamma_2 D2_i + \cdots + \gamma_n Dn_i + u_{it}  \\
+Y_{it} = \beta_0 + \beta_1 X_{it} + \gamma_2 D2_i + \cdots + \gamma_n Dn_i + \varepsilon_{it}  \\
   \text{where } D2_i = 
   \begin{cases}
   1 & \text{for } i = 2\\
@@ -111,11 +111,11 @@ $$
 
 $$
 \begin{align}
-\tilde{Y}_{it} &= \beta_1 \tilde{X}_{it} + \tilde{u}_{it}, \\
+\tilde{Y}_{it} &= \beta_1 \tilde{X}_{it} + \tilde{\varepsilon}_{it}, \\
 \text{where }
 \tilde{Y}_{it} &= Y_{it} - \bar{Y}_i, \hspace{1em}   \bar{Y}_i = \frac{1}{T} \sum^T_{t=1} Y_{it}\\
 \tilde{X}_{it} &= X_{it} - \bar{X}_i, \hspace{1em} \bar{X}_i  = \frac{1}{T} \sum^T_{t=1} X_{it}\\
-\tilde{u}_{it} &= u_{it}- \bar{u}_i, \hspace{1em} \bar{u}_i = \frac{1}{T} \sum_{t=1}^T u_{it}
+\tilde{\varepsilon}_{it} &= \varepsilon_{it}- \bar{\varepsilon}_i, \hspace{1em} \bar{\varepsilon}_i = \frac{1}{T} \sum_{t=1}^T \varepsilon_{it}
 \end{align}
 $$
 
@@ -131,7 +131,7 @@ $$
 なお，時間の固定効果（time fixed effects）$\pi_t$を除去したい場合も似たような手法で分析できる。
 
 $$
-Y_{it} = \beta_0 + \beta_1 X_{it} +\pi_t + u_{it}
+Y_{it} = \beta_0 + \beta_1 X_{it} +\pi_t + \varepsilon_{it}
 $$
 
 1. ”$T-1$個のダミー説明変数”を用いたOLS推定
@@ -143,7 +143,7 @@ $$
 two-way固定効果モデルあるいは個体と時間の固定効果モデル（entity and time fixed effects model）は、以下のように表される。
 
 $$
-Y_{it} =\beta_1 X_{it} +\theta_i + \pi_t + u_{it}
+Y_{it} =\beta_1 X_{it} +\theta_i + \pi_t + \varepsilon_{it}
 $$
 
 個体の固定効果$\theta_i$と時間の固定効果$\pi_t$の両方を除去したい場合は、それぞれの推定方法の組み合わせになる。
@@ -217,7 +217,7 @@ Grunfeld %>% ggplot(aes(x = value, y = capital, colour = as.factor(firm))) + geo
 投資総額を企業価値、資本ストック、個体固定効果、時間固定効果に回帰する。
 
 $$
-Y_{it} =\beta_1 X1_{it} + \beta_2 X2_{it} +\theta_i + \pi_t + u_{it}
+Y_{it} =\beta_1 X1_{it} + \beta_2 X2_{it} +\theta_i + \pi_t + \varepsilon_{it}
 $$
 
 
@@ -234,11 +234,12 @@ panel_df <- pdata.frame(original_df, index = c("firm", "year")) # 個体=firm、
 ```{r}
 # lmによるpooled OLS
 pool_lm <- lm(inv ~ value + capital, data = panel_df)
-summary(pool_lm)
 
 # plmによるpooled OLS
 pool_plm <- plm(inv ~ value + capital, data = panel_df, model = "pooling")
-summary(pool_plm)
+
+#stargazer
+stargazer(pool_lm, pool_plm, type = "text", digits = 3, df = FALSE, column.labels = c("Pooled lm", "Pooled plm"), model.names = F, model.numbers = F)
 ```
 
 次に、固定効果として個体固定効果のみを含むoneway固定効果モデルを推定する。
@@ -247,13 +248,14 @@ summary(pool_plm)
 # lmによる固定効果モデル推定(個体固定効果のみ）
 # firmは因子なので、factor(firm)と書くと、ダミー変数として認識される。
 fe_oneway_lm <- lm(inv ~ value + capital + factor(firm), data = panel_df)
-summary(fe_oneway_lm)
 
 # plmによる固定効果モデル推定（個体固定効果のみ）
 # yearも因子なので、factor(year)と書くと、ダミー変数として認識される。
 fe_oneway_plm <- plm(inv ~ value + capital, 
                      data = panel_df, model = "within") # within=固定効果モデル
-summary(fe_oneway_plm)
+
+#stargazer
+stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, type = "text", digits = 3, df = FALSE, column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm"), model.names = F, model.numbers = F)
 ```
 
 最後に、時間固定効果も含むtwoway固定効果モデルを推定する。
@@ -261,27 +263,16 @@ summary(fe_oneway_plm)
 ```{r}
 # lm関数による固定効果モデル推定(個体固定効果と時間固定効果)
 fe_twoway_lm <- lm(inv ~ value + capital + factor(firm) + factor(year), data = panel_df)
-summary(fe_twoway_lm)
 
 # plmの固定効果モデル推定（個体固定効果と時間固定効果）
 fe_twoway_plm <- plm(inv ~ value + capital,
           data = Grunfeld, model = "within", effect = "twoways") # within=固定効果モデル
-summary(fe_twoway_plm)
+
+#stargazer
+stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, fe_twoway_lm, fe_twoway_plm, type = "text", digits = 3, df = FALSE, column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm", "Twoway lm", "Twoway plm"), model.names = F, model.numbers = F)
+
 ```
 
-上記の結果をまとめて`stargazer`で表示する。
-
-```{r}
-# Stargazerで表にする。幅を狭くするため、df=FALSEとする。モデル名もつける
-stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm,
-          fe_twoway_lm, fe_twoway_plm, type = "text", digits = 3, df = FALSE,
-          column.labels = c("Pooled lm","Pooled plm","Oneway lm","Oneway plm","Twoway lm","Twoway plm"),
-          model.names = F, model.numbers = F)
-
-stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm,
-          fe_twoway_lm, fe_twoway_plm, type = "text", digits = 3, df = FALSE,
-          model.names = F, model.numbers = F)
-```
 
 `lm`を用いても`plm`を用いても`value`および`capital`の係数推定値および標準誤差は全く同じとなる。しかし、`lm`と個体ダミー・時間ダミーを用いた推定の場合、個体固定効果や時間固定効果の値が推定される。それぞれの個体固定効果はfirm 1との差を、それぞれの時間固定効果は1935年からの差を推定している。
 
@@ -292,7 +283,7 @@ stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm,
 fe_twoway_plm2 <- plm(inv ~ value + capital + factor(year),
           data = Grunfeld, model = "within") # within =固定効果モデル
 
-#stargazerで比べる。
+#stargazerで3つのtwoway FEを比べる。
 stargazer(fe_twoway_lm, fe_twoway_plm, fe_twoway_plm2, type = "text", digits = 3, df = FALSE,
           column.labels = c("Twoway lm", "Twoway plm", "Twoway plm2"), 
           model.names = F, model.numbers = F)

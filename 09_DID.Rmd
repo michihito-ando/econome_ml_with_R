@@ -1,0 +1,264 @@
+---
+title: "Rで学ぶ計量経済学と機械学習 9<br> <br> 計量経済学5：差の差(DID)法"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    fig_height: 4          # 画像サイズのデフォルトを設定
+    fig_width: 6           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+```
+
+# データの生成
+
+パネルデータ分析の応用として、**差の差(difference in differences:DID)法**がある。
+
+詳しい解説は参考文献などに譲るが、ここではもっとも単純なDID（二群・二期間DID)の推定を行う。
+
+これまでの事例と同樣、能力が均等に分布した個体の所得をアウトカム変数とした分析を行う。処置変数として、職業訓練(`training`)を想定する。
+
+まず、能力が1~100まで均等に分布した個体を1万人生成させる。
+
+```{r}
+# 事前準備 --------------------
+# パッケージの読み込み
+library(tidyverse)
+library(plm)
+library(stargazer)
+
+# 乱数の種を固定
+set.seed(0)
+
+# データの生成 ----------------
+n <- 10000
+# 能力は0から100まで均等に分布
+ability <- runif(n, min = 0, max = 100)
+
+# IDとabilityをデータフレームに格納する
+df <- tibble(ID = 1:n, ability)
+```
+
+二期間DIDなので、１年目と２年目のDGPをそれぞれ作成する。1年目は、誰も職業訓練を受けず、所得は、定数項、能力、誤差項のみによって決まるものとする。
+
+```{r}
+# 1年目
+
+## year = 0を加える
+df0 <- df %>% mutate(year = 0) 
+
+##　職業訓練フラグ
+##　一年目は誰も職業訓練をうけない
+df0 <- df0 %>% mutate(training = 0)
+
+#所得 incomeを加える
+df0 <- df0 %>% mutate(income = 200 + 10*ability + rnorm(n, mean = 0, sd = 50))
+```
+
+2年目は、能力を部分的に反映した適正試験が 180 点以上であれば職業訓練(`training`)を受けられるとし、職業訓練を受けた個体は500万円、所得が上乗せされるものとする。ここで、職業訓練を受けた個体が処置群、受けなかった個体が対照群となる。
+
+また、年ショックとして、`n(mean=100、sd=25)`をすべての個体に加える。
+
+```{r}
+# 2年目
+
+## year = 1　を加える
+df1 <- df %>% mutate(year = 1)
+
+## 職業訓練フラグ
+## 条件：能力を部分的に反映した適正試験が 180 点以上であれば職業訓練を受けられる
+## 10%くらいが該当するように恣意的に設定
+## abilityとscoreの関係は非線形なものとする
+## 今回もmutate()とcase_when()を使用して作成
+
+#適正試験の点数 score
+df1 <- df1 %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+#職業訓練ダミー training (score 180点以上=1)
+df1 <- df1 %>% mutate(training = case_when(score >= 180 ~ 1, TRUE ~ 0))
+#所得 income: 年ショックとしてn(100,25)も追加
+df1 <- df1 %>% mutate(income = 200 + 10*ability + 500*training + rnorm(n, mean = 100, sd = 25) + rnorm(n, mean = 0, sd = 50))
+```
+
+最後に、1年目と2年目のデータを結合し、パネルデータとして認識させる。
+
+```{r}
+# 1年目と2年目をくっつける。
+df_binded <- bind_rows(df0, df1)
+head(df_binded)
+```
+
+# 差の差(DID)推定
+
+## グラフを用いた説明
+
+上記のデータを用いてDID推定を実際に行う前に、グラフを使ってDID推定を説明しよう。
+まず、処置前と処置後、処置群と対照群について、アウトカム変数(`income`)の４つの平均値を作成する。
+
+今回の場合、処置前と処置後を区別する時間ダミー変数(`year`)はすでにあるが、処置群と対照群を区別する処置群ダミー変数はないため、作成する必要がある。
+
+なお、`training`は処置群ダミーではなく処置ダミーであり、$t=0$のときには全員`training`$=0$であることに注意。
+
+
+```{r}
+#処置群ダミーの作成
+
+##　処置群の抽出
+df_treated <- df_binded %>% filter(training == 1) %>% select(ID)
+
+##　処置群ダミーの作成
+df_treated <- df_treated %>% mutate(treated = 1)
+
+## df_panelにdf_treatedを結合: dplyr::left_join(a, b, by = "x1") bをaに対応付け、結合する(aが全て残る)
+df_panel <- left_join(df_binded, df_treated, by ="ID")
+
+# treated(処置群ダミー）のNAを0をreplace関数を使って置き換える
+df_panel <- df_panel %>% mutate(treated = replace(treated, which(is.na(treated)), 0))
+
+#以下のような方法など、他の置き換える方法がある。
+# df_panel <- df_panel  %>% mutate_at(vars(treated), funs(ifelse(is.na(.),0,.)))
+# df_panel$treated[is.na(df_panel$treated)] <- 0
+```
+
+
+次に、`treated`と`year`のグループごとに、アウトカム変数(`income`)の４つの平均値を作成する。
+
+```{r}
+# group_byでグループ分けし、summarise_eachですべての列（変数）でグループごとに平均値を計算
+df_panel_mean <- df_panel %>% group_by(treated, year) %>% #グループわけ
+  dplyr::summarise_each(list(mean)) %>%  # すべての列（変数）でグループごとに平均値を計算
+  ungroup() # グループ分けを解除
+```
+
+この４つの平均値を図示すると、以下のようになる。
+
+```{r}
+
+# 処置群と対照群のラベルづけ
+df_panel_mean <- df_panel_mean %>% mutate(treated_label =
+                      case_when(treated == 1 ~ "Treated", treated == 0 ~ "Control"))
+
+# A, B, C, Dのラベルづけ（図に挿入）
+df_panel_mean <- df_panel_mean %>% mutate(point_label =
+                      case_when(treated == 1 & year == 1 ~ "A", 
+                                treated == 1 & year == 0 ~ "B", 
+                                treated == 0 & year == 1 ~ "C",
+                                treated == 0 & year == 0 ~ "D"))
+# 図の作成
+g <- df_panel_mean %>% ggplot(aes(x = year, y = income, color = treated_label)) +
+  geom_point() + # 散布図
+  geom_line() +  # 直線
+  labs(title = "Income by year and group") + #タイトル
+  scale_x_continuous(breaks = c(0,1)) +　# X軸は0と1のみ
+  geom_text(aes(label = point_label), vjust = -0.3) #A,B,C,Dの文字を点の0.4上に表示。
+
+# 図の表示  
+g
+```
+
+ここで、職業訓練(`training`)の平均効果は、
+
+$$
+\hat{\beta} = (Y^A-Y^B) - (Y^C-Y^D)
+$$
+
+と推定できる。つまり、処置群(`Treated`)における`income`の平均値の伸び（=職業訓練効果+年ショック）から、対照群(`Control`)における`income`の平均値の伸び（=年ショック）を引いたものが、職業訓練の平均効果と推定される。
+
+## 回帰モデルを用いたDID推定
+
+### 回帰モデル
+
+上記のような二群(処置群と対照群）・二期間($t=0,1$)のDID推定は、以下の回帰式を用いて推定できる。
+
+$$
+Y_{it} = \mu + \theta D_i + \pi T_t + \beta D_iT_t + \varepsilon_{it} \ \ \ \ \  (1)
+$$
+ここで、$D_i$は処置群ダミー、$T_t$は時間ダミー($t=0$だと0、$t=1$だと1)であり、DIDパラメータ（処置群に対する平均処置効果:ATET)は$\beta$である。
+
+また、この式の二年間の差分（一階の階差）をとると、以下のように表すこともできる。
+
+$$
+\Delta Y_i =  \pi + \beta D_i + \Delta \varepsilon_{it}  \ \ \ \ \ (2)
+$$
+
+
+(2)式の$\Delta Y_i$は`income`の一階の階差変数であり、以下のように作成できる。
+
+```{r}
+# incomeのラグ変数および一階の階差変数の作成
+# dplyr::lagとplm::lagの二つがあるためか、dplyr::をつけないとうまくいかなない
+df_panel <- df_panel %>% group_by(ID) %>% # IDでグループ分け
+  mutate(lag_income = dplyr::lag(income, order_by = year)) %>% # lag変数の作成
+  mutate(diff_income = income - lag_income) %>%  # 一階の階差変数の作成
+  ungroup() # グループ分けの解除
+```
+
+### lmを用いた推定
+
+`lm`を用いて、(1)式および(2)式に基づいてDID推定を行う。
+
+
+```{r}
+# DID regression
+
+# pooled OLS:(1)式
+DID_pooled <- lm(income ~ treated + year + treated*year, data = df_panel)
+
+# first-differenced (一階の階差) OLS: (2)式
+DID_FD <- lm(diff_income ~ treated, data = df_panel)
+
+# stargazer
+stargazer(DID_pooled, DID_FD, type = "text", digits = 3, df = FALSE,
+          column.labels = c("DID (Pooled data)","DID (FD data)"),
+          model.names = F, model.numbers = F)
+
+```
+
+DID推定値は概ね500近傍となってり、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果$\theta$を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果$\theta_i$を除去しているためである。
+
+### plmを用いた推定
+
+つまり、パネルデータであれば、(1)式の処置群ダミー$\theta D_i$の代わりに、個体ダミーを用いてもよいし、そのほうが標準誤差は小さくなる。（ただし、繰り返しクロスセクションデータを用いたDID推定では個体ダミーは用いることはできない点は留意が必要である。）
+
+この場合、`lm`関数で個体ダミーをn-1個用いて推定してよいが、`plm`関数で個体固定効果モデルを推定すればよい。
+
+
+```{r}
+# df_panelのデータをpanelとして認識
+df_panel <- pdata.frame(df_panel, index = c("ID", "year")) # 個体=firm、時間=yearと認識させたdf
+
+# DID regression
+
+# DID with one-way FE model
+DID_plm1 <- plm(income ~ year + treated*year, data = df_panel, model = "within")
+
+# DID with two-way FE model
+DID_plm2 <- plm(income ~ treated*year, data = df_panel, model = "within", effect = "twoways")
+
+# stargazer
+stargazer(DID_plm1, DID_plm2, type = "text", digits = 3, df = FALSE,
+          column.labels = c("DID (onewayFE)","DID (twowayFE)"),
+          model.names = F, model.numbers = F)
+```
+
+(2)式の一階の階差によるDIDと、推定値と標準誤差は完全に一致している。
+
+# 参考文献
+
+安藤道人「計量経済学２」あるいは「計量経済特論２」の「差の差法」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)

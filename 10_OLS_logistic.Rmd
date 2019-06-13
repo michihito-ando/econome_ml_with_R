@@ -1,6 +1,6 @@
 ---
-title: "機械学習１：線形回帰・ロジスティック回帰"
-author: ""
+title: "Rで学ぶ計量経済学と機械学習 10<br> <br> 機械学習１：線形回帰・ロジスティック回帰"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 date: "`r Sys.Date()`"
 output:
  html_document:
@@ -116,12 +116,12 @@ $$
 
 <!-- 線形回帰では一般的に最小二乗法という手法でパラメータ$\beta_j \hspace{1em} (j = 1,...,p)$を推定する -->
 
-### 誤差関数
+### 残差平方和の最小化
 
-線形回帰でパラメータ$\boldsymbol{\beta}$（$=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_p\end{pmatrix}$）を推定するために多く使われる方法は**最小二乗法**（least squares method）というもので，これは実測値$y_i$と予測値$\hat{y}_i$の**誤差二乗和**（Sum of Squared Error）
+線形回帰でパラメータ$\boldsymbol{\beta}$（$=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_p\end{pmatrix}$）を推定するために多く使われる方法は**最小二乗法**（OLS: ordinary least squares method）というもので，これは実測値$y_i$と予測値$\hat{y}_i$の**残差平方和（残差二乗和）**（RSS:residual sum of squares）
 
 $$
-SSE = \sum_{i=1}^n (y_i - \hat{y}_i)^2
+RSS = \sum_{i=1}^n (y_i - \hat{y}_i)^2
 $$
 
 を最小にするパラメータ
@@ -130,25 +130,23 @@ $$
 $$
 % 定義
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
-\hat{\boldsymbol{\beta}}^{LS} = \argmin_{\boldsymbol{\beta}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
+\hat{\boldsymbol{\beta}}^{LS} = \argmin_{\boldsymbol{b}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
 $$
 
 を採用するというものである。
 
-なお，$\argmin$という記号は「関数の最小値を与える引数」という意味である。$\min$と$\argmin$の関係は次の図のようになっている。
-
-<center><img src="10_OLS_logistic.assets/1552122544346.png" width = 40%></center>
+なお，$\argmin$という記号は「関数の最小値を与える引数」という意味である。
 
 SSEは（パラメータが1つの場合）U字型のカーブを描く関数になる。
 
-最小値が１つであり微分可能なので，推定量$\hat{\boldsymbol{\beta}}^{LS}​$を得るための計算が容易であるという便利な特性をもっている。
+最小値が１つであり微分可能なので，推定量$\hat{\boldsymbol{\beta}}^{OLS}$を得るための計算が容易であるという便利な特性をもっている。
 
 ```{r, echo=F}
 # data 
 x = 3 * rnorm(1000) + 2
 y = 0 * x + rnorm(1000, sd = 3)
 
-# ウェイトを変えながら誤差を計算
+# ウェイトを変えながら残差を計算
 w = -100:100 * 0.1
 for(i in 1:length(w)){
   y_hat = w[i] * x
@@ -167,7 +165,7 @@ library(tidyverse)
 ggplot(data_frame(weight = w, loss = cost_vec),
        aes(x = weight, y = loss))+
   geom_line(color = "SteelBlue")+
-  labs(title = "誤差二乗和（SSE）", y = "誤差ε", x = "パラメータβ")+
+  labs(y = "RSS", x = "パラメータb")+
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -184,10 +182,10 @@ $$
 
 の場合で説明していく。
 
-最小二乗法では，誤差を最小化するようなパラメータ$\beta_j^*$の値を推定するのが目的であり，それはU字型の誤差関数であるSSEの最小値であるので，次の条件（接線の傾きが0であること）を満たすパラメータとなる。
+最小二乗法では，残差平方和(RSS)を最小化するようなパラメータ$\beta_j^*$の値を推定するのが目的であり，それはU字型の関数であるRSSの最小値であるので，次の条件（接線の傾きが0であること）を満たすパラメータとなる。
 
 $$
-\begin{cases}\frac{\partial SSE}{\partial \beta_0} = -2 \sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_i) = 0\\\frac{\partial SSE}{\partial \beta_1} = -2 \sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_i)x_i = 0\end{cases}
+\begin{cases}\frac{\partial SSE}{\partial b_0} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i) = 0\\\frac{\partial SSE}{\partial b_1} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i)x_i = 0\end{cases}
 $$
 
 
@@ -208,7 +206,7 @@ ggplot(sse,
   geom_point(aes(x = sse[sse$loss == min(sse$loss),"weight"][[1]],
                  y = min(sse$loss)),
              color = "orange", size = 2)+
-  labs(title = "最小二乗推定量", y = "誤差ε", x = "パラメータβ")+
+  labs(y = "RSS", x = "パラメータb")+
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -220,8 +218,8 @@ ggplot(sse,
 
 $$
 \begin{align}
-\beta_0 &= \bar{y} - \beta_1 \bar{x}\\
-\beta_1 &= \frac{\sum_{i=1}^n(x_i-\bar{x})(y_i-\bar{y_i})}
+\hat{\beta}_0 &= \bar{y} - \beta_1 \bar{x}\\
+\hat{\beta}_1 &= \frac{\sum_{i=1}^n(x_i-\bar{x})(y_i-\bar{y_i})}
 {\sum_{i=1}^n (x_i - \bar{x})^2}
 \end{align}
 $$
@@ -257,7 +255,8 @@ head(HousePrices)
 - `garage`：ガレージの数
 - `prefer`：都市の近くに立地しているか
 
-機械学習の目的は未知のデータに対する予測性能を高めることであるため，データを学習（パラメータの推定）に使う「学習用データ」と学習に使わず予測性能の試験に使う「テスト用データ」に分割しておく。
+機械学習の目的は未知のデータに対する予測性能を高めることである。
+したがって、データを、学習（パラメータの推定）に使う「**学習用データ**」と、学習に使わず予測性能の試験に使う「**テスト用データ**」に分割しておく。
 
 ```{r}
 # ID列を追加
@@ -309,6 +308,7 @@ $$
 MSE = \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2
 $$
 
+なお、ここでの「**誤差**」とは、$y_i - \hat{y}_i$すなわち観測値と予測値の差であって、統計学や計量経済学でいうところの誤差項($\varepsilon$)とは異なる点に注意されたい。
 
 `{MLmetrics}`パッケージにはMSEのような機械学習で用いる関数が実装されているため，このパッケージをインストールして読み込む
 
@@ -328,7 +328,7 @@ MSE(y_train_true, y_train_pred)
 
 MSEは二乗しているため，非常に値が大きくなってしまう。
 
-MSEの平方根をとることでこの点を修正したものが$RMSE$である。
+MSEの平方根をとることでこの点を修正したものが$RMSE$(root mean squared error)である。
 $$
 RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2}
 $$
@@ -435,12 +435,7 @@ ggplot(df, aes(x = p, y = L))+
 ```
 
 
-
-## 誤差関数
-
-ロジスティック回帰の誤差関数は尤度関数の対数をとり負にした**交差エントロピー誤差関数**（cross-entropy error function）というものを使う。
-
-交差エントロピー誤差は最小二乗法の平均二乗誤差とは異なり「微分してゼロになるパラメータを使う」というアプローチ（解析的に解く方法）はとれないため，**ニュートン・ラフソン法**（Newton-Raphson method）や**勾配降下法**（gradient descent method）を用いて，誤差関数を小さくするように徐々にパラメータを変化させていく計算を繰り返すアプローチをとる（数値計算的に解く）。
+ロジスティック回帰の最尤推定では、**ニュートン・ラフソン法**（Newton-Raphson method）や**勾配降下法**（gradient descent method）などを用いて繰り返し近似計算を行うことによって、パラメータを推定する。
 
 
 ## Rでの実践
