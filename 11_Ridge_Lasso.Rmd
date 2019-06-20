@@ -1,5 +1,5 @@
 ---
-title: "Rで学ぶ計量経済学と機械学習 9<br> <br> 機械学習2：リッジ回帰・Lasso"
+title: "Rで学ぶ計量経済学と機械学習 11<br> <br> 機械学習2：リッジ回帰・Lasso"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 date: "`r Sys.Date()`"
 output:
