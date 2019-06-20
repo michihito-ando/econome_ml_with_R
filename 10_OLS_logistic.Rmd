@@ -118,10 +118,10 @@ $$
 
 ### 残差平方和の最小化
 
-線形回帰でパラメータ$\boldsymbol{\beta}$（$=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_p\end{pmatrix}$）を推定するために多く使われる方法は**最小二乗法**（OLS: ordinary least squares method）というもので，これは実測値$y_i$と予測値$\hat{y}_i$の**残差平方和（残差二乗和）**（RSS:residual sum of squares）
+線形回帰でパラメータ$\boldsymbol{\beta}$（$=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_p\end{pmatrix}$）を推定するために多く使われる方法は**最小二乗法**（OLS: ordinary least squares method）というもので，これは実測値$y_i$と予測値$\hat{y}_i$の**残差平方和（残差二乗和）**（SSR: sum of squared residuals）
 
 $$
-RSS = \sum_{i=1}^n (y_i - \hat{y}_i)^2
+SSR = \sum_{i=1}^n (y_i - \hat{y}_i)^2
 $$
 
 を最小にするパラメータ
@@ -130,14 +130,14 @@ $$
 $$
 % 定義
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
-\hat{\boldsymbol{\beta}}^{LS} = \argmin_{\boldsymbol{b}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
+\hat{\boldsymbol{\beta}}^{OLS} = \argmin_{\boldsymbol{b}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
 $$
 
 を採用するというものである。
 
 なお，$\argmin$という記号は「関数の最小値を与える引数」という意味である。
 
-SSEは（パラメータが1つの場合）U字型のカーブを描く関数になる。
+SSRは（パラメータが1つの場合）U字型のカーブを描く関数になる。
 
 最小値が１つであり微分可能なので，推定量$\hat{\boldsymbol{\beta}}^{OLS}$を得るための計算が容易であるという便利な特性をもっている。
 
@@ -165,7 +165,7 @@ library(tidyverse)
 ggplot(data_frame(weight = w, loss = cost_vec),
        aes(x = weight, y = loss))+
   geom_line(color = "SteelBlue")+
-  labs(y = "RSS", x = "パラメータb")+
+  labs(y = "SSR", x = "パラメータb")+
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -185,7 +185,7 @@ $$
 最小二乗法では，残差平方和(RSS)を最小化するようなパラメータ$\beta_j^*$の値を推定するのが目的であり，それはU字型の関数であるRSSの最小値であるので，次の条件（接線の傾きが0であること）を満たすパラメータとなる。
 
 $$
-\begin{cases}\frac{\partial SSE}{\partial b_0} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i) = 0\\\frac{\partial SSE}{\partial b_1} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i)x_i = 0\end{cases}
+\begin{cases}\frac{\partial SSR}{\partial b_0} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i) = 0\\\frac{\partial SSR}{\partial b_1} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i)x_i = 0\end{cases}
 $$
 
 
@@ -206,7 +206,7 @@ ggplot(sse,
   geom_point(aes(x = sse[sse$loss == min(sse$loss),"weight"][[1]],
                  y = min(sse$loss)),
              color = "orange", size = 2)+
-  labs(y = "RSS", x = "パラメータb")+
+  labs(y = "SSR", x = "パラメータb")+
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
