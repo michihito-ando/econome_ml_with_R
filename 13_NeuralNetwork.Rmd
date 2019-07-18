@@ -303,7 +303,7 @@ test_X <- t(test_features/255)
 
 このデータは次のような28 x 28ピクセルの手書き数字データになっている。
 
-```{r}
+```{r fig.width=4, fig.height=4}
 # 扱っているデータを覗く
 ## 1つ目
 i = 1 # 任意の番号のデータ
@@ -329,6 +329,8 @@ table(train_y)
 
 ディープラーニングを行うには`{mxnet}`パッケージを使用する。インストール方法が少し面倒だが次のように書いてインストールすればよい
 （参考：[mxnetの公式サイト](http://mxnet.incubator.apache.org/versions/master/install/index.html)）。
+
+**注：最新のバージョンのRでは動かないかもしれません。**
 
 ```{r, eval=F}
 # mxnetのインストール
@@ -396,8 +398,11 @@ predicted_labels_test <- max.col(t(pred_test)) - 1
 table(test_y, predicted_labels_test)
 ```
 
+# 参考文献
 
+大関真之（2016）『機械学習入門 ボルツマン機械学習から深層学習まで』，オーム社.
 
+瀧雅人（2017）『これならわかる深層学習入門: 機械学習スタートアップシリーズ』，講談社.
 
 
 
