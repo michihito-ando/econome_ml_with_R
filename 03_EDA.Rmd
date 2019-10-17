@@ -63,8 +63,10 @@ library(tidyverse) # ggplot2もtidyverseパッケージに含まれている
 
 # 棒グラフをつくり，gに代入する
 g <- ggplot(df, aes(x = クラス)) + # dfのデータでキャンバスを作る
-  geom_bar() # キャンバスに棒グラフgeom_bar()を重ねる
-g # 表示
+  geom_bar() + # キャンバスに棒グラフgeom_bar()を重ねる
+  xlab("Class") # X軸タイトルの変更（R Studio Cloudでは日本語文字化けするため）
+
+  g # 表示
 ```
 
 - 参考：[ggplot2のチートシート](https://github.com/rstudio/cheatsheets/raw/master/translations/japanese/ggplot2-cheatsheet-2.0-ja.pdf)
@@ -215,7 +217,8 @@ cor(df[,3:5])
 ```{r}
 # ヒストグラム
 ggplot(df, aes(x = 英語)) +
-  geom_histogram(bins = 10) # binsは棒の数。指定しない場合はbins=30になる
+  geom_histogram(bins = 10) + #指定しない場合はbins binsは棒の数。=30になる
+  xlab("English") #X軸タイトルを変更(R Studio cloudは日本語文字化けするため)
 ```
 
 R本体の機能でヒストグラムを描く場合は`hist()`を使う
@@ -229,8 +232,9 @@ hist(x = df[["数学"]])
 
 ```{r}
 # ggplotの棒グラフ
-ggplot(df, aes(x = クラス))+
-  geom_bar()
+ggplot(df, aes(x = クラス)) +
+  geom_bar() +
+  xlab("Class") #X軸タイトルを変更
 ```
 
 
@@ -243,10 +247,21 @@ ggplot(df, aes(x = クラス))+
 そして散布図を描く場合は`geom_point()`を`+`でつなげればよい
 
 ```{r}
-ggplot(df, aes(x = 英語, y = 国語))+
-  geom_point()
+ggplot(df, aes(x = 英語, y = 国語)) +
+  geom_point() +
+  xlab("English") + #X軸タイトルを変更
+  ylab("Japanese") #y軸タイトルを変更
 ```
 
+回帰直線を加えるには、`stat_smooth()`を使う。
+
+```{r}
+ggplot(df, aes(x = 英語, y = 国語)) +
+  geom_point() +
+  stat_smooth(method = "lm", se =FALSE, colour = "blue") + # lm:最小二乗法、信頼区間は表示させない(FALSE)、色は青(blue)
+  xlab("English") + #X軸タイトルを変更
+  ylab("Japanese") #y軸タイトルを変更
+```
 
 ## 折れ線グラフ
 
@@ -257,7 +272,10 @@ Excelで言うところの「マーカー付き折れ線グラフ」にしたい
 ```{r}
 ggplot(df, aes(x = 英語, y = 国語))+
   geom_line()+ # 折れ線
-  geom_point() # マーカー
+  geom_point() + # マーカー
+  xlab("English") +
+  ylab("Japanese")
+
 ```
 
 
@@ -288,7 +306,10 @@ ggplot(longley, aes(x = Year, y = GNP))+
 ```{r}
 g <- ggplot(df, aes(x = クラス, y = 国語))+
   geom_boxplot()+   # 箱ひげ図
-  labs(title = "クラスごとの国語の点数の分布")
+  labs(title = "クラスごとの国語の点数の分布") +
+  xlab("Class") +
+  ylab("Japanese")
+
 
 ggplotly(g)
 ```
@@ -300,7 +321,9 @@ ggplotly(g)
 ```{r}
 g <- ggplot(df, aes(x = クラス, y = 国語))+
   geom_violin() + # バイオリンプロット
-  labs(title = "クラスごとの国語の点数の分布")
+  labs(title = "クラスごとの国語の点数の分布") +
+  xlab("Class") +
+  ylab("Japanese")
 
 ggplotly(g)
 ```
@@ -311,7 +334,9 @@ ggplotly(g)
 g <- ggplot(df, aes(x = クラス, y = 国語)) +
   geom_violin() +     # バイオリンプロット。これを先に描く。
   geom_boxplot(width = 0.3) +       # 箱ひげ図を上書き。幅を0.3に指定
-  labs(title = "クラスごとの国語の点数の分布")
+  labs(title = "クラスごとの国語の点数の分布") +
+  xlab("Class") +
+  ylab("Japanese")
 
 g       #ggplotly(g)だと箱ひげ図が表示されない
 
@@ -329,7 +354,10 @@ ggsave(plot = g, file = "violin_box.png")    # violin_box.pngとして保存さ�
 ```{r}
 ggplot(df, aes(x = 英語, y = 国語, fill = クラス, color = クラス))+
   geom_point()+
-  labs(title = "英語と国語の得点の散布図をクラスごとに塗り分けたもの")
+  labs(title = "英語と国語の得点の散布図をクラスごとに塗り分けたもの") +
+  xlab("English") +
+  ylab("Japanese")
+
 ```
 
 
