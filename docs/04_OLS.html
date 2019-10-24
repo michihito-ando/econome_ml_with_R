@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2019-05-09" />
+<meta name="date" content="2019-10-25" />
 
 <title>Rで学ぶ計量経済学と機械学習 4    回帰分析</title>
 
@@ -1267,7 +1267,7 @@ window.buildTabsets = function(tocID) {
 <style type="text/css" data-origin="pandoc">
 a.sourceLine { display: inline-block; line-height: 1.25; }
 a.sourceLine { pointer-events: none; color: inherit; text-decoration: inherit; }
-a.sourceLine:empty { height: 1.2em; position: absolute; }
+a.sourceLine:empty { height: 1.2em; }
 .sourceCode { overflow: visible; }
 code.sourceCode { white-space: pre; position: relative; }
 div.sourceCode { margin: 1em 0; }
@@ -1280,13 +1280,11 @@ code.sourceCode { white-space: pre-wrap; }
 a.sourceLine { text-indent: -1em; padding-left: 1em; }
 }
 pre.numberSource a.sourceLine
-  { position: relative; }
-pre.numberSource a.sourceLine:empty
-  { position: absolute; }
+  { position: relative; left: -4em; }
 pre.numberSource a.sourceLine::before
   { content: attr(data-line-number);
-    position: absolute; left: -5em; text-align: right; vertical-align: baseline;
-    border: none; pointer-events: all;
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; pointer-events: all; display: inline-block;
     -webkit-touch-callout: none; -webkit-user-select: none;
     -khtml-user-select: none; -moz-user-select: none;
     -ms-user-select: none; user-select: none;
@@ -1599,7 +1597,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 4<br> <br> 回帰分析</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)</h4>
-<h4 class="date">2019-05-09</h4>
+<h4 class="date">2019-10-25</h4>
 
 </div>
 
@@ -1641,16 +1639,208 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 ## 5            other   yes      no</code></pre>
 </div>
 <div class="section level2">
-<h2><span class="header-section-number">1.2</span> 最小二乗法</h2>
+<h2><span class="header-section-number">1.2</span> 記述統計の表示</h2>
+<p>回帰分析を行う前に、ほとんどの場合、分析に用いる統計の要約統計量（summary statistics)を載せる。</p>
+<p>要約統計量をチェックするだけならば、<code>summary()</code>を使えばよい。</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="kw">summary</span>(CPS1985)</a></code></pre></div>
+<pre><code>##       wage          education       experience         age       
+##  Min.   : 1.000   Min.   : 2.00   Min.   : 0.00   Min.   :18.00  
+##  1st Qu.: 5.250   1st Qu.:12.00   1st Qu.: 8.00   1st Qu.:28.00  
+##  Median : 7.780   Median :12.00   Median :15.00   Median :35.00  
+##  Mean   : 9.024   Mean   :13.02   Mean   :17.82   Mean   :36.83  
+##  3rd Qu.:11.250   3rd Qu.:15.00   3rd Qu.:26.00   3rd Qu.:44.00  
+##  Max.   :44.500   Max.   :18.00   Max.   :55.00   Max.   :64.00  
+##     ethnicity     region       gender         occupation 
+##  cauc    :440   south:156   male  :289   worker    :156  
+##  hispanic: 27   other:378   female:245   technical :105  
+##  other   : 67                            services  : 83  
+##                                          office    : 97  
+##                                          sales     : 38  
+##                                          management: 55  
+##            sector    union     married  
+##  manufacturing: 99   no :438   no :184  
+##  construction : 24   yes: 96   yes:350  
+##  other        :411                      
+##                                         
+##                                         
+## </code></pre>
+<p>だが、これではみにくく、論文などの掲載することはできない。そこで、<code>stargazer</code>パッケージを使い、要約統計量の表を作成する。</p>
+<p>まず、<code>stargazer</code>パッケージをインストールする。</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">install.packages</span>(<span class="st">&quot;stargazer&quot;</span>)</a></code></pre></div>
+<p>次に、<code>stargazer</code>を読み込み、要約統計量の表を作成する。</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb8-1" data-line-number="1"><span class="co">#stargazerの読み込み</span></a>
+<a class="sourceLine" id="cb8-2" data-line-number="2"><span class="kw">library</span>(stargazer)</a></code></pre></div>
+<p>text形式およびhtml形式で表示する場合は、それぞれ以下のように書く。</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="co">#textでの表示</span></a>
+<a class="sourceLine" id="cb9-2" data-line-number="2"><span class="kw">stargazer</span>(CPS1985, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<pre><code>## 
+## =============================================================
+## Statistic   N   Mean  St. Dev.  Min  Pctl(25) Pctl(75)  Max  
+## -------------------------------------------------------------
+## wage       534 9.024   5.139   1.000  5.250    11.250  44.500
+## education  534 13.019  2.615     2      12       15      18  
+## experience 534 17.822  12.380    0      8        26      55  
+## age        534 36.833  11.727   18      28       44      64  
+## -------------------------------------------------------------</code></pre>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb11-1" data-line-number="1"><span class="co">#htmlで表示し、summary_CPS1985.htmlという名前での保存</span></a>
+<a class="sourceLine" id="cb11-2" data-line-number="2"><span class="kw">stargazer</span>(CPS1985, <span class="dt">type =</span> <span class="st">&quot;html&quot;</span>, <span class="dt">out =</span> <span class="st">&quot;summary_CPS1985.html&quot;</span>)</a></code></pre></div>
+<table style="text-align:center">
+<tr>
+<td colspan="8" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Statistic
+</td>
+<td>
+N
+</td>
+<td>
+Mean
+</td>
+<td>
+St. Dev.
+</td>
+<td>
+Min
+</td>
+<td>
+Pctl(25)
+</td>
+<td>
+Pctl(75)
+</td>
+<td>
+Max
+</td>
+</tr>
+<tr>
+<td colspan="8" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+wage
+</td>
+<td>
+534
+</td>
+<td>
+9.024
+</td>
+<td>
+5.139
+</td>
+<td>
+1.000
+</td>
+<td>
+5.250
+</td>
+<td>
+11.250
+</td>
+<td>
+44.500
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+education
+</td>
+<td>
+534
+</td>
+<td>
+13.019
+</td>
+<td>
+2.615
+</td>
+<td>
+2
+</td>
+<td>
+12
+</td>
+<td>
+15
+</td>
+<td>
+18
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+experience
+</td>
+<td>
+534
+</td>
+<td>
+17.822
+</td>
+<td>
+12.380
+</td>
+<td>
+0
+</td>
+<td>
+8
+</td>
+<td>
+26
+</td>
+<td>
+55
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+age
+</td>
+<td>
+534
+</td>
+<td>
+36.833
+</td>
+<td>
+11.727
+</td>
+<td>
+18
+</td>
+<td>
+28
+</td>
+<td>
+44
+</td>
+<td>
+64
+</td>
+</tr>
+<tr>
+<td colspan="8" style="border-bottom: 1px solid black">
+</td>
+</tr>
+</table>
+<p>Wordで作成した論文に張り付ける場合はhtml形式のほうがよい。また、<code>stargazer</code>の表はもっと細かく調整できるので、ヘルプを参照したりググったりして、自分用にカスタマイズした表を作ることができる。また、latexを使った出力も可能である。</p>
+</div>
+<div class="section level2">
+<h2><span class="header-section-number">1.3</span> 最小二乗法</h2>
 <p>線形回帰のパラメータ<span class="math inline">\(\beta_0, \beta_1\)</span>はデータ<span class="math inline">\(X_i,Y_i\)</span>から推定する。最も有名で強力な推定方法は<strong>最小二乗法</strong>（ordinary least squares method, OLS method）である。この方法では，実測値<span class="math inline">\(Y_i\)</span>と予測値<span class="math inline">\(\hat{Y}_i\)</span>との残差二乗和<span class="math inline">\(\sum_{i=1}^n (Y_i - \hat{Y}_i)^2\)</span>を最小化するように推定量<span class="math inline">\(\hat{\beta}_0, \hat{\beta}_1\)</span>を求める。</p>
 <p>最小二乗法による線形回帰は<code>lm()</code>関数で行うことができる。</p>
 <p>例えば，被説明変数を賃金<span class="math inline">\(\text{Wage}\)</span>，説明変数を教育年数<span class="math inline">\(\text{Education}\)</span>とする</p>
 <p><span class="math display">\[
 \text{Wage}_i  = \beta_0 + \beta_1 \text{Education}_i  + u_i
 \]</span> のような回帰モデルを作って推定したい場合は，<code>lm()</code>の<code>formula</code>引数に<code>wage ~ education</code>と指定し，使用するデータフレームを<code>data</code>引数に指定すればよい。</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb5-1" data-line-number="1"><span class="co"># Regression</span></a>
-<a class="sourceLine" id="cb5-2" data-line-number="2">reg &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> wage <span class="op">~</span><span class="st"> </span>education, <span class="dt">data =</span> CPS1985) <span class="co"># 教育年数が賃金を決めるモデル</span></a>
-<a class="sourceLine" id="cb5-3" data-line-number="3">reg</a></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="co"># Regression</span></a>
+<a class="sourceLine" id="cb12-2" data-line-number="2">reg &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> wage <span class="op">~</span><span class="st"> </span>education, <span class="dt">data =</span> CPS1985) <span class="co"># 教育年数が賃金を決めるモデル</span></a>
+<a class="sourceLine" id="cb12-3" data-line-number="3">reg</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## lm(formula = wage ~ education, data = CPS1985)
@@ -1660,7 +1850,7 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 ##     -0.7460       0.7505</code></pre>
 <p>ここで<code>Coefficients:</code>の部分に表示されている<code>(Intercept)</code>は切片の係数<span class="math inline">\(\beta_0\)</span>で，<code>education</code>は傾き係数<span class="math inline">\(\beta_1\)</span>である。</p>
 <p>推定したlmオブジェクトは，<code>summary()</code>関数でより詳細な情報を見ることができる。</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">summary</span>(reg)</a></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1"><span class="kw">summary</span>(reg)</a></code></pre></div>
 <pre><code>## 
 ## Call:
 ## lm(formula = wage ~ education, data = CPS1985)
@@ -1681,13 +1871,11 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 ## F-statistic: 90.85 on 1 and 532 DF,  p-value: &lt; 2.2e-16</code></pre>
 </div>
 <div class="section level2">
-<h2><span class="header-section-number">1.3</span> 回帰分析の結果表示</h2>
+<h2><span class="header-section-number">1.4</span> 回帰分析の結果表示</h2>
 <p><code>summary()</code>による結果表示は論文に使用できるような整った形ではない。</p>
 <p>そこで，<code>{stargazer}</code>パッケージを使って整形する。</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb9-1" data-line-number="1"><span class="kw">install.packages</span>(<span class="st">&quot;stargazer&quot;</span>)</a></code></pre></div>
 <p><code>stargazer()</code>に<code>lm()</code>関数のオブジェクトを入れ，<code>type</code>引数に<code>&quot;text&quot;</code>を指定することで以下のように表示される</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb10-1" data-line-number="1"><span class="kw">library</span>(stargazer)</a>
-<a class="sourceLine" id="cb10-2" data-line-number="2"><span class="kw">stargazer</span>(reg, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">stargazer</span>(reg, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===============================================
 ##                         Dependent variable:    
@@ -1709,9 +1897,9 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 ## ===============================================
 ## Note:               *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 <p><code>type = &quot;html&quot;, out = &quot;reg1.html&quot;</code>とおけばhtml形式で保存できる</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb12-1" data-line-number="1"><span class="kw">stargazer</span>(reg,               <span class="co"># 回帰分析の結果</span></a>
-<a class="sourceLine" id="cb12-2" data-line-number="2">          <span class="dt">type =</span> <span class="st">&quot;html&quot;</span>,      <span class="co"># ファイル形式</span></a>
-<a class="sourceLine" id="cb12-3" data-line-number="3">          <span class="dt">out =</span> <span class="st">&quot;reg1.html&quot;</span>)  <span class="co"># 保存するファイル名</span></a></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="kw">stargazer</span>(reg,               <span class="co"># 回帰分析の結果</span></a>
+<a class="sourceLine" id="cb18-2" data-line-number="2">          <span class="dt">type =</span> <span class="st">&quot;html&quot;</span>,      <span class="co"># ファイル形式</span></a>
+<a class="sourceLine" id="cb18-3" data-line-number="3">          <span class="dt">out =</span> <span class="st">&quot;reg1.html&quot;</span>)  <span class="co"># 保存するファイル名</span></a></code></pre></div>
 </div>
 </div>
 <div class="section level1">
@@ -1720,15 +1908,15 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 <h2><span class="header-section-number">2.1</span> 対数変換</h2>
 <p>データ分析の過程では，データを対数変換したい場合もある。</p>
 <p>例えば，賃金のように「低い人（低所得者層）が多く，高い人（高所得者層）が少ない」ような分布はL字型のような右に歪んだ分布になる。こうした分布は対数変換を行うことで正規分布に近づく。</p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb13-1" data-line-number="1"><span class="kw">library</span>(tidyverse)</a>
-<a class="sourceLine" id="cb13-2" data-line-number="2"><span class="kw">library</span>(gridExtra)</a>
-<a class="sourceLine" id="cb13-3" data-line-number="3"></a>
-<a class="sourceLine" id="cb13-4" data-line-number="4">g1 &lt;-<span class="st"> </span><span class="kw">ggplot</span>(CPS1985, <span class="kw">aes</span>(<span class="dt">x =</span> wage))<span class="op">+</span></a>
-<a class="sourceLine" id="cb13-5" data-line-number="5"><span class="st">  </span><span class="kw">geom_histogram</span>(<span class="dt">bins =</span> <span class="dv">10</span>)</a>
-<a class="sourceLine" id="cb13-6" data-line-number="6">g2 &lt;-<span class="st"> </span><span class="kw">ggplot</span>(CPS1985, <span class="kw">aes</span>(<span class="dt">x =</span> <span class="kw">log</span>(wage)))<span class="op">+</span></a>
-<a class="sourceLine" id="cb13-7" data-line-number="7"><span class="st">  </span><span class="kw">geom_histogram</span>(<span class="dt">bins =</span> <span class="dv">10</span>)</a>
-<a class="sourceLine" id="cb13-8" data-line-number="8"><span class="kw">grid.arrange</span>(g1, g2)</a></code></pre></div>
-<p><img src="data:image/png;base64,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" width="384" style="display: block; margin: auto;" /></p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb19-1" data-line-number="1"><span class="kw">library</span>(tidyverse)</a>
+<a class="sourceLine" id="cb19-2" data-line-number="2"><span class="kw">library</span>(gridExtra)</a>
+<a class="sourceLine" id="cb19-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb19-4" data-line-number="4">g1 &lt;-<span class="st"> </span><span class="kw">ggplot</span>(CPS1985, <span class="kw">aes</span>(<span class="dt">x =</span> wage))<span class="op">+</span></a>
+<a class="sourceLine" id="cb19-5" data-line-number="5"><span class="st">  </span><span class="kw">geom_histogram</span>(<span class="dt">bins =</span> <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb19-6" data-line-number="6">g2 &lt;-<span class="st"> </span><span class="kw">ggplot</span>(CPS1985, <span class="kw">aes</span>(<span class="dt">x =</span> <span class="kw">log</span>(wage)))<span class="op">+</span></a>
+<a class="sourceLine" id="cb19-7" data-line-number="7"><span class="st">  </span><span class="kw">geom_histogram</span>(<span class="dt">bins =</span> <span class="dv">10</span>)</a>
+<a class="sourceLine" id="cb19-8" data-line-number="8"><span class="kw">grid.arrange</span>(g1, g2)</a></code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAwAAAAJACAYAAAA6rgFWAAAEGWlDQ1BrQ0dDb2xvclNwYWNlR2VuZXJpY1JHQgAAOI2NVV1oHFUUPrtzZyMkzlNsNIV0qD8NJQ2TVjShtLp/3d02bpZJNtoi6GT27s6Yyc44M7v9oU9FUHwx6psUxL+3gCAo9Q/bPrQvlQol2tQgKD60+INQ6Ium65k7M5lpurHeZe58853vnnvuuWfvBei5qliWkRQBFpquLRcy4nOHj4g9K5CEh6AXBqFXUR0rXalMAjZPC3e1W99Dwntf2dXd/p+tt0YdFSBxH2Kz5qgLiI8B8KdVy3YBevqRHz/qWh72Yui3MUDEL3q44WPXw3M+fo1pZuQs4tOIBVVTaoiXEI/MxfhGDPsxsNZfoE1q66ro5aJim3XdoLFw72H+n23BaIXzbcOnz5mfPoTvYVz7KzUl5+FRxEuqkp9G/Ajia219thzg25abkRE/BpDc3pqvphHvRFys2weqvp+krbWKIX7nhDbzLOItiM8358pTwdirqpPFnMF2xLc1WvLyOwTAibpbmvHHcvttU57y5+XqNZrLe3lE/Pq8eUj2fXKfOe3pfOjzhJYtB/yll5SDFcSDiH+hRkH25+L+sdxKEAMZahrlSX8ukqMOWy/jXW2m6M9LDBc31B9LFuv6gVKg/0Szi3KAr1kGq1GMjU/aLbnq6/lRxc4XfJ98hTargX++DbMJBSiYMIe9Ck1YAxFkKEAG3xbYaKmDDgYyFK0UGYpfoWYXG+fAPPI6tJnNwb7ClP7IyF+D+bjOtCpkhz6CFrIa/I6sFtNl8auFXGMTP34sNwI/JhkgEtmDz14ySfaRcTIBInmKPE32kxyyE2Tv+thKbEVePDfW/byMM1Kmm0XdObS7oGD/MypMXFPXrCwOtoYjyyn7BV29/MZfsVzpLDdRtuIZnbpXzvlf+ev8MvYr/Gqk4H/kV/G3csdazLuyTMPsbFhzd1UabQbjFvDRmcWJxR3zcfHkVw9GfpbJmeev9F08WW8uDkaslwX6avlWGU6NRKz0g/SHtCy9J30o/ca9zX3Kfc19zn3BXQKRO8ud477hLnAfc1/G9mrzGlrfexZ5GLdn6ZZrrEohI2wVHhZywjbhUWEy8icMCGNCUdiBlq3r+xafL549HQ5jH+an+1y+LlYBifuxAvRN/lVVVOlwlCkdVm9NOL5BE4wkQ2SMlDZU97hX86EilU/lUmkQUztTE6mx1EEPh7OmdqBtAvv8HdWpbrJS6tJj3n0CWdM6busNzRV3S9KTYhqvNiqWmuroiKgYhshMjmhTh9ptWhsF7970j/SbMrsPE1suR5z7DMC+P/Hs+y7ijrQAlhyAgccjbhjPygfeBTjzhNqy28EdkUh8C+DU9+z2v/oyeH791OncxHOs5y2AtTc7nb/f73TWPkD/qwBnjX8BoJ98VQNcC+8AAEAASURBVHgB7N0LvJRVvf/xH/f7/Y6iQuAGFf+GqAkKsUvJSE922Cc5UkcUxTJJjYqyREkNUSPgJEWeAD2IAhUqGhGBqZWQgMDhYgjFTRTlfr/u//4uW+PsvWeGvWfP3vPM83zW6zV7Zp7brPVe88xe63nWpVphUTACAggggAACCCCAAAIIREKgeiRSSSIRQAABBBBAAAEEEEDACVAB4IuAAAIIIIAAAggggECEBKgARCizSSoCCCCAAAIIIIAAAlQA+A4ggAACCCCAAAIIIBAhASoAEcpskooAAggggAACCCCAABUAvgMIIIAAAggggAACCERIoGYY07po0SJ77bXXbOvWrXbq1Ck766yz7PLLL7errroqYXK1/cqVKxOu08KWLVvajTfeWGr9unXrbNasWbZp0yZr0KCBde/e3fLz861Tp06ltmUBAggggAACCCCAAAJBEKgWpnkAjh49at/+9rdt+fLlzrZx48bued++fe75oosusrFjx1q9evWK2d911122dOnSYsvi36hAP23atPhFNnv2bBs/frxb1rBhQzt27Jh76NhjxoyxHj16FNueNwgggAACCCCAAAIIBEEgVBWAn/zkJ/bb3/7WzjnnHPvBD35geXl5zlhX6kePHm1btmyxa6+91r7zne8Usx8wYICpkjB8+HCrU6dOsXV606hRI+vXr19s+apVq+yOO+6wWrVq2ahRo+zKK6+0EydO2Jw5c2zChAlu+TPPPGNt27aN7cMLBBBAAAEEEEAAAQSCIBCaCsChQ4fs85//vGli46lTp1rHjh2L+f7jH/+wr371q1atWjWbN2+e1a9f363fsWOH/fu//7u1aNHCFeCL7ZTkzYgRI2zx4sV2880325AhQ4ptpbsCujugJkO33357sXW8QQABBBBAAAEEEEAg2wKh6QSsq/InT560Dh06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o+nBtf+7775rujugysDtt99epuOxEQIIIIAAAggggAACVSUQ+U7A/up/Xl5emcwPHTpkS5Yscdv279+/1D5+2dy5c013BQgIIIAAAggggAACCARJgArAv5r/+AqACu27du1Kmkdr1651V/87dOhg7du3L7Vd165dTU2G9u7da5s3by61ngUIIIAAAggggAACCGRTIPJNgPwdABX87777blu+fLmdPHnSFeIvueQSU78ANQ/yYdu2be5l06ZN/aJSz1q3f/9+27JlCyMCldJhAQIIIIAAAggggEA2BSJfAXjnnXec/9NPP201atQwXcFXZWDjxo22cOFCe/PNN91oP507d3bbHTx40D2nqgA0bty42LbuTYk/r7zyio0dO7bE0o/e1qtXz5599tmE68K0sFq1arHk1K1b13Wqji3gBQIInFZAQxQHNWhAhSDHL5Nu/rdM/xfUPywKQf8vfUj1/9BvE5Znn+6ofLfj800Dn0Ql3f6cbtKkSWjP6UhXAFSYV6ddBbXd/9a3vmUqfCto+QMPPGBr1qyxhx9+2CZPnmw1a9Y09QFQKDkykFv4rz8aFlThyJEj/1pS+kl3CDZs2FB6RdESxUGdiqMU9KPqf1ijlG7SikBFBIL8O1G9enXTI0pB/yOiGIL8Pays/Ijad1uOnNOV9W3KznGj+Wv1L2sVtDVc54cffmgXXXSR+RqfVqt9/+jRo934/2ompI6/vXr1chN+ab3G/U8Wjh496lYlGlI02T4sRwABBBBAAAEEEECgKgQiXQFQbVadefVIFNq0aeNm91UzIDUJUgXA3/7S0KHJgq7uK2h24GThC1/4gn3+859PuFoVke3btydcF6aFup3o+1fobkwq0zClm7QgkCmBoP1O6Ap4q1atXPIOHz5se/bsyVRSA30cXQHX/wZdTDp+/Hig45qpyKnZj79j/sEHH0Rm1LtmzZq5i4WpBgvJlHEQjqM7861bt3ZRUauG3bt3ByFalR4H/1u2c+fOlBd8Kz0ip/mAdu3anWaL5KsjXQFIzvLxGv/F15dAwVcAfCH/4y0/fuULsvqhSBZUyKfJSzIdliOAAAIIIIAAAghUlkCkKwBvv/22vfHGG1a/fv2kk4BpojCFM8880z37CoFG+NGVnpJtHzX8p64M6O5Cly5d3D78QQABBBBAAAEEEEAgKALR6qFVQl23sp588kmb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U0dRdSRs27atu6qc+6kKdwp2797txorXb/NZZ53lhn09XYo5p08nFJ71nNO5nZdUAHI7/4g9AggggAACCCCAAALlEvi4EV+5dmNjBBBAAAEEEEAAAQQQyEUBKgC5mGvEGQEEEEAAAQQQQACBNAWoAKQJx24IIIAAAggggAACCOSiABWAXMw14owAAggggAACCCCAQJoCVADShGM3BBBAAAEEEEAAAQRyUYAKQC7mGnFGAAEEEEAAAQQQQCBNASoAacKxGwIIIIAAAggggAACuShABSAXc404I4AAAggggAACCCCQpgAVgDTh2A0BBBBAAAEEEEAAgVwUoAKQi7lGnBFAAAEEEEAAAQQQSFOACkCacOyGAAIIIIAAAggggEAuClAByMVcI84IIIAAAggggAACCKQpQAUgTTh2QwABBBBAAAEEEEAgFwWoAORirhFnBBBAAAEEEEAAAQTSFKACkCYcuyGAAAIIIIAAAgggkIsCVAByMdeIMwIIIIAAAggggAACaQpQAUgTjt0QQAABBBBAAAEEEMhFgZq5GGnijAACCCBQ+QIffvihbdy40X1QXl6eNWnSpNSH7t+/39auXeuWn3XWWda2bdtS25w4ccKWLVvmlp9zzjnWunXrYtscPnzY/v73v9u6devs7bfftrp161qXLl3c47zzzrPq1U9/rWrx4sW2dOlSe++99+z888+3yy+/3BSfwsJC+9vf/uY+r3Pnzta8efNin+3f7N2711asWOEeen3hhRfaRRdd5I7ht+EZAQQQCI1A0Y8jAQEEEEAAgVICRQXqwqJ/du7x+OOPl1qvBU888URsm5tvvjnhNgsWLIht8/rrrxfb5uc//3lhw4YNY+v95/nnyy67rHDVqlXF9ol/U1T5KCwq7Cfc//bbby88cOBAbN0zzzwTv6t7ferUqcLHHnussE6dOrHt/Gfr+T//8z8Ld+/eXWo/FiCAAAK5LMAdgKJfeAICCCCAQGmBHj162Jlnnmlbt261+fPn2z333FNqIy33YeHChf5lsee5c+e6923atHFX5vWm6B+nDRgwwH73u9+5de3bt7dPfepT7gr9u+++a0uWLDHdgdCVfV3N37x5szVr1sxt6/8UVQwsPz/fbadl5557rvXs2dO0v/YrqlzY//3f//nNSz3rzsMXvvAF8/FW/IoqHO5Oh+4mrFmzxooqDVZU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oDsDupqv9vq6G6A7Az40adLEv3TPGk1o8uTJbrhSxVNpUv8FX/jXDMW6i7B8+XIK/8XkeIMAArkuwB2AXM9B4o8AAgjksIAm4tIEWxrNp3Xr1q7C0KBBg4ylSP0AfFOgkhWCkh+i+QjU8ViTnalvQ6dOnUwVCgICCCAQNgEqAGHLUdKDAAIIREBg9uzZ7sr/ueeea7r6n6yD7m233eaa+GioTw0pmmxisAiQkUQEEEAgJsA8ADEKXiCAAAII5IqAmus88cQTLroq3PvOuvHxf+211+zJJ590i9R3gcJ/vA6vEUAgygJUAKKc+6QdAQQQyFEBFejVpl8dhtXJ94MPPrCrr77a9QPQTMILFiyw7373u26+AY3+c9999+VoSok2AgggkHkBmgBl3pQjIoAAAghUgYAm8Lr22mvdzMT+43RnQEOJ+qC7A+PGjTN1FiYggAACCHwkwChAfBMQQAABBHJSQHMFrFmzxm666SZr3ry5S4Mv/Ddu3NgtX7x4MYX/nMxdIo0AApUpwB2AytTl2AgggAACVSawf/9+e++999w4/hrPn4AAAgggkFiACkBiF5YigAACCCCAAAIIIBBKAZoAhTJbSRQCCCCAAAIIIIAAAokFqAAkdmEpAggggAACCCCAAAKhFKACEMpsJVEIIIAAAggggAACCCQWoAKQ2IWlCCCAAAIIIIAAAgiEUoAKQCizlUQhgAACCCCAAAIIIJBYgApAYheWIoAAAggggAACCCAQSgEqAKHMVhKFAAIIIIAAAggggEBiASoAiV1YigACCCCAAAIIIIBAKAWoAIQyW0kUAggggAACCCCAAAKJBagAJHZhKQIIIIAAAggggAACoRSgAhDKbCVRCCCAAAIIIIAAAggkFqACkNiFpQgggAACCCCAAAIIhFKACkAos5VEIYAAAggggAACCCCQWIAKQGIXliKAAAIIIIAAAgggEEoBKgChzFYShQACCCCAAAIIIIBAYgEqAIldWIoAAggggAACCCCAQCgFqACEMltJFAIIIIAAAggggAACiQWoACR2YSkCCCCAAAIIIIAAAqEUoAIQymwlUQgggAACCCCAAAIIJBagApDYhaUIIIAAAggggAACCIRSgApAKLOVRCGAAAIIIIAAAgggkFiACkBiF5YigAACCCCAAAIIIBBKASoAocxWEoUAAggggAACCCCAQGIB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JquIKAIIIIAAAggggAACFRegAlBxQ46AAAIIIIAAAggggEDOCFAByJmsIqIIIIAAAggggAACCFRcgApAxQ05AgIIIIAAAggggAACOSNABSBnsoqIIoAAAggggAACCCBQcQEqABU35AgIIIAAAggggAACCOSMABWAnMkqIooAAggggAACCCCAQMUFalb8EBwBAQQQQAABBDIpMGTIkEweLtDHmjJlSqDjR+QQCKMAdwDCmKukCQEEEEAAAQQQQACBJAJUAJLAsBgBBBBAAAEEEEAAgTAKUAEIY66SJgQQQAABBBBAAAEEkghQAUgCw2IEEEAAAQQQQAABBMIoQAUgjLlKmhBAAAEEEEAAAQQQSCKQ8VGAJk+ebGvWrLHbbrvNzjvvvCQfW3zxj370I/vd735n1157rX3ve98rvrKC71566SV76qmn7P7777du3bolPdq6dets1qxZtmnTJmvQoIF1797d8vPzrVOnThndJ+nBWIEAAggggAACCCCAQBUIZLwC8Pzzz9vLL79sV111VZkrAK+88or99a9/tU984hMZTfKqVavssccesxMnTtjRo0eTHnv27Nk2fvx4t75hw4Z27NgxW7Zsmc2cOdPGjBljPXr0KLVvOvuUOggLEEAAAQQQQAABBBCoYoGsNgE6efKk6cr7ihUrXLLr16+fseQvX77c7r33Xlf4T3VQVRImTJhgtWvXtoceeshVXubNm2fDhw+3w4cP24gRI+y9994rdoh09il2AN4ggAACCCCAAAIIIJAlgQpVAAYMGGB169Yt9lDhWeH6668vtrzkdnqvQrea5ezcudPt07NnT/dckT+HDh1yV/1VgN+9e7dVr546idOmTbPCwkIbPHiw9enTx6pVq2a1atWygoICGzhwoB0/ftzmzJlTLErp7FPsALxBAAEEEEAAAQQQQCBLAqlLx6eJ1OOPP26nTp1yzWvUxEYPvVdQwdkvS/bst9X2F1xwgX3xi1/UywqFoUOHmpoh6W7CfffdZx07dkx6PFUWlixZ4tb379+/1HZ+2dy5c2N3EtLZp9SBWYAAAggggAACCCCAQJYEKtQHoGvXrjZp0iT729/+Fou+OvNu3rzZrrnmGjvrrLNiyxO90JV2dbhVIf0//uM/rFmzZok2K9eyPXv2mArut9xyi7Vr186mT5+edP+1a9e6q/8dOnSw9u3bl9pO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25o1a2zrrbe28ePHZ7z4Vx2OOOIIUyNAoUA1SHj06NFZrBq7QgABBBBAAAEEEEAAgVSBrDcA1K1HaeDAgcW6m9+hQwc7/fTT3TaTJ092r/yHAAIIIIAAAggggAAC5SOQ1QbAunXr7NNPP3Ul3X333YtdYp9XYwNICCCAAAIIIIAAAgggUH4CWW0AVK1a1apX/3NYwYoVK4pd6pUrV7q8G220UbG3ISMCCCCAAAIIIIAAAgiUXCCrDQBF/GnXrp0rxdtvv13s0rz11lsub8eOHYu9DRkRQAABBBBAAAEEEECg5AJZbQDo8HvssYcrxaBBg2zevHlFlujll1+OD/7VvAEkBBBAAAEEEEAAAQQQKD+BrDcArrnmGqtfv74tXbrUunbtag8//LBpbEBq+u2332zw4MF27LHHWiwWM939P/7441Oz8RkBBBBAAAEEEEAAAQSyKJD1eQCaN29uN910k51//vluBmBF+LnsssusdevW1qpVK/vjjz/sm2++sblz57pJwVSXGjVq2KOPPmo1a9bMYtXYFQIIIIAAAggggAACCKQKZL0BoAOcd955bubf0047zTUClixZYtOmTXP/UgvQqVOnQicLS83PZwQQQAABBBBAAAEEECi9QLk0AFScAw880D755BO799573etnn31mc+bMcXf727RpY/rXvXt369evn1WrVq30NWBLBBBAAAEEEEAAAQQQKLZAuTUAVAKF9bzqqqvihVFff0UKClvSBGR+ArN0ZWvatKmdeOKJBVapQTNmzBjT/AX16tVz4xjUqFF3JxICCCCAAAIIIIAAAmEUKNcGgCr8+++/W+3atV3dEy/+p0yZ4i6Y69atW+kuzz//fNruSb5guqBPbQCMHTvW7rzzTpdFg541tmH69On29NNP280332ydO3f2m/OKAAIIIIAAAggggEBoBMqtAaDY/kOHDnWDff3swIm17tu3r/3www/Wq1cvGzFihG288caJqyv0/ZdffumOd8EFF1itWrUKHLtBgwZJy2bNmmXDhw93g5YHDhxo++23n61du9aee+45t1yDnh9//HHbbLPNkrbjAwIIIIAAAggggAAClS1QLg0Ahf4cMGCArVmzxvXv193xxAg/69evd91mtF4Xyu+++66NGzfOOnToUOEeCxcutGXLllmTJk2sd+/exTq+IhapO5MaMV26dHHbKJKR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CKxcudIuu+wy22yzzezvf/97bhSaUla4wOTJk+2tt96y77//3oV13HLLLW2vvfayAw88sMLLwgHDLzBx4kR7/fXX3felefPm7m9St27dTO9JCBQlMGPGDLv77rttjz32sDPPPLOo7KFYTxjQUJyGaBVi7Nixduedd7pK169f3/744w/3r06dOnbzzTdb586dowVCbYstEIvF7Oqrr7Z33nnHdt55Zxs+fHixtyVjNARWr15tl19+uekPslLDhg3d67Jly9xrp06dbOjQoabfNyQE1q5da1dddZVNmTLFYTRo0MCWL19u+l2z0UYbue/K9ttvDxQCGQV+++03O/XUU23hwoV2wAEH2MCBAzPmDdMKugCF6WxEoCyzZs1yF201a9a0IUOG2IQJE+yll16yCy64wFatWuXu7C5YsCACElSxpAL6ftxyyy3u4r+k25I/OgK6C6eL/1atWtnIkSNt/Pjx7t+DDz5oLVu2tJkzZ9qIESOiA0JNCxW4//773cV/ixYt3N+kF154wf7zn//YSSedZEuXLrULL7zQFi1aVOg+WBltgdtuu81d/OeaAg2AXDtjOV7eRx991N1Z6du3r3Xp0sXN5qoZF3v37m3HHnusrVmzxp577rkcryXFz7bAhx9+aCeffLK7kGNG12zr5s/+1D1MF3D6jgwePNjatm0br1y7du3cBZ4WjBs3zpSXFG0BPX1+/vnnHUK/fv3c3yTNNr7JJpvYWWed5RqMv//+e/zpQLS1qH06gVdeecVee+01a9SoUbrVoV5GAyDUpye/Cqc/uFOnTnWVOvjggwtUzi/TH2c9liUhIIFXX33VLr74YtOTIfWvvOSSS4BBIK2AnjCuW7fOXbhtvfXWBfJomS7u1L1j3rx5BdazIFoCS5YscRf9u+yyi+u6kVp73aRS+uyzz1JX8RkB9zfp9ttvt80339z69OmTcyIMAs65U5a7BdYvUf3h1WN4PW5NTbpDp/6Xeuw6f/58BgSnAkX08+LFi933RU8ADjvsMDewM6IUVLsIgd133909AdBd23RJNxb0+0UpF+/YpasTy0ovsOmmm9q1116bcQdfffWVW9ehQ4eMeVgRTYH169fbDTfc4LouqwvQ559/nnMQNABy7pTlboF/+OEHV/jC/vBqnQbUfPfddzQAcvdUZ7XkPXr0sGOOOcb0aJ6EQGECVapUscaN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++677ffff7etttrK9thjj6R1H330kbuwrV+/vm2//fZJ6/yHOXPm2LJly9xd8F122cUvTnrVYGhFGKpRo4btvPPOSev04YcffjDtR/9U/latWlmbNm3cMZs2bVogf+qCpUuX2oQJE5xd7dq1Xd07d+5sev/999+7O/NylGe6JKMvv/zSVN/Zs2dbixYtTN17iut/7LHH2sSJE+3++++3a6+91uRFQgABBLIqEPyiIiGAAAII5IDAN998Ewv+ALh/t956a9oSB2EkYzvssEM8n8+v1+DiN/b000+n3c4v/Oyzz2LBxX7a7QcMGBBbvnx5fN3jjz/uN3Ovq1atcsfQsS699NKkdfpwxBFHuG0bN24cCwa5FlgfDICNbbrppvH9z58/v0AeLdh3331dngMOOCBpfdAwiPXo0SO+fWLd9T64gI8FYxJia9asSdou8cMNN9wQa9CgQYF9BBfxsaBRFLv66qvduuBOfeJm8ffBhX8saPgU2F7Hb9asWSwYGB3Pm+lN0LiJBd2A3D6GDRuWKRvLEUAAgVIL0AUo+K1MQgABBPJB4J577rHgAtg++eQTdwddd8dPOukkCy6Y3Z1/Dc5VVJ5+/fqlre6sWbNsv/32s/fee8+tV3cUDUrdf//93fb33XefC1OZduNg4eTJk03HUOrdu7d7TfzvyCOPdB+XLFkSf4qQuP7jjz92d/b9skmTJvm38dfFixfHy3fUUUfFl7/66qsWNHxMcfSrVq3q6qExCCeeeKLttttuLp+eTAQX8DZw4MD4dolv+vfv7+64//bbb6awnLLs06ePG8eg/vhdu3a1V155JXGTpPfPPPOMu9OvpycK17r77rs766ChYg0bNrSFCxda0AiyK6+8Mmm71A9BQ8G6dOniFo8ZMyZ1NZ8RQACBsguUuunAhggggAACFSpQ2BOAL774Ila3bl131zjofhN7//33k8qmbYML0vid6SeeeCJpve6+BxfKbn3QtSY2YsSIpPVff/11LOgGE98++OsTCyb5Sspz2WWXxbcPuiElrdOHoDtOLLgwdnkGDRpUYL2eami//l9wAV8gz2OPPebWaz/fffddfL0ve5MmTWJBQyK+3L955513YsFFuNtWTyCCibf8KveqO/P+uHJKffpw2223xYKoRvE8QZeipO2DhklMx9Y+WrZsGXv99deT1gcNo9iBBx4Y3/7t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" width="384" style="display: block; margin: auto;" /></p>
 <p>また，変数変換を行うことによって係数の解釈も次のように変わる。</p>
 <table>
 <thead>
@@ -1762,9 +1950,9 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 \ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i  + u_i
 \]</span></p>
 <p>は以下のコードで実行できる。</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb14-1" data-line-number="1">reg_logwage &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1">reg_logwage &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
 <p>対数変換をしなかった線形回帰の結果<code>reg</code>と今回の<code>reg_logwage</code>を<code>stargazer()</code>に入れることで，まとめて結果表示できる。</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" data-line-number="1"><span class="kw">stargazer</span>(reg, reg_logwage, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1"><span class="kw">stargazer</span>(reg, reg_logwage, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===========================================================
 ##                                    Dependent variable:     
@@ -1798,9 +1986,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 \ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i + \beta_2 \text{Experience}_i + u_i
 \]</span></p>
 <p>をRで推定する場合，<code>lm()</code>関数の引数<code>formula</code>に<code>+ experience</code>を追加し，</p>
-<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" data-line-number="1">reg_multiple &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb23-1" data-line-number="1">reg_multiple &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience, <span class="dt">data =</span> CPS1985)</a></code></pre></div>
 <p>と書けばよい。</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb18-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===================================================================
 ##                                   Dependent variable:              
@@ -1846,11 +2034,12 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 <p>という手順で分析すればよい。</p>
 <p>まず，２乗の変数を作成する。</p>
 <p><code>mutate(新しい変数の名前 = 既存の変数の名前^2)</code>のように書くことで任意の変数の2乗項を作成できる。</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb20-1" data-line-number="1"><span class="co"># mutate関数で新しい変数を追加したデータをdfオブジェクトに代入</span></a>
-<a class="sourceLine" id="cb20-2" data-line-number="2">df =<span class="st"> </span>CPS1985 <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">experience2 =</span> experience<span class="op">^</span><span class="dv">2</span>) </a></code></pre></div>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co"># mutate関数で新しい変数を追加したデータをdfオブジェクトに代入</span></a>
+<a class="sourceLine" id="cb26-2" data-line-number="2">df =<span class="st"> </span>CPS1985 <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">mutate</span>(<span class="dt">experience2 =</span> experience<span class="op">^</span><span class="dv">2</span>) </a></code></pre></div>
 <p>次に，このデータフレーム<code>df</code>と新たな変数名<code>experience2</code>を使って<code>lm()</code>関数を書く。</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb21-1" data-line-number="1">reg_mincer &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience <span class="op">+</span><span class="st"> </span>experience2, <span class="dt">data =</span> df)</a></code></pre></div>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb22-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1">reg_mincer &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience <span class="op">+</span><span class="st"> </span>experience2, <span class="dt">data =</span> df)</a></code></pre></div>
+<p>text形式で分析結果表を作成すると以下のようになる。</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===========================================================================================
 ##                                               Dependent variable:                          
@@ -1878,6 +2067,279 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## F Statistic         90.006*** (df = 1; 532) 71.214*** (df = 2; 531) 55.229*** (df = 3; 530)
 ## ===========================================================================================
 ## Note:                                                           *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
+<p>html形式で分析結果表を作成すると以下のようになる。なおRMarkdown（このウェブ資料）ではNote以下の部分が正しく表示されていないので、出力されたhtmlファイルを見ること。</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, <span class="dt">type =</span> <span class="st">&quot;html&quot;</span>, <span class="dt">out =</span> <span class="st">&quot;./04reg_table.html&quot;</span>)</a></code></pre></div>
+<table style="text-align:center">
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td colspan="3">
+<em>Dependent variable:</em>
+</td>
+</tr>
+<tr>
+<td>
+</td>
+<td colspan="3" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td colspan="3">
+log(wage)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(1)
+</td>
+<td>
+(2)
+</td>
+<td>
+(3)
+</td>
+</tr>
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+education
+</td>
+<td>
+0.077<sup>***</sup>
+</td>
+<td>
+0.096<sup>***</sup>
+</td>
+<td>
+0.090<sup>***</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.008)
+</td>
+<td>
+(0.008)
+</td>
+<td>
+(0.008)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+experience
+</td>
+<td>
+</td>
+<td>
+0.012<sup>***</sup>
+</td>
+<td>
+0.035<sup>***</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+(0.002)
+</td>
+<td>
+(0.006)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+experience2
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+-0.001<sup>***</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+(0.0001)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Constant
+</td>
+<td>
+1.060<sup>***</sup>
+</td>
+<td>
+0.594<sup>***</sup>
+</td>
+<td>
+0.520<sup>***</sup>
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+(0.107)
+</td>
+<td>
+(0.124)
+</td>
+<td>
+(0.124)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>
+</td>
+</tr>
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Observations
+</td>
+<td>
+534
+</td>
+<td>
+534
+</td>
+<td>
+534
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+R<sup>2</sup>
+</td>
+<td>
+0.145
+</td>
+<td>
+0.211
+</td>
+<td>
+0.238
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Adjusted R<sup>2</sup>
+</td>
+<td>
+0.143
+</td>
+<td>
+0.209
+</td>
+<td>
+0.234
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+Residual Std. Error
+</td>
+<td>
+0.489 (df = 532)
+</td>
+<td>
+0.470 (df = 531)
+</td>
+<td>
+0.462 (df = 530)
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+F Statistic
+</td>
+<td>
+90.006<sup>***</sup> (df = 1; 532)
+</td>
+<td>
+71.214<sup>***</sup> (df = 2; 531)
+</td>
+<td>
+55.229<sup>***</sup> (df = 3; 530)
+</td>
+</tr>
+<tr>
+<td colspan="4" style="border-bottom: 1px solid black">
+</td>
+</tr>
+<tr>
+<td style="text-align:left">
+<em>Note:</em>
+</td>
+<td colspan="3" style="text-align:right">
+<sup><em></sup>p&lt;0.1; <sup><strong></sup>p&lt;0.05; <sup></strong></em></sup>p&lt;0.01
+</td>
+</tr>
+</table>
 </div>
 </div>
 </div>
@@ -1886,28 +2348,143 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 <div class="section level2">
 <h2><span class="header-section-number">3.1</span> 不均一分散に対して頑健な標準誤差</h2>
 <p><code>lm</code>によるOLS推定における標準誤差は、誤差項の分散が均一（均一分散）であると仮定している。しかし、実際の計量経済分析において均一分散の仮定が満たされていると想定できるケースはまれであり、通常は、不均一分散に対して頑健な標準誤差(ロバスト標準誤差, heteroskedasticity robust standard error)を用いる。</p>
-<p><code>lm</code>関数にはロバスト標準誤差が実装されていないため、別途パッケージを用いる。ここでは、{sandwich} パッケージの<code>vcovHC</code>関数を用いる。なおsandwichという名称は、ロバスト標準誤差の推定量の式の形状から来ている。</p>
+</div>
+<div id="lm_robust" class="section level2">
+<h2><span class="header-section-number">3.2</span> lm_robust</h2>
+<p>ロバスト標準誤差は、<code>lm()``の代わりにestimatr</code>パッケージの<code>lm_robust()</code>を用いて計算し、分析結果表に組み込むことができる。</p>
+<p>まず、<code>estimatr</code>パッケージを読み込む。</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb31-1" data-line-number="1"><span class="kw">install.packages</span>(<span class="st">&quot;estimatr&quot;</span>)</a></code></pre></div>
+<p>パッケージを読み込み、<code>lm</code>と同じような形で<code>lm_robust</code>を用いる、ロバスト標準誤差にはいくつかの種類があるが、ここでは <code>HC1</code>と指定する。</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co"># パッケージの読み込み</span></a>
+<a class="sourceLine" id="cb32-2" data-line-number="2"><span class="kw">library</span>(<span class="st">&quot;estimatr&quot;</span>)</a>
+<a class="sourceLine" id="cb32-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb32-4" data-line-number="4"><span class="co"># ロバスト標準誤差を用いたOLS推定</span></a>
+<a class="sourceLine" id="cb32-5" data-line-number="5">reg_logwage_r &lt;-<span class="st"> </span><span class="kw">lm_robust</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education, </a>
+<a class="sourceLine" id="cb32-6" data-line-number="6">                           <span class="dt">data =</span> CPS1985, <span class="dt">se_type =</span> <span class="st">&quot;HC1&quot;</span>)</a>
+<a class="sourceLine" id="cb32-7" data-line-number="7">reg_multiple_r &lt;-<span class="st"> </span><span class="kw">lm_robust</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience, </a>
+<a class="sourceLine" id="cb32-8" data-line-number="8">                            <span class="dt">data =</span> CPS1985, <span class="dt">se_type =</span> <span class="st">&quot;HC1&quot;</span>)</a>
+<a class="sourceLine" id="cb32-9" data-line-number="9">reg_mincer_r &lt;-<span class="st"> </span><span class="kw">lm_robust</span>(<span class="dt">formula =</span> <span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span>education <span class="op">+</span><span class="st"> </span>experience <span class="op">+</span><span class="st"> </span>experience2, </a>
+<a class="sourceLine" id="cb32-10" data-line-number="10">                          <span class="dt">data =</span> df, <span class="dt">se_type =</span> <span class="st">&quot;HC1&quot;</span>)</a></code></pre></div>
+<p>なお、<code>HC1</code>は計量経済学でもっともよく使われるロバスト標準誤差であり、経済学者によく使用される計量分析ソフトのStataのロバスト標準誤差と同一のものであり、<code>lm_robust</code>では、<code>HC1</code>のかわりに<code>stata</code>と表記してもよい。</p>
+<p>推定結果は、lmと同じく<code>summary()</code>関数で見ることができる。</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb33-1" data-line-number="1"><span class="kw">summary</span>(reg_logwage_r)</a></code></pre></div>
+<pre><code>## 
+## Call:
+## lm_robust(formula = log(wage) ~ education, data = CPS1985, se_type = &quot;HC1&quot;)
+## 
+## Standard error type:  HC1 
+## 
+## Coefficients:
+##             Estimate Std. Error t value  Pr(&gt;|t|) CI Lower CI Upper  DF
+## (Intercept)  1.05989   0.105624  10.035 8.107e-22   0.8524  1.26738 532
+## education    0.07676   0.008072   9.509 6.607e-20   0.0609  0.09262 532
+## 
+## Multiple R-squared:  0.1447 ,    Adjusted R-squared:  0.1431 
+## F-statistic: 90.42 on 1 and 532 DF,  p-value: &lt; 2.2e-16</code></pre>
+<div class="sourceCode" id="cb35"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb35-1" data-line-number="1"><span class="kw">summary</span>(reg_multiple_r)</a></code></pre></div>
+<pre><code>## 
+## Call:
+## lm_robust(formula = log(wage) ~ education + experience, data = CPS1985, 
+##     se_type = &quot;HC1&quot;)
+## 
+## Standard error type:  HC1 
+## 
+## Coefficients:
+##             Estimate Std. Error t value  Pr(&gt;|t|) CI Lower CI Upper  DF
+## (Intercept)  0.59417   0.117546   5.055 5.940e-07  0.36326   0.8251 531
+## education    0.09641   0.008030  12.007 1.500e-29  0.08064   0.1122 531
+## experience   0.01177   0.001794   6.563 1.255e-10  0.00825   0.0153 531
+## 
+## Multiple R-squared:  0.2115 ,    Adjusted R-squared:  0.2085 
+## F-statistic: 77.27 on 2 and 531 DF,  p-value: &lt; 2.2e-16</code></pre>
+<div class="sourceCode" id="cb37"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb37-1" data-line-number="1"><span class="kw">summary</span>(reg_mincer_r)</a></code></pre></div>
+<pre><code>## 
+## Call:
+## lm_robust(formula = log(wage) ~ education + experience + experience2, 
+##     data = df, se_type = &quot;HC1&quot;)
+## 
+## Standard error type:  HC1 
+## 
+## Coefficients:
+##               Estimate Std. Error t value  Pr(&gt;|t|)   CI Lower   CI Upper
+## (Intercept)  0.5203218  0.1218633   4.270 2.320e-05  0.2809274  0.7597161
+## education    0.0897561  0.0081694  10.987 1.937e-25  0.0737077  0.1058045
+## experience   0.0349403  0.0061116   5.717 1.812e-08  0.0229343  0.0469464
+## experience2 -0.0005362  0.0001357  -3.952 8.783e-05 -0.0008028 -0.0002697
+##              DF
+## (Intercept) 530
+## education   530
+## experience  530
+## experience2 530
+## 
+## Multiple R-squared:  0.2382 ,    Adjusted R-squared:  0.2339 
+## F-statistic: 53.46 on 3 and 530 DF,  p-value: &lt; 2.2e-16</code></pre>
+<p>論文などで使用するための分析結果表については、<code>lm_robust</code>と<code>stargazer</code>の相性はよくないため、そのまま<code>stargazer</code>を使えない。それでも両者を使う方法は参考文献のリンク先に記されているが、ここでは分析結果表のための別のパッケージである<code>texreg</code>を使う。</p>
+<p>まず、<code>texreg</code>をインストールする。</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb39-1" data-line-number="1"><span class="kw">install.packages</span>(<span class="st">&quot;texreg&quot;</span>)</a></code></pre></div>
+<p>次に、<code>texreg</code>を読み込み、以下のようにtext表を出力する。</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co">#読み込み</span></a>
+<a class="sourceLine" id="cb40-2" data-line-number="2"><span class="kw">library</span>(texreg)</a>
+<a class="sourceLine" id="cb40-3" data-line-number="3"></a>
+<a class="sourceLine" id="cb40-4" data-line-number="4"><span class="co">#結果表の出力</span></a>
+<a class="sourceLine" id="cb40-5" data-line-number="5"><span class="kw">screenreg</span>(<span class="kw">list</span>(reg_logwage_r, reg_multiple_r, reg_mincer_r), </a>
+<a class="sourceLine" id="cb40-6" data-line-number="6">          <span class="dt">include.ci =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+<pre><code>## 
+## ===============================================
+##              Model 1     Model 2     Model 3   
+## -----------------------------------------------
+## (Intercept)    1.06 ***    0.59 ***    0.52 ***
+##               (0.11)      (0.12)      (0.12)   
+## education      0.08 ***    0.10 ***    0.09 ***
+##               (0.01)      (0.01)      (0.01)   
+## experience                 0.01 ***    0.03 ***
+##                           (0.00)      (0.01)   
+## experience2                           -0.00 ***
+##                                       (0.00)   
+## -----------------------------------------------
+## R^2            0.14        0.21        0.24    
+## Adj. R^2       0.14        0.21        0.23    
+## Num. obs.    534         534         534       
+## RMSE           0.49        0.47        0.46    
+## ===============================================
+## *** p &lt; 0.001, ** p &lt; 0.01, * p &lt; 0.05</code></pre>
+<p>htmlもしくはWordで出力する場合は、次のようにする。</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb42-1" data-line-number="1"><span class="co">#html</span></a>
+<a class="sourceLine" id="cb42-2" data-line-number="2"><span class="kw">htmlreg</span>(<span class="kw">list</span>(reg_logwage_r, reg_multiple_r, reg_mincer_r), </a>
+<a class="sourceLine" id="cb42-3" data-line-number="3">        <span class="dt">file =</span> <span class="st">&quot;./04reg_table_r.html&quot;</span>, <span class="dt">include.ci =</span> <span class="ot">FALSE</span>)</a>
+<a class="sourceLine" id="cb42-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb42-5" data-line-number="5"><span class="co">#word</span></a>
+<a class="sourceLine" id="cb42-6" data-line-number="6"><span class="kw">htmlreg</span>(<span class="kw">list</span>(reg_logwage_r, reg_multiple_r, reg_mincer_r), </a>
+<a class="sourceLine" id="cb42-7" data-line-number="7">        <span class="dt">file =</span> <span class="st">&quot;./04reg_table_r.doc&quot;</span>, <span class="dt">include.ci =</span> <span class="ot">FALSE</span>)</a></code></pre></div>
+</div>
+</div>
+<div id="-lm_robust" class="section level1">
+<h1><span class="header-section-number">4</span> 参考：不均一分散への対応 (lm_robustを使わない方法)</h1>
+<p><code>lm_robust()</code>登場前のRでのロバスト標準誤差の計算および分析結果表への組み込みの仕方を紹介する。</p>
+<div id="vcovhc" class="section level2">
+<h2><span class="header-section-number">4.1</span> vcovHC</h2>
+<p>{sandwich} パッケージの<code>vcovHC</code>関数を用いる。なおsandwichという名称は、ロバスト標準誤差の推定量の式の形状から来ている。</p>
 <p>まず{sandwich}パッケージをインストールして読み込む。</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb24-1" data-line-number="1"><span class="kw">install.packages</span>(<span class="st">&quot;sandwich&quot;</span>)</a></code></pre></div>
-<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb25-1" data-line-number="1"><span class="kw">library</span>(sandwich)</a></code></pre></div>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb43-1" data-line-number="1"><span class="kw">install.packages</span>(<span class="st">&quot;sandwich&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb44-1" data-line-number="1"><span class="kw">library</span>(sandwich)</a></code></pre></div>
 <p>上記の3種類の重回帰モデルの推定結果の標準誤差を、ロバスト標準誤差に置き換える。</p>
 <p>まず、<code>vcovHC</code>関数を用いてロバスト標準誤差を得る。</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
-<a class="sourceLine" id="cb26-2" data-line-number="2">vcov_reg_lowage &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_logwage, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></a>
-<a class="sourceLine" id="cb26-3" data-line-number="3">robustSE_reg_logwage &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_lowage)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a>
-<a class="sourceLine" id="cb26-4" data-line-number="4"></a>
-<a class="sourceLine" id="cb26-5" data-line-number="5"><span class="co"># (2) reg_multiple</span></a>
-<a class="sourceLine" id="cb26-6" data-line-number="6">vcov_reg_multiple &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_multiple, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>) <span class="co"># 分散共分散行列</span></a>
-<a class="sourceLine" id="cb26-7" data-line-number="7">robustSE_reg_multiple &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_multiple)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a>
-<a class="sourceLine" id="cb26-8" data-line-number="8"></a>
-<a class="sourceLine" id="cb26-9" data-line-number="9"><span class="co"># (3) reg_mincer</span></a>
-<a class="sourceLine" id="cb26-10" data-line-number="10">vcov_reg_mincer &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_mincer, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></a>
-<a class="sourceLine" id="cb26-11" data-line-number="11">robustSE_reg_mincer &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_mincer)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
+<a class="sourceLine" id="cb45-2" data-line-number="2">vcov_reg_lowage &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_logwage, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></a>
+<a class="sourceLine" id="cb45-3" data-line-number="3">robustSE_reg_logwage &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_lowage)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a>
+<a class="sourceLine" id="cb45-4" data-line-number="4"></a>
+<a class="sourceLine" id="cb45-5" data-line-number="5"><span class="co"># (2) reg_multiple</span></a>
+<a class="sourceLine" id="cb45-6" data-line-number="6">vcov_reg_multiple &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_multiple, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>) <span class="co"># 分散共分散行列</span></a>
+<a class="sourceLine" id="cb45-7" data-line-number="7">robustSE_reg_multiple &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_multiple)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a>
+<a class="sourceLine" id="cb45-8" data-line-number="8"></a>
+<a class="sourceLine" id="cb45-9" data-line-number="9"><span class="co"># (3) reg_mincer</span></a>
+<a class="sourceLine" id="cb45-10" data-line-number="10">vcov_reg_mincer &lt;-<span class="st"> </span><span class="kw">vcovHC</span>(reg_mincer, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></a>
+<a class="sourceLine" id="cb45-11" data-line-number="11">robustSE_reg_mincer &lt;-<span class="st"> </span><span class="kw">sqrt</span>(<span class="kw">diag</span>(vcov_reg_mincer)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></a></code></pre></div>
 <p>ここで、<code>type = &quot;HC1&quot;</code>とは、ロバスト標準誤差の種類の指定であり、<code>HC1</code>は計量経済学でもっともよく使われるものである。</p>
 <p>{stargazer}で表を作成する際には、以下のように標準誤差をロバスト標準誤差に置き換える。</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb27-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, </a>
-<a class="sourceLine" id="cb27-2" data-line-number="2">          <span class="dt">se =</span> <span class="kw">list</span>(robustSE_reg_logwage, robustSE_reg_multiple, robustSE_reg_mincer), <span class="co"># robust SEに置き換え</span></a>
-<a class="sourceLine" id="cb27-3" data-line-number="3">          <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb46-1" data-line-number="1"><span class="kw">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, </a>
+<a class="sourceLine" id="cb46-2" data-line-number="2">          <span class="dt">se =</span> <span class="kw">list</span>(robustSE_reg_logwage, robustSE_reg_multiple, robustSE_reg_mincer), <span class="co"># robust SEに置き換え</span></a>
+<a class="sourceLine" id="cb46-3" data-line-number="3">          <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
 ## ===========================================================================================
 ##                                               Dependent variable:                          
@@ -1938,14 +2515,13 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 <p>通常は、均一分散を仮定した標準誤差よりもロバスト標準誤差のほうが大きくなる傾向があるが、今回はほとんど変わらない。なお回帰係数の推定値は全く同じとなる。</p>
 </div>
 <div id="f" class="section level2">
-<h2><span class="header-section-number">3.2</span> 参考：不均一分散に対して頑健なF検定</h2>
-<p>上の表において、F統計量は均一分散を仮定したもののままである。残念ながら、{stargazer}を使って不均一分散に対して頑健なF検定の結果を簡潔に表に示す方法はない。</p>
-<p>下記では、<code>lm</code>での回帰分析結果を利用して、不均一分散に対して頑健なF検定を行う方法だけ記す。</p>
+<h2><span class="header-section-number">4.2</span> 不均一分散に対して頑健なF検定</h2>
+<p>上の表において、F統計量は均一分散を仮定したもののままである。下記では、<code>lm</code>での回帰分析結果を利用して、不均一分散に対して頑健なF検定を行う方法だけ記す。</p>
 <p>次に、F検定に使用する「制約なし」の回帰モデル（被説明変数を定数項のみに回帰するモデル）を実行し、オブジェクトに保存する。</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb29-1" data-line-number="1">reg_no_X &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> CPS1985)　<span class="co"># no_X:説明変数なし</span></a></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb48-1" data-line-number="1">reg_no_X &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="kw">log</span>(wage) <span class="op">~</span><span class="st"> </span><span class="dv">1</span>, <span class="dt">data =</span> CPS1985)　<span class="co"># no_X:説明変数なし</span></a></code></pre></div>
 <p>均一分散を仮定したF検定は、{AER}パッケージの<code>waldtest</code>関数を使って、以下のような形で行うことができる。上記の（均一分散下での）回帰分析でのF検定の結果と一致することが確認できる。</p>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
-<a class="sourceLine" id="cb30-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_no_X)</a></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
+<a class="sourceLine" id="cb49-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_no_X)</a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education
@@ -1955,8 +2531,8 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -1 90.006 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb32-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
-<a class="sourceLine" id="cb32-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_no_X)</a></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
+<a class="sourceLine" id="cb51-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_no_X)</a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience
@@ -1966,8 +2542,8 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -2 71.214 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb34-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
-<a class="sourceLine" id="cb34-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_no_X)</a></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb53-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
+<a class="sourceLine" id="cb53-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_no_X)</a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience + experience2
@@ -1978,9 +2554,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p>一方、不均一分散に対して頑健なF検定は、以下のように実施できる。</p>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb36-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
-<a class="sourceLine" id="cb36-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_no_X, </a>
-<a class="sourceLine" id="cb36-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_logwage, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb55-1" data-line-number="1"><span class="co"># (1) reg_lowage</span></a>
+<a class="sourceLine" id="cb55-2" data-line-number="2"><span class="kw">waldtest</span>(reg_logwage, reg_no_X, </a>
+<a class="sourceLine" id="cb55-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_logwage, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education
@@ -1990,9 +2566,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -1 90.416 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb38-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
-<a class="sourceLine" id="cb38-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_no_X, </a>
-<a class="sourceLine" id="cb38-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_multiple, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)) <span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb57-1" data-line-number="1"><span class="co"># (2) reg_multiple</span></a>
+<a class="sourceLine" id="cb57-2" data-line-number="2"><span class="kw">waldtest</span>(reg_multiple, reg_no_X, </a>
+<a class="sourceLine" id="cb57-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_multiple, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>)) <span class="co"># HC1を用いたF検定</span></a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience
@@ -2002,9 +2578,9 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 ## 2    533 -2 77.265 &lt; 2.2e-16 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb40-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
-<a class="sourceLine" id="cb40-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_no_X, </a>
-<a class="sourceLine" id="cb40-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_mincer, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb59-1" data-line-number="1"><span class="co"># (3) reg_mincer</span></a>
+<a class="sourceLine" id="cb59-2" data-line-number="2"><span class="kw">waldtest</span>(reg_mincer, reg_no_X, </a>
+<a class="sourceLine" id="cb59-3" data-line-number="3">         <span class="dt">vcov =</span> <span class="kw">vcovHC</span>(reg_mincer, <span class="dt">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></a></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience + experience2
@@ -2019,21 +2595,12 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
 </div>
 </div>
 <div class="section level1">
-<h1><span class="header-section-number">4</span> 参考文献</h1>
+<h1><span class="header-section-number">5</span> 参考文献</h1>
 <p>回帰分析や均一分散/不均一分散については、「<a href="https://sites.google.com/site/michihito7ando/lectures/econome2018">計量経済学１</a>」の講義資料などを参照すること。</p>
-</div>
-<div id="stata" class="section level1">
-<h1><span class="header-section-number">5</span> 参考：Stataでの回帰分析</h1>
-<p>Stataでは、不均一分散に対して頑健な回帰分析（ロバスト標準誤差およびロバストなF検定）はより簡単に実施できるというメリットはある。</p>
-<pre><code>* 均一分散を仮定した標準誤差
-reg log_wage education 
-reg log_wage education experience
-reg log_wage education experience experience2
-
-* 不均一分散に対して頑健な標準誤差(オプションにrobustと加えるだけ)
-reg log_wage education, robust
-reg log_wage education experience, robust
-reg log_wage education experience experience2, robust</code></pre>
+<p><code>lm_robst</code>を利用した分析については、以下のサイトを参考にした。</p>
+<p><a href="https://declaredesign.org/r/estimatr/articles/getting-started.html">Getting started using estimatr</a></p>
+<p><a href="https://ditraglia.com/econ224/lab07.pdf">Lab #7 - More on Regression in R</a></p>
+<p><a href="http://keita43a.hatenablog.com/entry/2019/04/17/232548">Rで計量経済の回帰分析やるならestimatrパッケージが良さそう。</a></p>
 </div>
 
 
