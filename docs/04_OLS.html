@@ -1664,7 +1664,7 @@ Y_i = \beta_0 + \beta_1 X_i + u_i
 ##                                         
 ##                                         
 ## </code></pre>
-<p>だが、これではみにくく、論文などの掲載することはできない。そこで、<code>stargazer</code>パッケージを使い、要約統計量の表を作成する。</p>
+<p>だが、これではみにくく、論文などに掲載することはできない。そこで、<code>stargazer</code>パッケージを使い、要約統計量の表を作成する。</p>
 <p>まず、<code>stargazer</code>パッケージをインストールする。</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb7-1" data-line-number="1"><span class="kw">install.packages</span>(<span class="st">&quot;stargazer&quot;</span>)</a></code></pre></div>
 <p>次に、<code>stargazer</code>を読み込み、要約統計量の表を作成する。</p>
@@ -1828,7 +1828,7 @@ age
 </td>
 </tr>
 </table>
-<p>Wordで作成した論文に張り付ける場合はhtml形式のほうがよい。また、<code>stargazer</code>の表はもっと細かく調整できるので、ヘルプを参照したりググったりして、自分用にカスタマイズした表を作ることができる。また、latexを使った出力も可能である。</p>
+<p>Wordで作成した論文に張り付ける場合はhtml形式のほうがよい。また<code>stargazer</code>の表はもっと細かく調整できる。ヘルプを参照したりググったりして、自分用にカスタマイズした表を作ることができる。また、latexを使った出力も可能である。</p>
 </div>
 <div class="section level2">
 <h2><span class="header-section-number">1.3</span> 最小二乗法</h2>
@@ -1872,8 +1872,7 @@ age
 </div>
 <div class="section level2">
 <h2><span class="header-section-number">1.4</span> 回帰分析の結果表示</h2>
-<p><code>summary()</code>による結果表示は論文に使用できるような整った形ではない。</p>
-<p>そこで，<code>{stargazer}</code>パッケージを使って整形する。</p>
+<p><code>summary()</code>による結果表示は論文に使用できるような整った形ではない。そこで再び<code>{stargazer}</code>パッケージを使って整形する。</p>
 <p><code>stargazer()</code>に<code>lm()</code>関数のオブジェクトを入れ，<code>type</code>引数に<code>&quot;text&quot;</code>を指定することで以下のように表示される</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb16-1" data-line-number="1"><span class="kw">stargazer</span>(reg, <span class="dt">type =</span> <span class="st">&quot;text&quot;</span>)</a></code></pre></div>
 <pre><code>## 
