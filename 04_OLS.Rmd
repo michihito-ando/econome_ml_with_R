@@ -347,7 +347,7 @@ library(texreg)
 
 #結果表の出力
 screenreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
-          include.ci = FALSE)
+          include.ci = FALSE, digits = 3)
 ```
 
 htmlもしくはWordで出力する場合は、次のようにする。
@@ -355,11 +355,11 @@ htmlもしくはWordで出力する場合は、次のようにする。
 ```{r, results = 'asis'}
 #html
 htmlreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
-        file = "./04reg_table_r.html", include.ci = FALSE)
+        file = "./04reg_table_r.html", include.ci = FALSE, digits = 3)
 
 #word
 htmlreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
-        file = "./04reg_table_r.doc", include.ci = FALSE)
+        file = "./04reg_table_r.doc", include.ci = FALSE, digits = 3)
 ```
 
 # 参考：不均一分散への対応 (lm_robustを使わない方法)

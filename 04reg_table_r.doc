@@ -10,63 +10,63 @@
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;">(Intercept)</td>
-<td style="padding-right: 12px; border: none;">1.06<sup style="vertical-align: 0px;">***</sup></td>
-<td style="padding-right: 12px; border: none;">0.59<sup style="vertical-align: 0px;">***</sup></td>
-<td style="padding-right: 12px; border: none;">0.52<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">1.060<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.594<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.520<sup style="vertical-align: 0px;">***</sup></td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;"></td>
-<td style="padding-right: 12px; border: none;">(0.11)</td>
-<td style="padding-right: 12px; border: none;">(0.12)</td>
-<td style="padding-right: 12px; border: none;">(0.12)</td>
+<td style="padding-right: 12px; border: none;">(0.106)</td>
+<td style="padding-right: 12px; border: none;">(0.118)</td>
+<td style="padding-right: 12px; border: none;">(0.122)</td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;">education</td>
-<td style="padding-right: 12px; border: none;">0.08<sup style="vertical-align: 0px;">***</sup></td>
-<td style="padding-right: 12px; border: none;">0.10<sup style="vertical-align: 0px;">***</sup></td>
-<td style="padding-right: 12px; border: none;">0.09<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.077<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.096<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.090<sup style="vertical-align: 0px;">***</sup></td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;"></td>
-<td style="padding-right: 12px; border: none;">(0.01)</td>
-<td style="padding-right: 12px; border: none;">(0.01)</td>
-<td style="padding-right: 12px; border: none;">(0.01)</td>
+<td style="padding-right: 12px; border: none;">(0.008)</td>
+<td style="padding-right: 12px; border: none;">(0.008)</td>
+<td style="padding-right: 12px; border: none;">(0.008)</td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;">experience</td>
 <td style="padding-right: 12px; border: none;"></td>
-<td style="padding-right: 12px; border: none;">0.01<sup style="vertical-align: 0px;">***</sup></td>
-<td style="padding-right: 12px; border: none;">0.03<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.012<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.035<sup style="vertical-align: 0px;">***</sup></td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;"></td>
 <td style="padding-right: 12px; border: none;"></td>
-<td style="padding-right: 12px; border: none;">(0.00)</td>
-<td style="padding-right: 12px; border: none;">(0.01)</td>
+<td style="padding-right: 12px; border: none;">(0.002)</td>
+<td style="padding-right: 12px; border: none;">(0.006)</td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;">experience2</td>
 <td style="padding-right: 12px; border: none;"></td>
 <td style="padding-right: 12px; border: none;"></td>
-<td style="padding-right: 12px; border: none;">-0.00<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">-0.001<sup style="vertical-align: 0px;">***</sup></td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;"></td>
 <td style="padding-right: 12px; border: none;"></td>
 <td style="padding-right: 12px; border: none;"></td>
-<td style="padding-right: 12px; border: none;">(0.00)</td>
+<td style="padding-right: 12px; border: none;">(0.000)</td>
 </tr>
 <tr>
 <td style="border-top: 1px solid black;">R<sup style="vertical-align: 0px;">2</sup></td>
-<td style="border-top: 1px solid black;">0.14</td>
-<td style="border-top: 1px solid black;">0.21</td>
-<td style="border-top: 1px solid black;">0.24</td>
+<td style="border-top: 1px solid black;">0.145</td>
+<td style="border-top: 1px solid black;">0.211</td>
+<td style="border-top: 1px solid black;">0.238</td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;">Adj. R<sup style="vertical-align: 0px;">2</sup></td>
-<td style="padding-right: 12px; border: none;">0.14</td>
-<td style="padding-right: 12px; border: none;">0.21</td>
-<td style="padding-right: 12px; border: none;">0.23</td>
+<td style="padding-right: 12px; border: none;">0.143</td>
+<td style="padding-right: 12px; border: none;">0.209</td>
+<td style="padding-right: 12px; border: none;">0.234</td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;">Num. obs.</td>
@@ -76,9 +76,9 @@
 </tr>
 <tr>
 <td style="border-bottom: 2px solid black;">RMSE</td>
-<td style="border-bottom: 2px solid black;">0.49</td>
-<td style="border-bottom: 2px solid black;">0.47</td>
-<td style="border-bottom: 2px solid black;">0.46</td>
+<td style="border-bottom: 2px solid black;">0.489</td>
+<td style="border-bottom: 2px solid black;">0.470</td>
+<td style="border-bottom: 2px solid black;">0.462</td>
 </tr>
 <tr>
 <td style="padding-right: 12px; border: none;" colspan="5"><span style="font-size:0.8em"><sup style="vertical-align: 0px;">***</sup>p &lt; 0.001, <sup style="vertical-align: 0px;">**</sup>p &lt; 0.01, <sup style="vertical-align: 0px;">*</sup>p &lt; 0.05</span></td>
