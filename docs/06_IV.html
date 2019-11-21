@@ -3875,11 +3875,11 @@ Y = 200 + 10A + 500X + \varepsilon
 <li>大卒だと所得が500万円上昇する</li>
 <li>切片は200万円（能力=0、非大卒の平均給与）</li>
 </ul>
-<div id="htmlwidget-5452a5ff1b6e0a719dd3" style="width:480px;height:336px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-5452a5ff1b6e0a719dd3">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-00c85eab8ad1d653d590" style="width:480px;height:336px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-00c85eab8ad1d653d590">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>今回は、前回のデータに新たな変数を加える。<strong>「能力に関係なく、30％の確率でランダムに選ばれた人が学費を免除され、入学を許可される」</strong>という制度があるとし，さらに、<strong>「学費免除に選ばれた人は、50%の確率で大学を卒業できる」</strong>（ただし能力が80以上の条件で選ばれて大卒となった人はこの法則の対象外）とする。</p>
-<div id="htmlwidget-89d43c17b2681e71c062" style="width:480px;height:336px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-89d43c17b2681e71c062">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n学費免除Z -> 学歴X [label=\"50％の確率で大学を卒業\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-14b99a14534d6dcf13bb" style="width:480px;height:336px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-14b99a14534d6dcf13bb">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n学費免除Z -> 学歴X [label=\"50％の確率で大学を卒業\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>データ生成過程は、以下のように設定できる。</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="co"># 事前準備 --------------------</span></a>
 <a class="sourceLine" id="cb1-2" title="2"></a>
@@ -4144,7 +4144,7 @@ Y = 200 + 10A + 500X + \varepsilon
 </div>
 <div id="tsls" class="section level2">
 <h2><span class="header-section-number">3.3</span> 二段階最小二乗法(TSLS)を実行する</h2>
-<p><code>{AER}</code>パッケージには操作変数法による回帰を行う<code>ivreg()</code>という関数がある。こちらを実行すればより簡単に操作変数法を実行することができる。（内部では二段階最小二乗法を行っている）</p>
+<p><code>{AER}</code>パッケージに操作変数法による回帰を行う<code>ivreg()</code>という関数がある。これを実行すればより簡単に操作変数法を実行することができる。（内部では二段階最小二乗法を行っている）</p>
 <div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb15-1" title="1"><span class="kw">library</span>(AER)</a>
 <a class="sourceLine" id="cb15-2" title="2"></a>
 <a class="sourceLine" id="cb15-3" title="3">iv_reg =<span class="st"> </span><span class="kw">ivreg</span>(<span class="dt">formula =</span> income <span class="op">~</span><span class="st"> </span>university <span class="op">|</span><span class="st"> </span>exemption, <span class="co"># 被説明変数 ~ 説明変数 | 操作変数　と指定</span></a>
@@ -4174,7 +4174,7 @@ Y = 200 + 10A + 500X + \varepsilon
 <div id="section-5" class="section level2">
 <h2><span class="header-section-number">3.4</span> ロバスト標準誤差</h2>
 <p>なおTSLSにおいても、不均一分散に対して頑健な標準誤差（ロバスト標準誤差）を使うことが望ましい。</p>
-<p>{estimatr}パッケージの<code>iv_robust()</code>を使う</p>
+<p>{estimatr}パッケージの<code>iv_robust()</code>を使えば、ロバスト標準誤差を用いてTSLSを実施できる。</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb17-1" title="1"><span class="kw">library</span>(estimatr)</a>
 <a class="sourceLine" id="cb17-2" title="2"><span class="kw">library</span>(texreg)</a>
 <a class="sourceLine" id="cb17-3" title="3"></a>
