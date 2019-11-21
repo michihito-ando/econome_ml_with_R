@@ -299,9 +299,40 @@ stargazer(iv_reg, type = "text")
 
 TSLS推定値は、約`r round(iv_reg$coefficients[2],0)`であり、先に求めた値とも一致する。
 
+
+## ロバスト標準誤差
 なおTSLSにおいても、不均一分散に対して頑健な標準誤差（ロバスト標準誤差）を使うことが望ましい。
 
-TSLSでは、{ivpack}パッケージを使うことにより、簡単にロバスト標準誤差を計算できる。
+{estimatr}パッケージの`iv_robust()`を使う
+
+```{r}
+library(estimatr)
+library(texreg)
+
+iv_reg_robust <- iv_robust(income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数
+                            data = df, se_type ="HC1") 
+
+# summary
+summary(iv_reg_robust)
+
+#結果表の出力: コンソールに出力
+screenreg(list(iv_reg, iv_reg_robust), 
+          include.ci = FALSE, digits = 3)
+```
+
+`university`の係数推定値については、ロバスト標準誤差のほうが若干大きくなっているが、ほとんど変わらない。
+
+htmlで出力するには、{textreg}パッケージの`htmlreg()`を使う。
+
+```{r}
+#結果表の出力：html
+htmlreg(list(iv_reg, iv_reg_robust), 
+        file = "./06ivreg_table.html", include.ci = FALSE, digits = 3)
+```
+
+
+## 参考：`ivreg()`と{ivpack}を使ったロバスト標準誤差の計算
+`ivreg()`と{ivpack}パッケージを使うことにより、ロバスト標準誤差を計算することもできる。
 
 
 まずはパッケージをダウンロードする。
@@ -311,8 +342,6 @@ library(ivpack)
 
 `robust.se`関数を用いてロバスト標準誤差を計算し、上記の均一分散を仮定した場合の標準誤差と比較する。
 ```{r}
-iv_reg_robust <- robust.se(iv_reg)
-stargazer(iv_reg, iv_reg_robust, type = "text")
+iv_reg_robust2 <- robust.se(iv_reg)
+stargazer(iv_reg, iv_reg_robust2, type = "text")
 ```
-
-`university`の係数推定値については、ロバスト標準誤差のほうが若干大きくなっている。
