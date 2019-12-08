@@ -63,7 +63,7 @@ $$
 
 ## one-way固定効果モデル
 
-### 個体固定効果モデル（グループ内推定：within）{-}
+### 個体固定効果モデル（グループ内推定：within）
 
 以下のような個体固定効果モデルを考える。
 
@@ -73,7 +73,7 @@ $$
 
 パネルデータを用いることができる場合、以下の３つの方法によって個体固定効果（entity fixed effects）$\theta_i$を除去することができる。
 
-#### (1) 差分モデル（first difference model）のOLS推定{-}
+#### (1) "一回の階差モデル（first difference model）"によるOLS推定{-}
 
 $$
 (Y_{i,t+1} - Y_{it}) = (\beta_0 - \beta_0) + \beta_1 (X_{i,t+1}-X_{it}) +  (\varepsilon_{i,t+1} - \varepsilon_{it})
@@ -104,10 +104,10 @@ Y_{it} = \beta_0 + \beta_1 X_{it} + \gamma_2 D2_i + \cdots + \gamma_n Dn_i + \va
 $$
 
 - 推定方法：
-  1. ダミー変数$D2_i, \cdots, Dn_i$を作成する
+  1. 個体ダミー変数（個体$i$に該当する場合に1、それ以外は0となるダミー変数）$D2_i, \cdots, Dn_i$を作成する
   2. 上の式をOLS推定する
 
-#### (3) ”個体の平均除去（Entity-demeaned）”を用いたOLS推定{-}
+#### (3) ”平均差分法（Entity-demeaned）”を用いたOLS推定{-}
 
 $$
 \begin{align}
@@ -122,11 +122,11 @@ $$
 - 推定方法：
   1. 説明変数・被説明変数について，変数から期間平均を引く
   2. 上の式をOLS推定する
-- $n-1$個のダミー変数による推定と同じ推定量が得られる
-- 統計ソフトでは通常entity-demeanedによる推定が行われる
+- $n-1$個の個体ダミー説明変数による推定と同じ推定値が得られる
+- 統計ソフトでは通常は平均差分法による推定が行われる
 
 
-### 時間固定効果モデル（グループ間推定：between）{-}
+### 時間固定効果モデル（グループ間推定：between）
 
 なお，時間の固定効果（time fixed effects）$\pi_t$を除去したい場合も似たような手法で分析できる。
 
@@ -134,13 +134,14 @@ $$
 Y_{it} = \beta_0 + \beta_1 X_{it} +\pi_t + \varepsilon_{it}
 $$
 
-1. ”$T-1$個のダミー説明変数”を用いたOLS推定
-2. ”time-demeaned”を用いたOLS推定
+1. $T-1$個の時間ダミー説明変数（時間$t$に該当する場合に1、それ以外は0となるダミー変数）を用いたOLS推定
+2. time-demeanedを用いたOLS推定
 
+ただし、計量経済学ではこのような時間固定効果のみを想定したモデルを推定することはほとんどない。
 
 ## two-way固定効果モデル
 
-two-way固定効果モデルあるいは個体と時間の固定効果モデル（entity and time fixed effects model）は、以下のように表される。
+個体と時間の固定効果モデル（entity and time fixed effects model）は、two-way固定効果モデルと呼ばれ、以下のように表される。
 
 $$
 Y_{it} =\beta_1 X_{it} +\theta_i + \pi_t + \varepsilon_{it}
@@ -148,21 +149,26 @@ $$
 
 個体の固定効果$\theta_i$と時間の固定効果$\pi_t$の両方を除去したい場合は、それぞれの推定方法の組み合わせになる。
 
-1. 差分モデルのOLS推定
-2. ”entity demeaning”と”$T-1$個のダミー変数”を用いたOLS推定
-3. ”time demeaning”と“$n-1$個のダミー変数”を用いたOLS推定
-4. ”entity & time demeaning”を用いたOLS推定
+1. $n-1$個の個体ダミー変数と$T-1$個の時間ダミー変数を用いたOLS推定
+2. entity demeaningと$T-1$個の時間ダミー変数を用いたOLS推定
+3. time demeaningと$n-1$個の個体ダミー変数を用いたOLS推定
+4. entity & time demeaningを用いたOLS推定
      - 説明変数と被説明変数について，個体と時間両方の平均を引いてOLS推定
   
 なお、パネルデータを活用した計量経済分析では、時間固定効果がないと仮定できるケースはまれであるため、通常はone-way固定効果モデルではなくtwo-way固定効果モデルを用いる。
 
 
-# Rによる固定効果モデルの推定
+# データの読み込みと可視化
 
 ## パッケージとデータの読み込み
-Rでは`{plm}`パッケージによってパネルデータ分析を行うことができる。
+Rでは、`{estimatr}`パッケージの`lm_robust`関数や`{plm}`パッケージの`plm`によってパネルデータ分析を行うことができる。
+
+ここでは、ロバスト標準誤差やクラスタロバスト標準誤差を簡単に利用できる`lm_robust`を用いた分析方法を紹介する。`plm`を用いた推定も参考に残している。
+
+なお、パネルデータ分析については、誤差項の系列相関も考慮する必要があるため、クラスタロバスト標準誤差を用いることが望ましい。
 
 ```{r, eval=F}
+install.packages("estimatr")
 install.packages("plm")
 ```
 
@@ -171,9 +177,11 @@ install.packages("plm")
 # 事前準備 ------------
 # パッケージの読み込み
 library(tidyverse)
-library(plm)
-library(stargazer)
-library(lmtest)
+library(estimatr) # lm_robustによるパネルデータ分析
+library(plm) # plmによるパネルデータ分析
+library(stargazer) # lmやplmのときの結果表
+library(texreg) # lmやplmやlm_robustのときの結果表
+library(lmtest) # lmやplmでロバスト標準誤差に修正
 ```
 
 今回は、`{plm}`パッケージ含まれている`Grunfeld`データセットを用いる。
@@ -212,14 +220,93 @@ Grunfeld %>% ggplot(aes(x = capital, y = inv, colour = as.factor(firm))) + geom_
 Grunfeld %>% ggplot(aes(x = value, y = capital, colour = as.factor(firm))) + geom_point()
 ```
 
-## 固定効果モデルの推定
+# lm_robustによる推定
 
 投資総額を企業価値、資本ストック、個体固定効果、時間固定効果に回帰する。
 
 $$
 Y_{it} =\beta_1 X1_{it} + \beta_2 X2_{it} +\theta_i + \pi_t + \varepsilon_{it}
 $$
+ここでは、`lm_robust`による推定方法を説明する。
 
+## Pooled OLS
+
+まず、`lm`および`lm_robust`を用いてプールドOLSモデルを推定する。
+
+```{r}
+# lm
+pooled_lm <- lm(inv ~ value + capital, data = Grunfeld)
+
+# lm_robust
+pooled_robust <-  lm_robust(inv ~ value + capital, data = Grunfeld, 
+                              se_type = "HC1") # HC1はロバスト標準誤差の種類
+
+#結果表の出力
+screenreg(list(pooled_lm, pooled_robust), 
+          custom.model.names = c("Pooled", "Pooled, robust"),
+          include.ci = FALSE, digits = 3)
+```
+
+## One-way固定効果モデル
+
+次に、固定効果として個体固定効果のみを含む固定効果モデル(one-way fixed-effect model) を推定する。これには、n-1個の個体ダミー変数を説明変数に導入する方法と、平均差分法(entity-demeaned)を用いて固定効果を除去する方法がある。
+
+なお`lm`や`lm_robust`では、変数Xをfactor(X)にして右辺に加えると、Xのそれぞれの値をカテゴリとみなしてそれぞれのダミー変数を説明変数に加えてくれる。
+
+
+```{r}
+
+#n-1個の個体ダミーを直接導入
+oneway_fe1 <- lm_robust(inv ~ value + capital + factor(firm) ,
+                               data = Grunfeld, 
+                              clusters = firm, #クラスタのレベルを指定
+                              se_type = "stata") #クラスタSE: Stataと同一のものを使う
+
+#lm_robustの"fixed_effects"オプションを利用
+oneway_fe2 <- lm_robust(inv ~ value + capital, data = Grunfeld, 
+                              fixed_effects = ~ firm, #個体固定効果の指定
+                              clusters = firm, #クラスタのレベルを指定
+                              se_type = "stata")  #クラスタSE: Stataと同一のものを使う
+
+#結果表の出力
+screenreg(list(pooled_robust, oneway_fe1, oneway_fe2), 
+          custom.model.names = c("Pooled", "Oneway 1", "Oneway 2"),
+          include.ci = FALSE, digits = 3)
+
+```
+
+二つの固定効果モデル推定においては、どちらの方法を用いても、係数推定値および標準誤差は全く同じとなる。ただし、個体ダミー（`factor(firm)`）を直接モデルに入れると、定数項や個々の個体ダミー変数の係数値の推定結果が表示される。
+
+## Two-way固定効果モデル
+
+次に、個体固定効果に加えて、時間固定効果を加えた固定効果モデル（twoway fixed-effect model)を推定する。
+
+```{r}
+#n-1個の個体ダミーとT-1個の年ダミーを直接導入
+twoway_fe1 <- lm_robust(inv ~ value + capital + factor(firm) + factor(year) ,
+                               data = Grunfeld, 
+                              clusters = firm, #クラスタのレベルを指定
+                              se_type = "stata") #クラスタSE: Stataと同一のものを使う
+
+#lm_robustの"fixed_effects"オプションを利用
+twoway_fe2 <- lm_robust(inv ~ value + capital, data = Grunfeld, 
+                              fixed_effects = ~ firm + year, #個体固定効果、時間固定効果の指定
+                              clusters = firm, #クラスタのレベルを指定
+                              se_type = "stata") #クラスタSE: Stataと同一のものを使う
+
+#結果表の出力
+screenreg(list(pooled_robust, oneway_fe1, oneway_fe2, twoway_fe1, twoway_fe2), 
+          custom.model.names = c("Pooled", "Oneway 1", "Oneway 2", "Twoway 1", "Twoway 2"),
+          include.ci = FALSE, digits = 3)
+```
+
+ここでも、どちらの方法を用いても係数推定値および標準誤差は全く同じとなる。しかし、個体ダミー（`factor(firm)`)および時間ダミー(`factor(year)`)を用いた推定の場合、定数項や個々の個体ダミーや年ダミーの推定結果が表示される。
+
+# 参考： `plm`による推定 
+
+ここでは、`plm`を用いて固定効果モデルを推定する方法を紹介する。ただし、標準誤差はロバスト標準誤差やクラスタロバスト標準誤差ではない点に注意が必要である。そのため、`plm`を用いた場合の標準誤差の修正方法も紹介する。
+
+## パネルデータフレームへの転換
 
 まず、{plm}パッケージの`pdata.frame()を使って`、個体と時間を有するパネル・データフレームとする。
 ただし、今回使うGrunfeldデータ(plmパッケージに所収）は最初からパネルデータフレームとなっているため、下記のコードは説明のための便宜的な処置である。
@@ -229,6 +316,10 @@ original_df <- Grunfeld # いったんdfとして読み込む（下記のpdata.f
 panel_df <- pdata.frame(original_df, index = c("firm", "year")) # 個体=firm、時間=yearと認識させたdf
 ```
 
+ここで、`firm`と`year`が因子（factor)に変換されている点に注意が必要である。
+
+## Pooled OLS
+
 まず、`lm`関数あるいは`plm`関数を使って、プールドOLSモデルを推定する。
 
 ```{r}
@@ -236,17 +327,25 @@ panel_df <- pdata.frame(original_df, index = c("firm", "year")) # 個体=firm、
 pool_lm <- lm(inv ~ value + capital, data = panel_df)
 
 # plmによるpooled OLS
-pool_plm <- plm(inv ~ value + capital, data = panel_df, model = "pooling")
+pool_plm <- plm(inv ~ value + capital, data = panel_df, 
+                model = "pooling")
 
 #stargazer
-stargazer(pool_lm, pool_plm, type = "text", digits = 3, df = FALSE, column.labels = c("Pooled lm", "Pooled plm"), model.names = F, model.numbers = F)
+stargazer(pool_lm, pool_plm, type = "text", 
+          digits = 3, df = FALSE, 
+          column.labels = c("Pooled lm", "Pooled plm"), 
+          model.names = F, model.numbers = F)
 ```
 
-次に、固定効果として個体固定効果のみを含むoneway固定効果モデルを推定する。
+## One-way固定効果モデル
+
+次に、固定効果として個体固定効果のみを含むone-way固定効果モデルを推定する。
 
 ```{r}
 # lmによる固定効果モデル推定(個体固定効果のみ）
-# firmは因子なので、factor(firm)と書くと、ダミー変数として認識される。
+# panel_dfにおけるfirmはすでに因子に変換されているので、
+# そのままでも個体ダミー変数となるが、誤解のないようにfactor(firm)と書く。
+
 fe_oneway_lm <- lm(inv ~ value + capital + factor(firm), data = panel_df)
 
 # plmによる固定効果モデル推定（個体固定効果のみ）
@@ -255,21 +354,32 @@ fe_oneway_plm <- plm(inv ~ value + capital,
                      data = panel_df, model = "within") # within=固定効果モデル
 
 #stargazer
-stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, type = "text", digits = 3, df = FALSE, column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm"), model.names = F, model.numbers = F)
+stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, 
+          type = "text", digits = 3, df = FALSE, 
+          column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm"), 
+          model.names = F, model.numbers = F)
 ```
 
-最後に、時間固定効果も含むtwoway固定効果モデルを推定する。
+## Two-way固定効果モデル
+
+最後に、時間固定効果も含むtwo-way固定効果モデルを推定する。
 
 ```{r}
 # lm関数による固定効果モデル推定(個体固定効果と時間固定効果)
+# panel_dfにおけるfirmとyearはすでに因子に変換されているので、
+# そのままでも個体ダミー変数となるが、誤解のないようにfactor(firm), factor(year)と書く。
 fe_twoway_lm <- lm(inv ~ value + capital + factor(firm) + factor(year), data = panel_df)
 
 # plmの固定効果モデル推定（個体固定効果と時間固定効果）
 fe_twoway_plm <- plm(inv ~ value + capital,
-          data = Grunfeld, model = "within", effect = "twoways") # within=固定効果モデル
+          data = panel_df, model = "within", 
+          effect = "twoways") # within=固定効果モデル
 
 #stargazer
-stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, fe_twoway_lm, fe_twoway_plm, type = "text", digits = 3, df = FALSE, column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm", "Twoway lm", "Twoway plm"), model.names = F, model.numbers = F)
+stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, fe_twoway_lm, fe_twoway_plm, 
+          type = "text", digits = 3, df = FALSE, 
+          column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm", "Twoway lm", "Twoway plm"), 
+          model.names = F, model.numbers = F)
 
 ```
 
@@ -281,36 +391,38 @@ stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, fe_twoway_lm, fe_twowa
 ```{R}
 # plmの固定効果モデル推定2（個体固定効果と時間固定効果）
 fe_twoway_plm2 <- plm(inv ~ value + capital + factor(year),
-          data = Grunfeld, model = "within") # within =固定効果モデル
+          data = panel_df, model = "within") # within =固定効果モデル
 
 #stargazerで3つのtwoway FEを比べる。
-stargazer(fe_twoway_lm, fe_twoway_plm, fe_twoway_plm2, type = "text", digits = 3, df = FALSE,
+stargazer(fe_twoway_lm, fe_twoway_plm, fe_twoway_plm2, type = "text", 
+          digits = 3, df = FALSE,
           column.labels = c("Twoway lm", "Twoway plm", "Twoway plm2"), 
           model.names = F, model.numbers = F)
 ```
 
-## （クラスター）ロバスト標準誤差
-plmによるOLS推定における標準誤差も、デフォルトでは均一分散を仮定している。したがって、ここでもロバスト標準誤差を用いる必要がある。さらに、パネルデータ分析については、誤差項の系列相関も考慮する必要があるため、クラスターロバスト標準誤差を用いることが望ましい。
+## `coeftest`による（クラスタ）ロバスト標準誤差
+
+`plm`によるOLS推定における標準誤差も、デフォルトでは均一分散を仮定している。したがって、ここでもロバスト標準誤差を用いる必要がある。さらに、パネルデータ分析については、誤差項の系列相関も考慮する必要があるため、クラスタロバスト標準誤差を用いることが望ましい。
 
 
-上記の3つの重回帰モデルの推定結果の標準誤差を、（クラスター）ロバスト標準誤差に置き換える。
+上記の重回帰モデルの推定結果の標準誤差を、（クラスタ）ロバスト標準誤差に置き換える。
 ここでは、`lmtest`および`plm`パッケージに含まれる`coeftest()`を用いる。
 
 ```{r}
 # coeftest()を用いてロバスト標準誤差を計算する。
 
-# lmで推定したものをロバスト標準誤差にする。クラスターロバストではない。
-fe_twoway_lm_robust <- coeftest(fe_twoway_lm, vcovHC(fe_twoway_lm, method = "arellano", type = "HC1"))
+# lmで推定したものをロバスト標準誤差にする。
+fe_twoway_lm_robust <- coeftest(fe_twoway_lm, 
+                                vcovHC(fe_twoway_lm, method = "arellano", type = "HC1"))
 
-#plmで推定したものをクラスターロバスト標準誤差にする。いくつかの選択肢がある。
-fe_twoway_plm_robust <- coeftest(fe_twoway_plm, vcovHC(fe_twoway_plm, method = "arellano", type = "HC1"))
-fe_twoway_plm2_robust <- coeftest(fe_twoway_plm2, vcovHC(fe_twoway_plm2, method = "arellano", type = "HC1"))
+#plmで推定したものをクラスタロバスト標準誤差にする。
+fe_twoway_plm_clustered <- coeftest(fe_twoway_plm, 
+                                 vcovHC(fe_twoway_plm, method = "arellano", type = "HC1"))
 
 # stargazerで比べる。
-stargazer(fe_twoway_lm, fe_twoway_lm_robust, fe_twoway_plm, fe_twoway_plm_robust, 
-          fe_twoway_plm2, fe_twoway_plm2_robust,
+stargazer(fe_twoway_lm, fe_twoway_lm_robust, fe_twoway_plm, fe_twoway_plm_clustered, 
           type = "text", digits = 3, df = FALSE,
-          column.labels = c("lm", "lm,robust", "plm", "plm,robust", "plm2", "plm2,robust"), 
+          column.labels = c("lm", "lm,robust", "plm", "plm,clustered"), 
           model.names = F, model.numbers = F)
 ```
 
@@ -318,3 +430,9 @@ stargazer(fe_twoway_lm, fe_twoway_lm_robust, fe_twoway_plm, fe_twoway_plm_robust
 # 参考文献
 
 安藤道人「計量経済学２」あるいは「計量経済特論２」の「パネルデータ分析」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)
+
+
+[Getting started using estimatr](
+https://declaredesign.org/r/estimatr/articles/getting-started.html)
+
+[Pacakge `estimatr`](https://cran.r-project.org/web/packages/estimatr/estimatr.pdf)
