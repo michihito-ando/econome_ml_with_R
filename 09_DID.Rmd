@@ -41,8 +41,10 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 # 事前準備 --------------------
 # パッケージの読み込み
 library(tidyverse)
+library(estimatr)
 library(plm)
 library(stargazer)
+library(texreg)
 
 # 乱数の種を固定
 set.seed(0)
@@ -232,11 +234,44 @@ stargazer(DID_pooled, DID_FD, type = "text", digits = 3, df = FALSE,
 
 DID推定値は概ね500近傍となってり、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果$\theta$を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果$\theta_i$を除去しているためである。
 
+
+### lm_robustを用いた推定
+パネルデータであれば、(1)式の処置群ダミー$\theta D_i$の代わりに、個体ダミーを用いてもよい。（ただし、繰り返しクロスセクションデータを用いたDID推定では個体ダミーは用いることはできない点は留意が必要である。）
+
+この場合、個体ダミーをn-1個用いて推定してもよいが、`lm_robust`関数で個体固定効果モデルを推定してもいい。
+
+
+```{r}
+# DID with a two-by-two DID model (オーソドックスなDIDモデル)
+DID_robust1 <- lm_robust(income ~ treated + year + treated*year, 
+                            data = df_panel, 
+                            clusters = ID,
+                            se_type = "stata")
+
+# DID with two-way FE model (年ダミーは活用） 
+DID_robust2 <- lm_robust(income ~ treated*year + year, 
+                            fixed_effects = ID,
+                            data = df_panel, 
+                            clusters = ID,
+                            se_type = "stata")
+
+# DID with two-way FE model（年ダミーも入れない）
+DID_robust3 <- lm_robust(income ~ treated*year, 
+                            fixed_effects = ID + year,
+                            data = df_panel, 
+                            clusters = ID,
+                            se_type = "stata")
+
+
+#結果表の出力
+screenreg(list(DID_robust1, DID_robust2, DID_robust3), 
+          custom.model.names = c("Pooled", "Oneway", "Twoway"),
+          include.ci = FALSE, digits = 3)
+```
+
 ### plmを用いた推定
 
-つまり、パネルデータであれば、(1)式の処置群ダミー$\theta D_i$の代わりに、個体ダミーを用いてもよいし、そのほうが標準誤差は小さくなる。（ただし、繰り返しクロスセクションデータを用いたDID推定では個体ダミーは用いることはできない点は留意が必要である。）
-
-この場合、`lm`関数で個体ダミーをn-1個用いて推定してよいが、`plm`関数で個体固定効果モデルを推定すればよい。
+`plm`関数で個体固定効果モデルを推定してもよいが、標準誤差は均一分散を仮定したものである点は注意が必要。
 
 
 ```{r}
@@ -245,10 +280,10 @@ df_panel <- pdata.frame(df_panel, index = c("ID", "year")) # 個体=firm、時�
 
 # DID regression
 
-# DID with one-way FE model
-DID_plm1 <- plm(income ~ year + treated*year, data = df_panel, model = "within")
+# DID with two-way FE model (年ダミーは活用） 
+DID_plm1 <- plm(income ~ treated*year + year, data = df_panel, model = "within")
 
-# DID with two-way FE model
+# DID with two-way FE model（年ダミーも入れない）
 DID_plm2 <- plm(income ~ treated*year, data = df_panel, model = "within", effect = "twoways")
 
 # stargazer
@@ -257,7 +292,6 @@ stargazer(DID_plm1, DID_plm2, type = "text", digits = 3, df = FALSE,
           model.names = F, model.numbers = F)
 ```
 
-(2)式の一階の階差によるDIDと、推定値と標準誤差は完全に一致している。
 
 # 参考文献
 
