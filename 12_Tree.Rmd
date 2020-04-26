@@ -37,41 +37,125 @@ $$
 
 ## ツリーモデル
 
-**決定木**（decision tree）は説明変数の値に応じて条件分岐を繰り返して木のような構造をとるアルゴリズムである。
+**決定木**（decision tree）は特徴量の値に応じて条件分岐を繰り返して木のような構造をとるアルゴリズムである。
 
-以下の図は$x_1,x_2$という説明変数を使って目的変数$y$の分類を決定木によって行うときのイメージである。左側の図が木構造のモデルの様子を表しており，まず「$x_1<a$」であるかどうかによって分岐し，続いて$x_1<a$がYesであったほうの枝において「$x_2<b$」であるかどうかで分岐するようにし，最終的に予測を行う。右側の図はこの条件分岐によって生み出される識別境界を示している。木はノードとリンクから構成され，分岐の結節点を**ノード**（node），ノードとノードを結ぶ線をリンクという。
+以下の図は$x_1,x_2$という特徴量を使って目的変数$y$の分類を決定木によって行うときのイメージである。
+左側の図が木構造のモデルの様子を表しており，まず予測対象のレコードが「$x_1<a$」であるかどうかによって分岐し，もしそうであれば$x_1<a$がYesであったほうの枝において更に「$x_2<b$」であるかどうかで分岐するようにして，そのレコードがどちらのクラスに属するかの分類を行う。
+右側の図はこの条件分岐によって生み出される識別境界（$x_1, x_2$の軸からなる空間の分割）を示している。
+
+なお，木の分岐の結節点や終端を**ノード**（node）と呼び，木の末端にあるノードは終端ノード（terminal node）や葉ノード（leaf node）と呼ぶ。各葉ノードは，右側の図の分割された各部分空間に対応している。
 
 ![](12_Tree.assets/1552647653428.png)
 
 
 
+## 理論
+
+線形回帰の場合，予測モデルの学習とはパラメータ$\beta$を推定することであったが，決定木では最適な分割を推定して木を分岐させていくことが学習にあたる。以下でその仕組みを概説する。
 
 
-## 学習規則
+### 予測値の算出
 
-線形回帰ではパラメータ$\beta$を推定して学習を行っていたが，決定木では最適な分割を推定することで学習を行う。
+目的変数$y$がカテゴリカル変数である場合，決定木の予測値は葉ノード内の学習データのうち，最も割合の多いクラスを使う（上の図のように）。
 
-決定木では**不純度**（impurity）と呼ばれる指標を用いて最適な分割を見つける。不純度には**ジニ係数**（gini index）
+目的変数$y$が量的変数である場合，葉ノード内の学習データの$y$の平均値を予測値とする。
+
+
+### 不純度
+
+
+決定木では，他の機械学習アルゴリズムが誤差関数で予測精度の良し悪しを評価していたのと同様に，分割の良し悪しについての指標である**不純度**（impurity）という関数を用いて予測精度が最もよい分割を探索する。
+
+
+目的変数$y$が$K$個のクラスからなるカテゴリカル変数である場合，不純度には**ジニ係数**（Gini index）
+
 $$
-I(t) = 1 - \sum_{i=1}^k {p(i|t)}^2
+I(t) = 1 - \sum_{k=1}^K p_{tk}^2, \hspace{1em} (k=1,2, ...,K)
 $$
-などが使われる。ここで$t$はノード，$i$は目的変数の値で，$p(i|t)$はノード$t$の領域に属する学習用データのサンプルサイズ$N(t)$のうち目的変数が$i$の値をとるデータ数$N_i(t)$の割合
+が使われることが多い。
+
+ここで$t$はノード，$k$は目的変数の値で，$p_{tk}$はノード$t$の領域に属する学習用データのサンプルサイズ$N(t)$のうち目的変数が$k$の値をとるデータ数$N_k(t)$の割合
 
 $$
-p(i|t) = \frac{N_i(t)}{N(t)}
+p_{kt} = \frac{N_k(t)}{N(t)}
 $$
-である。あるノードの領域に属するサンプルが全て同じクラスに属する場合（異なるクラスのサンプルが混じらずに綺麗に分割できている場合）にはその不純度は0になる。
+である。
 
-そして，ノード$t$の不純度$I(t)$やサンプルサイズ$N(t)$と，ノード$t$から左右に分割される子ノード$t_{L},t_{R}$の不純度$I(t_L),I(t_R)$と子ノードの領域に属するサンプルサイズ$N(t_L),N(t_R)$を用いて算出される**情報利得**（information gain）
+```{r, echo=F, fig.height=2, fig.width=3}
+
+# 2-class Gini impurity
+gini <- function(p) {
+  p_vec = c(p, 1-p)
+  return(1 - sum(p_vec^2))
+}
+
+gini_range = c()
+p_range = 0:100 * 0.01
+for (p in p_range) {
+  gini_range = append(gini_range, gini(p))
+}
+
+# plot
+library(tidyverse)
+ggplot(data_frame(gini_range, p_range),
+       aes(x = p_range, y = gini_range))+
+  geom_line(color = "SteelBlue")+
+  labs(y = "Gini index", x = expression(p[kt]), title = "2クラス分類におけるジニ係数")+
+  theme_classic()
+```
+
+上の図は分類すべきクラスが2つ（$K=2$）である場合のジニ係数の推移である。
+
+例えば$p_{tk}=0.5$のとき，すなわち2つのクラスに属するデータが半々の比率で混じり合っていて，良い分割とは全く言えない場合には，その葉ノードのジニ係数は
+
+$$
+I(t) = 1 - \sum_{k=1}^2 {p_{tk}}^2 = 1 - (0.5^2 + 0.5^2)= 0.5
+$$
+
+となる。グラフからわかるように，これは2クラス分類の状況下での最大の不純度である。
+
+逆に，しっかりとデータが分けられており，1つめのクラスに属するデータのみが葉ノード$t$に含まれる場合，$p(k=1|t)=1.0$であるから
+
+
+$$
+I(t) = 1 - \sum_{k=1}^2 {p_{tk}}^2 = 1 - (1.0^2 + 0.0^2)= 0
+$$
+
+となる。
+
+目的変数が量的変数の場合，不純度$I(t)$にはノード$t$内の学習データでの予測値$\hat{y}_i$と実測値$y_i$の平均2乗誤差
+
+$$
+I(t) = \frac{1}{N(t)}\sum_{\boldsymbol{x}_i \in t} (y_i - \hat{y})^2
+$$
+
+を使用する。なお，予測値$\hat{y}$がそのノード$t$内での平均値であるため，これはノード内での$y$の分散である。
+
+
+### 分割規則の決定
+
+不純度を使って，冒頭の例における「$x_1<a$」のような分岐の条件を探索していく。
+
+ノード$t$から左右に分割される子ノード達を$t_{L},t_{R}$と表記する。不純度$I(t_L),I(t_R)$と子ノードの領域に属するサンプルサイズ$N(t_L),N(t_R)$を用いて算出される，分割後の不純度の重み付き和
+
+$$
+\left\{\frac{N(t_L)}{N(t)} I(t_{L}) + \frac{N(t_R)}{N(t)} I(t_{R})\right\}
+$$
+
+と分割前の不純度$I(t)$との差
+
 $$
 I(t) - \left\{\frac{N(t_L)}{N(t)} I(t_{L}) + \frac{N(t_R)}{N(t)} I(t_{R})\right\}
 $$
-を最大化する分割，すなわち，分割後の子ノードの不純度を最も下げるような分割を採用する。
 
+を**情報利得**（information gain）と呼び，これを最大化する（分割後の不純度の和を最も下げる）ような分割の条件を探索する。
 
-<!-- ## 正則化 -->
+より具体的には，以下のような手順で学習が行われていく。
 
-<!-- あまりにも細かく分割しすぎるとかえって過学習を招くため，ほどよいところで分割を止めなければならない。 -->
+1. 葉ノード$t$において，すべての特徴量$x_j\ (j=1,2,...d)$について，$x_j$で分割可能なすべての点での情報利得を計算する
+2. すべての葉ノードで1.の計算を行い，最も情報利得の多い葉・特徴量・分割点の条件で木を分岐させる
+3. 上記1.,2.を，何らかの基準（例えば「いずれかの葉ノード内の学習データの数が5個未満になるまで」）を満たすまで繰り返し，延々と決定木を成長（分岐）させていく
+
 
 
 ## Rで実践
@@ -83,7 +167,6 @@ $$
 ```{r}
 # 準備
 library(tidyverse)
-set.seed(666)
 
 # データ読み込み
 library(carData)
@@ -111,7 +194,8 @@ titanic <- na.omit(TitanicSurvival)
 # ID列を追加
 df = titanic %>% rownames_to_column("ID")
 
-# 80%を学習用データに
+# 80%を学習用データにランダムサンプリング
+set.seed(1)  # 乱数の種を固定
 train <- df %>% sample_frac(size = 0.8)
 
 # 学習用データに使っていないIDの行をテスト用データに
@@ -132,19 +216,19 @@ test <- test %>% select(-ID)
 install.packages(c("rpart", "partykit"))
 ```
 
-`rpart()`関数を用いて決定木を実行できる。`lm()`関数と同様に，`formula`の引数にモデルの構造すなわち被説明変数・説明変数の関係を記述し`data`の引数にデータのオブジェクトを入れる。
+`rpart()`関数を用いて決定木を実行できる。`lm()`関数と同様に，`formula`の引数にモデルの構造すなわち被特徴量・特徴量の関係を記述し`data`の引数にデータのオブジェクトを入れる。
 
 
 ```{r}
 # パッケージの読み込み
 library(rpart)
 
-# rpartを実施し、titanic_treeに結果を保存
-# lmと同様、y ~ x。"." は「残りの変数全部」を意味する
+# rpartを実施し，titanic_treeに結果を保存
+# lmと同様に「y ~ x1 + x2」の形で変数を指定できる。"." は「残りのすべての変数」の意味
 titanic_tree <- rpart(survived ~ . , data = train)  
 ```
 
-ここでは表示しないが、結果は`summary()`や`print()`で表示できる。
+ここでは表示しないが，結果は`summary()`や`print()`で表示できる。
 
 ```{r  eval=F}
 summary(titanic_tree)
@@ -167,7 +251,7 @@ plot(as.party(titanic_tree))
 
 決定木はこのようにデータの解釈・説明を行うことができる。そのため線形回帰などと並んでマーケティングの現場などビジネスにおいても使われる。
 
-次に、実際の値と予測値を比べる。正解率を計算するために`Accuracy()`を使用するので、`MLmetrics`パッケージを読み込んでおく
+次に，実際の値と予測値を比べる。正解率を計算するために`Accuracy()`を使用するので，`MLmetrics`パッケージを読み込んでおく
 
 ```{r}
 library(MLmetrics)
@@ -185,7 +269,7 @@ table(train$survived, y_pred_train)
 Accuracy(y_pred = y_pred_train, y_true = train$survived)
 ```
 
-次いで、テストデータで検証する。
+次いで，テストデータで検証する。
 ```{r}
 # 予測値を保存
 y_pred_test <- predict(titanic_tree, test, type = "class")
@@ -193,33 +277,82 @@ y_pred_test <- predict(titanic_tree, test, type = "class")
 # 混同行列:実際の値と予測値を比べる
 table(test$survived, y_pred_test)
 
-# 訓練データでの正解率
+# テストデータでの正解率
 Accuracy(y_pred = y_pred_test, y_true = test$survived)
 ```
 
-```{r}
-# 予測
-y_pred = predict(titanic_tree, test, type = "class")
 
-# 混同行列:実際の値と予測値を比べる
-table(test$survived, y_pred)
-```
-
-訓練データでの正解率よりも低いものの、76%程度の正解率となっている。
 
 # ランダムフォレスト　
 
-決定木は予測モデルの解釈可能性が高いものの，単一の決定木では予測精度はあまり高くない。
+決定木は異なる学習データで学習し直した時に学習結果が大きく変化しやすい特性があり，単一の決定木での予測精度はあまり高くない。
 
-複数の予測モデルの結果を統合して答えを出す手法を**アンサンブル学習**（ensemble learning）という。決定木は予測精度が目的であるときには単体で使われることはほとんどなく，アンサンブルして使われる事が多い。
+しかし，複数の予測モデルを統合して予測値を出す**アンサンブル学習**（ensemble learning）という学習方法を用いることで，予測モデルの予測精度を向上させることができることが知られている。
 
-決定木のアンサンブル学習で最も有名な手法が**ランダムフォレスト**（random forest）である。
+例えば，60%の確率で正しい分類ができる予測モデルがあるとする。もしこの予測モデルを単体で使うのであればあまり信用できないモデルである。しかし，もしそのようなモデルが10個あり互いの予測の相関がなければ，平均的には10個のうち6個のモデルは正しい分類を行うと考えられるため，それらで多数決を行えば良い精度の予測モデルが得られると考えられる。
 
-ランダムフォレストでは複数の決定木を使うが，その際に決定木間の相関を減らすために学習用データのサンプルから重複を許して無作為抽出（**ブートストラップサンプリング**）したデータを用いる。
+以下の図はこの考えをもとにシミュレーションを行ったものである。「単体」の予測モデルは試行回数を増やすにつれて0.6に収束していくが，「10個の多数決」のほうは約0.85の累積正解率に収束しているのが分かる。
 
-さらに終端の(最後の）ノード以外の各ノードにおいて、あらかじめ決めておいた数だけの説明変数をランダムに選択して使用する。(なお、すべての説明変数を使う方法は**バギング**と呼ばれる。ランダムフォレストはバギングの改良版である)
+```{r, echo=F, fig.height=3, fig.width=6}
+set.seed(1)
 
-決定木の結果を多数決（分類問題の場合）あるいは平均（回帰問題の場合）したものを最終的な予測値として採用する。
+# 多数決を行う予測モデル
+aggregated_estimator <- function(n=5, p=0.6) {
+  # y: {0,1}のいずれかを確率pで返すn個の独立な予測モデルのアウトプット，という想定
+  # 正解は1とする
+  y = rbinom(n=n, size=1, prob=p)
+  # 多数決をとる
+  if (length(y[y == 1]) >= length(y[y == 0])) {
+    y_hat = 1
+  } else {
+    y_hat = 0
+  }
+  return(y_hat)
+}
+
+# Monte-Carlo Simulation
+n_estimators = 10
+p_true = 0.6
+baseline = p_true
+n_iter = 1000
+
+cum_accuracy = c()
+cum_accuracy_ag = c()
+y_vec = c()
+y_ag_vec = c()
+
+for (i in 1:n_iter) {
+  # single estimator
+  y = rbinom(n=1, size=1, prob=p_true)
+  y_vec = append(y_vec, y)
+  cum_accuracy = append(cum_accuracy, mean(y_vec))
+  # aggregated estimator
+  y_ag = aggregated_estimator(n=n_estimators, p=p_true)
+  y_ag_vec = append(y_ag_vec, y_ag)
+  cum_accuracy_ag = append(cum_accuracy_ag, mean(y_ag_vec))
+}
+
+# plot
+df = data_frame(iteration = 1:n_iter, "単体" = cum_accuracy, "10個の多数決" = cum_accuracy_ag)
+df = gather(df, key="予測モデル", value="value", -iteration)
+
+ggplot(df, aes(x=iteration, y=value, color=予測モデル))+
+  geom_line()+
+  # geom_hline(yintercept = baseline)+
+  labs(y = "累積正解率", x = "試行回数", 
+       title = "正解率60%の予測モデルのモンテカルロシミュレーション")+
+  theme_classic()
+```
+
+
+**ランダムフォレスト**（random forest）は上記の例のような考え方に基づき「互いの相関が低い複数の決定木を生成して多数決をとる」というアルゴリズムである。
+ランダムフォレストの学習は以下のような流れで行われる。
+
+1. 学習データから重複を許して無作為抽出（**ブートストラップサンプリング**）を$B$回繰り返し，$B$個のデータセットを得る。
+2. $B$個の各データセットで$B$個の決定木を生成する。その際には決定木間の相関を減らすため，あらかじめ決めておいた数の特徴量をランダムに選択し，それらの特徴量だけを使って決定木を生成する。
+3. 予測を行う際は，目的変数がカテゴリカル変数なら$B$個の決定木の予測結果の多数決をランダムフォレストの予測結果とする。目的変数が量的変数なら$B$個の決定木の予測結果の平均をランダムフォレストの予測結果とする。
+
+
 
 
 ## Rで実践
@@ -235,11 +368,14 @@ install.packages("randomForest")
 ```{r}
 # パッケージの読み込み
 library(randomForest)
+set.seed(0)
 
-# randomForestを実施し、titanic_RFに保存。
-# lmと同様、y ~ x。"." は「残りの変数全部」を意味する
-# デフォルトの設定をそのまま使う。
-titanic_RF <- randomForest(survived ~ . , data = train)
+# randomForestを実施し，titanic_RFに保存。
+titanic_RF <- randomForest(survived ~ . , data = train,
+                           mtry = 3,       # ランダムに選んで使用する特徴量の数
+                           nodesize = 5,   # 葉ノードに含まれる学習データの最小数
+                           sampsize = 100, # ブートストラップサンプルのサンプルサイズ
+                           ntree = 2000)   # ブートストラップの反復回数であり，作成する決定木の数
 ```
 
 結果の概略は`print`によって表示できる。
@@ -248,7 +384,36 @@ titanic_RF <- randomForest(survived ~ . , data = train)
 print(titanic_RF)
 ```
 
-（なお、ここでの`OOB estimate of error rate`とは、**Out-of-bag(OOB)による誤分類率の推定値**である。これは、ブートストラップサンプルによる決定木の生成では、平均的に訓練データの観測値の約3分の2を用いられ、残りの約3分の1の観測値は用いられない（out-of-bag)であることを利用した誤分類率の推定値である。つまり、個々の訓練データの観測値について、その観測値が使われなかった（out-of-bagであった）ブートストラップサンプルによる決定木の予測値（の多数決）を用いて予測を評価し、そこから全体の誤分類率を計算している。）
+なお，ここでの`OOB estimate of error rate`とはランダムフォレストの予測誤差の推定値であり，ブートストラップサンプリングを行った際に使われなかった学習データが生じることを利用して予測精度を測っている。`ntree`に指定すべき最適な木の数を考える際の参考になる。
+
+```{r, echo=F, fig.height=3, fig.width=4}
+errors = as_data_frame(titanic_RF$err.rate)
+
+# plot
+ggplot(errors, aes(x=1:nrow(errors), y=OOB))+
+  geom_line(color="SteelBlue")+
+  labs(y = "OOB誤分類率", x = "木の数", 
+       title = "ランダムフォレストの木の数と誤分類率")+
+  theme_classic()
+```
+
+
+<!-- ```{r} -->
+<!-- # ntreeの最適化 -->
+
+<!-- # OOB誤り率を取得する -->
+<!-- OOB_errors = as_data_frame(titanic_RF$err.rate)$OOB -->
+<!-- # 最小のOOB誤り率を返す木の数 -->
+<!-- best_n_tree = which(OOB_errors == min(OOB_errors))[1] -->
+
+<!-- # randomForestを実施し，titanic_RFに保存。 -->
+<!-- titanic_RF <- randomForest(survived ~ . , data = train, -->
+<!--                            mtry = 3,       # ランダムに選んで使用する特徴量の数 -->
+<!--                            nodesize = 5,   # 葉ノードに含まれる学習データの最小数 -->
+<!--                            sampsize = 200, # ブートストラップサンプルのサンプルサイズ -->
+<!--                            ntree = best_n_tree)   # ブートストラップの反復回数であり，作成する決定木の数 -->
+<!-- ``` -->
+
 
 まずは訓練データで検証する。
 
@@ -263,9 +428,8 @@ table(train$survived, y_pred_train)
 Accuracy(y_pred = y_pred_train, y_true = train$survived)
 ```
 
-単一の決定木よりも正解率は高くなっている。
 
-次いで、テストデータで検証する。
+次いで，テストデータで検証する。
 
 ```{r}
 # 予測
@@ -278,24 +442,24 @@ table(test$survived, y_pred_test)
 Accuracy(y_pred = y_pred_test, y_true = test$survived)
 ```
 
-こちらも、単一の決定木よりも正解率は高くなっている。
-
-また、ランダムフォレストでは，`$importance`でジニ係数の減少に基づいて算出される**変数重要度**（variable importance）を確認することができる。これは構築した予測モデルにおいてそれぞれの説明変数がどの程度予測に寄与しているのかを教えてくれる。
+また，ランダムフォレストでは，`$importance`でジニ係数の減少に基づいて算出される**変数重要度**（variable importance）を確認することができる。これは分割時の不純度の減少量の観点から，予測モデルにおいて各特徴量がどの程度予測に寄与しているのかの目安を示している。
 
 ```{r}
-# 変数重要度はimportanceとして保存されている
+# 変数重要度（特徴量重要度）
 titanic_RF$importance
-
-# importance関数でも表示できる。
-importance(titanic_RF)
 ```
 
-最も予測に寄与している説明変数は性別であることが分かる。
 
 # 参考文献
+
+[Breiman, L. (2001). Random forests. *Machine learning*, *45*(1), 5-32. ](https://link.springer.com/content/pdf/10.1023/A:1010933404324.pdf)
+
+Hastie, T., Tibshirani, R., & Friedman, J. (2014) 『統計的学習の基礎: データマイニング・推論・予測』，共立出版
+
 James et al.(2018)『Rによる統計的学習入門』8章「木に基づく方法」
 
 平井有三(2012)『はじめてのパターン認識』第11章「識別器の組み合わせによる性能強化」
+
 
 [Package `randomForest`](https://cran.r-project.org/web/packages/randomForest/randomForest.pdf)
 
@@ -310,7 +474,7 @@ https://www.slideshare.net/HitoshiHabe/ss-58784421)」
 
 <!-- ```{r} -->
 <!-- library(caret) -->
-<!-- clf_RF <- train(form = survived ~ . , # survivedを目的変数に，残りのすべての列を説明変数にする -->
+<!-- clf_RF <- train(form = survived ~ . , # survivedを目的変数に，残りのすべての列を特徴量にする -->
 <!--                 data = train, -->
 <!--                 method = "rf", # 決定木を指定 -->
 <!--                 trControl = trainControl(method = "cv"), -->
@@ -322,7 +486,7 @@ https://www.slideshare.net/HitoshiHabe/ss-58784421)」
 
 <!-- ```{r} -->
 <!-- library(caret) -->
-<!-- clf_tree <- train(form = survived ~ . , # survivedを目的変数に，残りのすべての列を説明変数にする -->
+<!-- clf_tree <- train(form = survived ~ . , # survivedを目的変数に，残りのすべての列を特徴量にする -->
 <!--                   data = train, -->
 <!--                   method = "rpart", # 決定木を指定 -->
 <!--                   trControl = trainControl(method = "cv"), -->

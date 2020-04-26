@@ -250,14 +250,14 @@ DID_robust1 <- lm_robust(income ~ treated + year + treated*year,
 
 # DID with two-way FE model (年ダミーは活用） 
 DID_robust2 <- lm_robust(income ~ treated*year + year, 
-                            fixed_effects = ID,
+                            fixed_effects = ~ ID,
                             data = df_panel, 
                             clusters = ID,
                             se_type = "stata")
 
 # DID with two-way FE model（年ダミーも入れない）
 DID_robust3 <- lm_robust(income ~ treated*year, 
-                            fixed_effects = ID + year,
+                            fixed_effects = ~ ID + year,
                             data = df_panel, 
                             clusters = ID,
                             se_type = "stata")
