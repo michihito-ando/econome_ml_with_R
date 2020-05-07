@@ -1777,13 +1777,11 @@ div.tocify {
 </div>
 <div class="section level2">
 <h2><span class="header-section-number">5.2</span> データフレームの操作</h2>
-<p><code>df[行番号,列番号]</code>のように座標を指定して要素を取り出すことができる。</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1"><span class="co">#データフレームの操作</span></a>
-<a class="sourceLine" id="cb26-2" data-line-number="2"><span class="co">#これらを new_df &lt;- ...として新しいオブジェクトにすることも可能</span></a>
-<a class="sourceLine" id="cb26-3" data-line-number="3">df1[<span class="dv">1</span>, ] <span class="co"># 1行目を表示</span></a></code></pre></div>
+<p><code>df[行番号,列番号]</code>のように座標を指定して要素を取り出すことができる。下記のコードの前に <code>x &lt;- ...</code> などとして新しいオブジェクト（数値、ベクトル、データフレーム）にすることもできる。</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb26-1" data-line-number="1">df1[<span class="dv">1</span>, ] <span class="co"># 1行目を表示</span></a></code></pre></div>
 <pre><code>##   クラス 英語 数学
 ## 1      B   79   75</code></pre>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" data-line-number="1">df1[ ,<span class="dv">2</span>] <span class="co"># 2列目の数字を表示</span></a></code></pre></div>
+<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb28-1" data-line-number="1">df1[ ,<span class="dv">2</span>] <span class="co"># 2列目を表示</span></a></code></pre></div>
 <pre><code>## [1] 79 91 89</code></pre>
 <div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb30-1" data-line-number="1">df1[<span class="dv">2</span>] <span class="co"># 2列目をデータフレームとして表示</span></a></code></pre></div>
 <pre><code>##   英語
