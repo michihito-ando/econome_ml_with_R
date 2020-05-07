@@ -1855,16 +1855,16 @@ div.tocify {
 <div id="colmeans" class="section level2">
 <h2><span class="header-section-number">6.4</span> colMeans()</h2>
 <p><code>colMeans()</code>はデータフレームの各列に対して平均値の計算（ベクトルの場合は<code>mean()</code>関数が使える）を行った結果を返す関数である。以下は、すべて同じ結果を返す。</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>, <span class="dv">2</span><span class="op">:</span><span class="dv">3</span>]) <span class="co"># 1~3行の2~3列の平均を表示</span></a></code></pre></div>
+<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb45-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>, <span class="dv">2</span><span class="op">:</span><span class="dv">3</span>]) <span class="co"># 2~3行の2~3列の平均を表示</span></a></code></pre></div>
 <pre><code>## 英語 数学 
 ## 90.0 86.5</code></pre>
 <div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb47-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">3</span>), <span class="kw">c</span>(<span class="dv">2</span>,<span class="dv">3</span>)]) <span class="co"># 2,3行の2,3列の平均を表示</span></a></code></pre></div>
 <pre><code>## 英語 数学 
 ## 90.0 86.5</code></pre>
-<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>,<span class="op">-</span><span class="kw">c</span>(<span class="dv">1</span>)]) <span class="co"># 2~3行の1列目以外の平均を表示</span></a></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb49-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>,<span class="op">-</span><span class="dv">1</span>]) <span class="co"># 2~3行の1列目以外の平均を表示</span></a></code></pre></div>
 <pre><code>## 英語 数学 
 ## 90.0 86.5</code></pre>
-<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>,<span class="op">-</span><span class="dv">1</span>]) <span class="co"># 2~3行の1列目以外の平均を表示</span></a></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb51-1" data-line-number="1"><span class="kw">colMeans</span>(df2[<span class="kw">c</span>(<span class="dv">2</span><span class="op">:</span><span class="dv">3</span>),<span class="op">-</span><span class="kw">c</span>(<span class="dv">1</span>)]) <span class="co"># 2~3行の1列目以外の平均を表示</span></a></code></pre></div>
 <pre><code>## 英語 数学 
 ## 90.0 86.5</code></pre>
 </div>
