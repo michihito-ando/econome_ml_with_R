@@ -1,0 +1,41 @@
+body {
+	font-family: "游ゴシック", "Yu Gothic UI", "Meiryo UI", "Hiragino Kaku Gothic ProN", "sans-serif";
+    font-size: 16px;
+    /* background-color: #F2F2F2; */
+    margin: 0 10% 10% 10%;
+}
+
+h1,h3,h4,h5,h6 {
+	font-weight:bold;
+	margin: 1em 0 0.15em 0;
+	padding: 0.15em;
+}
+
+h1 {
+    /*color: #6cb4e4;
+    text-align: center;*/
+    font-size: 1.8em;
+    padding: 0.5em;
+    border-top: solid 2px #BDBDBD; /* blue: #6cb4e4 */
+    border-bottom: solid 2px #BDBDBD;
+    background: -webkit-repeating-linear-gradient(-45deg, #E6E6E6, #F2F2F2 3px,#E6E6E6 3px, #E6E6E6 7px);
+    background: repeating-linear-gradient(-45deg, #E6E6E6, #F2F2F2 3px,#E6E6E6 3px, #E6E6E6 7px);
+  }
+  
+h2 {
+font-size: 1.5em;
+}
+
+h3 {
+font-size: 1.2em;
+}
+
+.title_area {
+    text-align: center;
+}
+.contents ul , .contents ol {
+    margin: 0px;
+}
+.footer {
+    text-align: right;
+}
