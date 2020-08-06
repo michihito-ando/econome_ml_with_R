@@ -378,6 +378,7 @@ mnist_dl = h2o.deeplearning(
   epochs = 10,       # エポック数。学習データ何回分の学習を反復させて重みを更新していくか。
   hidden_dropout_ratios = c(0.5, 0.5, 0.5), # 各中間層においてdropoutするユニットの割合
   sparse = TRUE,     # 0が多いデータ（スパースデータ）の取り扱い方を変え、メモリ使用量を抑える。
+  standardize = TRUE,# データの標準化を学習前に行う
   seed = 0
 )
 ```
