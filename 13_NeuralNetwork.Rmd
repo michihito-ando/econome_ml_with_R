@@ -172,7 +172,7 @@ titanic_nnet <- nnet(survived ~ . , data = train,
 
 `{NeuralNetTools}`パッケージを使用するとnnetのネットワーク構造を図にすることができる。Iはinput（入力層）、Bはbias（定数項）、Hはhidden（中間層、隠れ層）、Oはoutput（出力層）である。
 
-```{r}
+```{r fig.height=6, fig.width=10}
 if(!require(NeuralNetTools)) {install.packages("NeuralNetTools")} # インストールされていなければインストールする
 library(NeuralNetTools)
 plotnet(titanic_nnet)
@@ -391,9 +391,9 @@ mnist_dl = h2o.deeplearning(
 mnist_dl
 ```
 
-`plot()`を使うとエポック（訓練データを何回分使って重みの更新を反復させたか）ごとの予測誤差の推移を可視化することができる。（今回は説明のためepochsを小さな値にしているが、実際のデータ分析では「epochsを十分大きな値にしておいて、エポックを繰り返してもvalidationデータに対する予測誤差が改善しなくなったら学習を打ち切る」という戦略（early stopping）を取ることが多い）
+`plot()`を使うとエポック（訓練データを何回分使って重みの更新を反復させたか）ごとの予測誤差の推移を可視化することができる。（今回は説明のためepochsを小さな値にしているが、実際のデータ分析では「epochsを十分大きな値にしておいて、エポックを増やしてもvalidationデータに対する予測誤差が改善しなくなったら学習を打ち切る」という戦略（early stopping）を取ることも多い）
 
-```{r}
+```{r fig.height=4, fig.width=6}
 # 予測誤差の推移
 plot(mnist_dl)
 ```
