@@ -433,15 +433,24 @@ as.matrix(df1[,2:3])
 
 # （参考）Rの入門向けサイト
 
-
 ## 日本語
+
+- 卒業論文のためのR入門： https://tomoecon.github.io/R_for_graduate_thesis/
+    - 森知晴氏（立命館大学総合心理学部）のサイト
+    
+- 私たちのR: ベストプラクティスの探究　http://www.jaysong.net/RBook/
+    - 宋財泫氏 (Jaehyun Song)と矢内勇生 (Yuki Yanai)氏のサイト
+
+- KUT 計量経済学応用 統計的因果推論入門 https://yukiyanai.github.io/econometrics2/
+    - 矢内勇生氏のサイト
+    
 - 統計解析フリーソフト R の備忘録頁: http://cse.naro.affrc.go.jp/takezawa/r-tips/r.html
     - ベクトル、行列、データフレームなどの基本的操作についても詳しく解説されている。
     
 - JIN'S PAGE: https://mjin.doshisha.ac.jp/R/
     - 同志社大学 文化情報学部教授である金明哲のWebサイト
     - このWebサイトには彼の著書[『Rによるデータサイエンス』](https://www.amazon.co.jp/R%E3%81%AB%E3%82%88%E3%82%8B%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B5%E3%82%A4%E3%82%A8%E3%83%B3%E3%82%B9-%E3%83%87%E3%83%BC%E3%82%BF%E8%A7%A3%E6%9E%90%E3%81%AE%E5%9F%BA%E7%A4%8E%E3%81%8B%E3%82%89%E6%9C%80%E6%96%B0%E6%89%8B%E6%B3%95%E3%81%BE%E3%81%A7-%E9%87%91-%E6%98%8E%E5%93%B2/dp/462709602X/ref=asap_bc?ie=UTF8)のほぼ全ての内容が公開されている。
-
+    
 ## 英語
 - **R for Data Science**: https://r4ds.had.co.nz/
     - 和訳されて[『Rではじめるデータサイエンス』](https://www.amazon.co.jp/R%E3%81%A7%E3%81%AF%E3%81%98%E3%82%81%E3%82%8B%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B5%E3%82%A4%E3%82%A8%E3%83%B3%E3%82%B9-Hadley-Wickham/dp/487311814X/ref=sr_1_cc_6?s=aps&ie=UTF8&qid=1549191795&sr=1-6-catcorr&keywords=R%E3%81%AB%E3%82%88%E3%82%8B%E3%83%87%E3%83%BC%E3%82%BF%E3%82%B5%E3%82%A4%E3%82%A8%E3%83%B3%E3%82%B9)ともなっている本"R for Data Science"の原文

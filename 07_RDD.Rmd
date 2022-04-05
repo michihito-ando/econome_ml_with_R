@@ -49,7 +49,7 @@ $$
 
 
 ```{r, echo=F}
-library(DiagrammeR)
+pacman::p_load(DiagrammeR)
 grViz("digraph dot{
 graph[rankdir = LR]
 
