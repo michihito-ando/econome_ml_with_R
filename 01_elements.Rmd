@@ -30,6 +30,12 @@ knitr::opts_chunk$set(message = F)
 knitr::opts_chunk$set(warning = F)
 ```
 
+# 本講義の目的
+- RやR Studioの起動について学ぶ。
+- Rを使った計算について学ぶ。
+- オブジェクト、ベクトル、関数、データフレームなどについて学ぶ。
+- データの読み込み方について学ぶ。
+- 因子（factor)について学ぶ。
 
 # Rの起動
 

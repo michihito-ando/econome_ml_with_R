@@ -29,6 +29,11 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 library("readxl")
 ```
 
+# 本講義の目的
+
+- パッケージについて学ぶ。
+- データフレームについて学ぶ。
+- dplyrやtidyverseを使ったデータの前処理について学ぶ。
 
 # パッケージ
 
@@ -231,11 +236,17 @@ df[df["クラス"] == "C",] # クラスがCの行を取り出す
 `filter(データフレーム, 条件式)`の形で書く。
 
 ```{r}
-filter(df, 50 < 英語 & 英語 < 60) # 英語が50~60点の人を抽出
+dplyr::filter(df, 50 < 英語 & 英語 < 60) # 英語が50~60点の人を抽出
 ```
 
 （`filter()`はパイプ処理の節で登場した`subset()`と機能も文法もほぼ一緒）
 
+
+なお、`dplyr::`は省略することもできる。ただし、読み込んでいる他のパッケージに同じ名前の関数があった場合、エラーが生じるので、できるだけ省略しないことをすすめる（ただし本講義ではわりと省略している）。
+
+```{r}
+filter(df, 50 < 英語 & 英語 < 60) # 英語が50~60点の人を抽出
+```
 
 #### （参考）`filter_all()`
 
@@ -565,7 +576,7 @@ df[["名前"]] %>% str_which("川") # "川"が入っている要素の位置
 
 ![](02_data_wrangling.assets/1549118953251.png)
 
-有志による日本語のチートシートは[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の下の方の「Japanese Translations – 日本語翻訳」で見ることができる。（例：[dplyrとtidyrを使ったデータラングリングチートシート](https://github.com/rstudio/cheatsheets/raw/master/translations/japanese/data-wrangling-japanese.pdf)）
+有志による日本語のチートシートは[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の下の方の「Japanese Translations – 日本語翻訳」で見ることができる。
 
 # 参考文献
 

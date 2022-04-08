@@ -40,11 +40,8 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```{r}
 # 事前準備 --------------------
 # パッケージの読み込み
-library(tidyverse)
-library(estimatr)
-library(plm)
-library(stargazer)
-library(texreg)
+library(pacman)
+pacman::p_load(tidyverse, estimatr, plm, stargazer,texreg)
 
 # 乱数の種を固定
 set.seed(0)
@@ -220,7 +217,7 @@ df_panel <- df_panel %>% group_by(ID) %>% # IDでグループ分け
 # DID regression
 
 # pooled OLS:(1)式
-DID_pooled <- lm(income ~ treated + year + treated*year, data = df_panel)
+DID_pooled <- lm(income ~ treated + year + treated:year, data = df_panel)
 
 # first-differenced (一階の階差) OLS: (2)式
 DID_FD <- lm(diff_income ~ treated, data = df_panel)
@@ -243,20 +240,20 @@ DID推定値は概ね500近傍となってり、(1)式と(2)式で完全に一�
 
 ```{r}
 # DID with a two-by-two DID model (オーソドックスなDIDモデル)
-DID_robust1 <- lm_robust(income ~ treated + year + treated*year, 
+DID_robust1 <- lm_robust(income ~ treated + year + treated:year, 
                             data = df_panel, 
                             clusters = ID,
                             se_type = "stata")
 
 # DID with two-way FE model (年ダミーは活用） 
-DID_robust2 <- lm_robust(income ~ treated*year + year, 
+DID_robust2 <- lm_robust(income ~ treated:year + year, 
                             fixed_effects = ~ ID,
                             data = df_panel, 
                             clusters = ID,
                             se_type = "stata")
 
 # DID with two-way FE model（年ダミーも入れない）
-DID_robust3 <- lm_robust(income ~ treated*year, 
+DID_robust3 <- lm_robust(income ~ treated:year, 
                             fixed_effects = ~ ID + year,
                             data = df_panel, 
                             clusters = ID,
@@ -281,10 +278,10 @@ df_panel <- pdata.frame(df_panel, index = c("ID", "year")) # 個体=firm、時�
 # DID regression
 
 # DID with two-way FE model (年ダミーは活用） 
-DID_plm1 <- plm(income ~ treated*year + year, data = df_panel, model = "within")
+DID_plm1 <- plm(income ~ treated:year + year, data = df_panel, model = "within")
 
 # DID with two-way FE model（年ダミーも入れない）
-DID_plm2 <- plm(income ~ treated*year, data = df_panel, model = "within", effect = "twoways")
+DID_plm2 <- plm(income ~ treated:year, data = df_panel, model = "within", effect = "twoways")
 
 # stargazer
 stargazer(DID_plm1, DID_plm2, type = "text", digits = 3, df = FALSE,

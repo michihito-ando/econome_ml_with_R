@@ -88,14 +88,14 @@ df <- tibble(ID = 1:n, ability)
 ## 今回はmutate()とcase_when()を使用して作成
 
 #学力テストの点数 score
-df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
 #大卒ダミー university (score 180点以上=1)
 df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
 #所得 income
 df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
 
-##これまでと同じやり方だと、以下の通り。
-#df["score"] = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10)
+##dplyrを使わないやり方だと、以下の通り。
+#df["score"] = 30*log10(ability) + rnorm(n, mean = 115, sd = 10)
 #df["university"] = 1*(df["score"] >= 180)
 #df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, sd = 50)
 
@@ -180,7 +180,7 @@ for(i in 1:1000){ # forによるループ。1000回繰り返す
 n <- 10000
 ability <- runif(n, min = 0, max = 100) # 能力は0から100まで均等に分布
 df <- tibble(ID = 1:n, ability) # IDとabilityをデータフレームに格納する
-df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
 df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
 df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
 
@@ -220,7 +220,7 @@ set.seed(0)
 n <- 10000
 ability <- runif(n, min = 0, max = 100)
 df <- tibble(ID = 1:n, ability)
-df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
 df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
 df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
 ```
@@ -272,7 +272,7 @@ ggplot(df, aes(x = score, y = income, color = edu_label, group = edu_label)) +
 df <- df %>% mutate(score_gap = score - 180)
 
 # 線形RD: X軸にscore_gapを用いることにより、y切片の変化すなわちuniversityダミーの係数を上図の「ジャンプ」の大きさと解釈できる。
-linear_RD <- lm(income ~ university + score_gap + score_gap*university, data = df) 
+linear_RD <- lm(income ~ university + score_gap + score_gap:university, data = df) 
 stargazer(linear_RD, type = "text")
 ```
 
@@ -298,16 +298,16 @@ ggplot(df, aes(x = score, y = income, color = edu_label, group = edu_label)) +
 ```{r}
 # 二次多項式RD, I(score_gap^2)はscore_gap^2
 secondpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = df) 
+              score_gap:university + I(score_gap^2):university, data = df) 
 
 # 三次多項式RD,  I(score_gap^3)はscore_gap^3
 thirdpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) + I(score_gap^3) +
-               score_gap*university + I(score_gap^2)*university + I(score_gap^3)*university, data = df) 
+               score_gap:university + I(score_gap^2):university + I(score_gap^3):university, data = df) 
 
 # 四次多項式RD, I(score_gap^4)はscore_gap^4
 fourthpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) + I(score_gap^3) + I(score_gap^4) +
-               + score_gap*university + I(score_gap^2)*university +
-               + I(score_gap^3)*university + I(score_gap^4)*university , data = df) 
+               + score_gap:university + I(score_gap^2):university +
+               + I(score_gap^3):university + I(score_gap^4):university , data = df) 
 
 # 一次~四次多項式RD
 stargazer(linear_RD, secondpoly_RD, thirdpoly_RD, fourthpoly_RD, type = "text", digits = 1, df = FALSE) # 幅を狭くするため、digits=1, df=FALSEとする
@@ -324,19 +324,19 @@ stargazer(linear_RD, secondpoly_RD, thirdpoly_RD, fourthpoly_RD, type = "text", 
 ```{r}
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
-band30_RD <- lm(income ~ university + score_gap + score_gap*university, data = band30_df) 
+band30_RD <- lm(income ~ university + score_gap + score_gap:university, data = band30_df) 
 
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
-band10_RD <- lm(income ~ university + score_gap + score_gap*university, data = band10_df) 
+band10_RD <- lm(income ~ university + score_gap + score_gap:university, data = band10_df) 
 
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
-band5_RD <- lm(income ~ university + score_gap + score_gap*university, data = band5_df) 
+band5_RD <- lm(income ~ university + score_gap + score_gap:university, data = band5_df) 
 
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
-band1_RD <- lm(income ~ university + score_gap + score_gap*university, data = band1_df) 
+band1_RD <- lm(income ~ university + score_gap + score_gap:university, data = band1_df) 
 
 stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
 ```
@@ -355,7 +355,7 @@ set.seed(0)
 n <- 1000000
 ability <- runif(n, min = 0, max = 100)
 df <- tibble(ID = 1:n, ability)
-df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
 df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
 df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
 
@@ -364,19 +364,19 @@ df <- df %>% mutate(score_gap = score - 180)
 
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
-band30_RD <- lm(income ~ university + score_gap + score_gap*university, data = band30_df) 
+band30_RD <- lm(income ~ university + score_gap + score_gap:university, data = band30_df) 
 
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
-band10_RD <- lm(income ~ university + score_gap + score_gap*university, data = band10_df) 
+band10_RD <- lm(income ~ university + score_gap + score_gap:university, data = band10_df) 
 
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
-band5_RD <- lm(income ~ university + score_gap + score_gap*university, data = band5_df) 
+band5_RD <- lm(income ~ university + score_gap + score_gap:university, data = band5_df) 
 
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
-band1_RD <- lm(income ~ university + score_gap + score_gap*university, data = band1_df) 
+band1_RD <- lm(income ~ university + score_gap + score_gap:university, data = band1_df) 
 
 stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
 ```
@@ -394,7 +394,7 @@ set.seed(0)
 n <- 10000
 ability <- runif(n, min = 0, max = 100)
 df <- tibble(ID = 1:n, ability)
-df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
 df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
 df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
 
@@ -404,22 +404,22 @@ df <- df %>% mutate(score_gap = score - 180)
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
 band30_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = band30_df) 
+              score_gap:university + I(score_gap^2):university, data = band30_df) 
 
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
 band10_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = band10_df)
+              score_gap:university + I(score_gap^2):university, data = band10_df)
 
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
 band5_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = band5_df)
+              score_gap:university + I(score_gap^2):university, data = band5_df)
 
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
 band1_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = band1_df)
+              score_gap:university + I(score_gap^2):university, data = band1_df)
 
 stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
 ```
@@ -434,7 +434,7 @@ set.seed(0)
 n <- 1000000
 ability <- runif(n, min = 0, max = 100)
 df <- tibble(ID = 1:n, ability)
-df <- df %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
 df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
 df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
 
@@ -444,22 +444,22 @@ df <- df %>% mutate(score_gap = score - 180)
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
 band30_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = band30_df) 
+              score_gap:university + I(score_gap^2):university, data = band30_df) 
 
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
 band10_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = band10_df)
+              score_gap:university + I(score_gap^2):university, data = band10_df)
 
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
 band5_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = band5_df)
+              score_gap:university + I(score_gap^2):university, data = band5_df)
 
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
 band1_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap*university + I(score_gap^2)*university, data = band1_df)
+              score_gap:university + I(score_gap^2):university, data = band1_df)
 
 stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
 ```
