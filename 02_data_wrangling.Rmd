@@ -44,7 +44,7 @@ library("readxl")
 
 公開されているパッケージをダウンロードしてインストールするには`install.packages("パッケージ名")`と書き，インストールしたパッケージを読み込むには`library(パッケージ名)`と書く。
 
-なお，インストールは一度すれば次回からは`install.packages()`を実行する必要はないが，`library()`はRを起動するたびに必要になる。
+なお，インストールは一度すれば次回からは`install.packages()`を実行する必要はないが，`library()`はRを起動するたびに必要になる。なお、`install.packages()`や`library()`を使わないでパッケージを読み込む方法も、後日学びます。
 
 さて，以下ではExcelファイルを読み込むためのパッケージ`{readxl}`を使用していく。
 
@@ -56,11 +56,13 @@ library("readxl") # 読み込み
 
 ### ファイルのアップロード
 
-分析したいデータが入ったファイルをRStudio Cloudのワークスペースにアップロードするには，右下の[Files]タブの[Upload]をクリックしてファイルをアップロードする。
+まず、分析したいデータファイルを作業用フォルダに入れる。今回は、講義ページにある[{test_scores.xlsx}](https://www.google.com/url?q=https%3A%2F%2Fmichihito-ando.github.io%2Feconome_ml_with_R%2Ftest_scores.xlsx&sa=D&sntz=1&usg=AOvVaw1tV8rXq0uAeOsiNZYGr4Om)のファイルを使う。
+
+なお、R Studio Cloudのワークスペースにアップロードする場合は，右下の[Files]タブの[Upload]をクリックしてファイルをアップロードする。
 
 ![](02_data_wrangling.assets/1549109514602.png)
 
-`test_scores.xlsx`ファイルをアップロードすれば，[Files]タブにも反映される。
+`test_scores.xlsx`をアップロードすれば，[Files]タブにも反映される。
 
 ![](02_data_wrangling.assets/test_scores_uploaded.png)
 
@@ -93,7 +95,6 @@ df <- read_excel("test_scores.xlsx")
 dim(df)
 ```
 
-
 ## View()
 
 「40 obs. of 5 variables」の右にある表のようなアイコンをクリックする（あるいは`View(dat)`を実行する）と，エクセルのようなセルにデータが入った形式でデータフレームを表示することができる。
@@ -113,8 +114,6 @@ head(df)
 （なお，後尾6行を見たいときは`tail()`関数を使う）
 
 
-
-
 # パイプ処理
 
 Rは基本的に関数を使ってコードを書くため，複数の処理をまとめて書くときは関数の中に関数を内包する形になる。
@@ -125,17 +124,20 @@ Rは基本的に関数を使ってコードを書くため，複数の処理を�
 head(read_excel("test_scores.xlsx"))
 ```
 
-そこで登場するのが`{dplyr}`パッケージの**パイプ演算子**（`%>%`）である。
+そこで、`{dplyr}`パッケージの**パイプ演算子**（`%>%`）を利用する。
 
-```{r, eval=F}
+```{r, eval = FALSE}
 # パッケージのインストール
 install.packages("dplyr")
+
+```{r}
+# パッケージの読み込み
+library(dplyr)
 ```
 
 パイプ演算子は左にあるオブジェクトを右の関数に受け渡して処理をさせることができる。
 
 ```{r}
-library(dplyr)
 read_excel("test_scores.xlsx") %>% head()
 ```
 
@@ -151,8 +153,6 @@ df %>% subset(クラス == "C") %>% head()
 
 ただし，`subset(, 条件)`のようにカンマを残す必要はない。`subset(条件)`のように書けばよい。
 
-
-
 # データフレームの操作
 
 ## {tidyverse}パッケージ
@@ -165,13 +165,13 @@ Rでは前処理を効率よく行うために{dplyr}や{tidyr}や{stringr}な�
 
 いくつものパッケージを個別にインストールと読み込みを行うのは面倒なので，{dplyr}や{tidyr}や{stringr}などの便利なパッケージをまとめた[{tidyverse}](https://www.tidyverse.org/packages/)というパッケージをインストールする。
 
+なお、今回のデータは、わかりやすいように変数名が日本語になっており、そのまま使用します。ですが、実際には、英語名（ローマ字）に変換してから前処理を進めることを奨励します。異なる環境での思わぬエラーなどを防ぐことができますし、日本語や漢字が分からない人にもreadableだからです。
 
 ```{r, eval=F}
 install.packages("tidyverse") #インストール
-library("tidyverse") # 読み込み
 ```
 
-```{r, include=F}
+```{r}
 library("tidyverse") # 読み込み
 ```
 
@@ -242,13 +242,13 @@ dplyr::filter(df, 50 < 英語 & 英語 < 60) # 英語が50~60点の人を抽出
 （`filter()`はパイプ処理の節で登場した`subset()`と機能も文法もほぼ一緒）
 
 
-なお、`dplyr::`は省略することもできる。ただし、読み込んでいる他のパッケージに同じ名前の関数があった場合、エラーが生じるので、できるだけ省略しないことをすすめる（ただし本講義ではわりと省略している）。
+なお、`dplyr::`は省略することもできる。ただし、読み込んでいる他のパッケージに同じ名前の関数があった場合、エラーが生じるので、できるだけ省略しないことをすすめる。ただ、本講義では簡便化のためにわりと省略している。
 
 ```{r}
 filter(df, 50 < 英語 & 英語 < 60) # 英語が50~60点の人を抽出
 ```
 
-#### （参考）`filter_all()`
+#### （参考）`dplyr::filter_all()`
 
 `filter_()`派生の関数で`filter_all()`というものがある。
 
@@ -269,7 +269,7 @@ filter_all(df, any_vars(. == 100))
 基本的には`select(データフレーム, 列名1, 列名2, ...)`のように書く。
 
 ```{r}
-select(df, クラス, 名前)
+dplyr::select(df, クラス, 名前)
 ```
 
 パイプ演算子を使用してもよい。
@@ -283,7 +283,7 @@ df %>% select(クラス, 名前)
 列名を指定するときに，マイナス（`-`）をつけると，「その列以外を取り出す」という指定になる
 
 ```{r}
-df %>% select(-名前)
+df %>% dplyr::select(-名前)
 ```
 
 ### 列名を検索して指定
@@ -322,7 +322,7 @@ head(df2)
 `rename()`関数を使い，`rename(df, 新しい列名 = 古い列名)`のように指定すると任意の列の列名のみを変えることができる。
 
 ```{r}
-df2 %>% rename(NAME = name)
+df2 %>% dplyr::rename(NAME = name)
 ```
 
 
@@ -331,7 +331,7 @@ df2 %>% rename(NAME = name)
 「点数が低い順に並べ替える」といった操作を行いたい場合，`arrange()`を使う
 
 ```{r}
-df %>% arrange(数学) # 数学の点が低い順（昇順）に並べ替える
+df %>% dplyr::arrange(数学) # 数学の点が低い順（昇順）に並べ替える
 ```
 
 「高い順に並べ替える」という操作をしたい場合は`arrange()`の中で`desc()`を使う
@@ -372,7 +372,7 @@ head(df)
 その場合，次のようにカンマで区切りながら変数を追加していく。
 
 ```{r}
-df %>% mutate(数国計 = 数学 + 国語, 
+df %>% dplyr::mutate(数国計 = 数学 + 国語, 
               数英計 = 数学 + 英語)
 ```
 
@@ -418,7 +418,7 @@ bind_rows(A,B)
 
 そうした場合は"id"列を基準にデータフレームを結合するjoin関数を使う。
 
-### full_join()
+### dplyr::full_join()
 
 `full_join()`関数を例に実行してみる。
 
@@ -451,7 +451,7 @@ sales
 
 ```{r}
 # "顧客id"をキーにcustomersとsalesを結合
-full_join(customers, sales, by = "顧客id")
+dplyr::full_join(customers, sales, by = "顧客id")
 ```
 
 このように`顧客id`で紐づけしてひとつのデータフレームへと結合する。
@@ -480,7 +480,7 @@ Rでは結合方法に応じて別々の関数になっており，
 `inner_join()`を使えば，先程の例での`顧客id == 3`は一方のデータフレームにしか存在しないidであるため，結合後は消える
 
 ```{r}
-inner_join(customers, sales, by = "顧客id")
+dplyr::inner_join(customers, sales, by = "顧客id")
 ```
 
 逆に`full_join()`では，先に示したように，`顧客id == 3`のデータが無い列は`NA`（欠損値）になる
@@ -504,19 +504,22 @@ sales
 
 ワイド形式は，例えば`sales`データで"商品"列の商品の種類ごとに列を分け，"顧客id"に対応する個数をセルに入れたもの（クロス集計表の形式になっているもの）である。
 
-{tidyr}パッケージの`spread()`でワイド形式に変換することができる
+{tidyr}パッケージの`pivot_wider()`でワイド形式に変換することができる
 
 ```{r}
 # ワイド形式
-wide_shape = sales %>% spread(key = 商品, value = 個数)
-wide_shape
+sales_wide = sales %>% tidyr::pivot_wider(names_from = "商品", values_from = "個数")
+sales_wide
 ```
 
-{tidyr}パッケージの`gather()`でロング形式に戻すことができる
+{tidyr}パッケージの`pivot_longer()`でロング形式に戻すことができる
 
 ```{r}
 # ロング形式に戻す
-wide_shape %>% gather(key = 商品, value = 個数, みかん:りんご, na.rm = TRUE)
+sales_long <- sales_wide %>% 
+  tidyr::pivot_longer(cols = -顧客id, names_to = "商品", values_to = "個数")
+
+sales_long
 ```
 
 
@@ -563,7 +566,6 @@ df[["名前"]] %>% str_which("川") # "川"が入っている要素の位置
 
 <!-- A %>% str_detect("あ") # "あ"が入っているか否か（論理値） -->
 <!-- ``` -->
-
 
 
 
