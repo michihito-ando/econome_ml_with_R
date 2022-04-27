@@ -29,21 +29,58 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
 
 
-# 例示用データの用意 
+# 本講義の目的
+
+- ggplotやplotlyなどを用いたデータの可視化やグラフ作成の基礎を学ぶ。
+
+# パッケージの読み込み
+
+`pacman`を使うと、`install.packages()`や`library()`を使わずにパッケージをまとめて読み込むことができる。
+
+まず`packman`をインストールする。
+```{r, eval=F}
+install.packages("pacman")
+```
+
+今回は、`readxl`と`tidyverse`と`plotly`と`skimr`を使う。以下のように書けば、まとめて読み込むことができる。
+
+```{r}
+pacman::p_load(readxl, tidyverse, plotly, skimr)
+```
+
+# ディレクトリの設定
+
+作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
+
+```{r, eval = FALSE}
+setwd(自分のディレクトリ) # ディレクトリの設定
+getwd # ディレクトリの確認
+```
+
+# 例示用データの用意と前処理 
 
 前回同様、今回も `test_scores.xlsx` のデータを使う
 
 ```{r}
-library("readxl")
 df <- read_excel("test_scores.xlsx") # エクセル読み込み
 head(df)
 ```
 
+今回は、`dplyr::rename()`によって変数名を英語に変換してから使う。
 
+```{r}
+#dfの名前変更
+df <- df %>% dplyr::rename(class = クラス,
+                           name = 名前,
+                           math = 数学,
+                           english = 英語,
+                           japanese = 国語)
+head(df)
+```
 
 # 描画用パッケージ
 
-グラフの描画で役立つパッケージを紹介する
+グラフの描画で役立つパッケージを紹介する。
 
 ## ggplot2
 
@@ -58,38 +95,28 @@ ggplotは次のように２つ以上の手順をとり，２つ以上の関数�
 **※R Studio Cloudで図を描くとき、タイトルや軸タイトルに日本語を使うと文字化けしてしまう。したがって、英語やローマ字を使うか、日本語を使いたい場合はパソコンにRとR Studioをインストールして使用する必要がある。(2019.4.22時点）**
 
 ```{r}
-# パッケージ読み込み
-library(tidyverse) # ggplot2もtidyverseパッケージに含まれている
-
 # 棒グラフをつくり，gに代入する
-g <- ggplot(df, aes(x = クラス)) + # dfのデータでキャンバスを作る
+g <- ggplot(df, aes(x = class)) + # dfのデータでキャンバスを作る
   geom_bar() + # キャンバスに棒グラフgeom_bar()を重ねる
   xlab("Class") # X軸タイトルの変更（R Studio Cloudでは日本語文字化けするため）
 
-  g # 表示
+g # 表示
 ```
 
-- 参考：[ggplot2のチートシート](https://github.com/rstudio/cheatsheets/raw/master/translations/japanese/ggplot2-cheatsheet-2.0-ja.pdf)
+- 参考：ggplot2のチートシートは、[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の下の方の「Japanese Translations – 日本語翻訳」で見ることができる。
 
 ## plotly
 
-`{plotly}`パッケージは動的なグラフ（マウスを乗せると情報が表示されたりするグラフ）を描くことができる。
+`{plotly}`パッケージを使うと、簡単なインタラクティブなグラフ（カーソルを合わせると情報が表示されたり、表示情報を変更したりできるグラフ）を描くことができる。
 
-`ggplotly()`関数を使うと，`{ggplot2}`で描いたグラフを動的なものに変換できる。
+`ggplotly()`関数を使うと，`{ggplot2}`で描いたグラフをインタラクティブなものに変換できる。
 
 **※R Studio Cloudで　`{ggplotly}`　を使うと、日本語表示は `{ggplot2}` そのものよりも適切に表示されるが、やはり少しおかしい。(2019.4.22時点)**
 
-```{r, eval=F}
-install.packages("plotly")
-```
 
 ```{r}
-library(plotly)
-ggplotly(g)   # ggplot2のグラフをplotlyのグラフへ変換
+plotly::ggplotly(g)   # ggplot2のグラフをplotlyのグラフへ変換
 ```
-
-
-
 
 
 # データの分布を要約する
@@ -122,7 +149,7 @@ simple_var <- function(x) {
   sigma2 = 1/n * sum((x - mean(x))^2)
   return(sigma2)
 }
-simple_var(df[["英語"]])
+simple_var(df[["english"]])
 
 
 unbiased_var <- function(x) {
@@ -130,34 +157,35 @@ unbiased_var <- function(x) {
   s2 = n/(n-1)*simple_var(x)
   return(s2)
 }
-unbiased_var(df[["英語"]])
+unbiased_var(df[["english"]])
 ```
 
 
 ```{r}
 # 不偏分散
-var(df$英語)
+var(df$english)
 ```
 
 分散の単位は元の単位の2乗であるため，それを元の単位に戻すために平方根をとったものが**標準偏差**（standard deviation）である。
 
 ```{r}
 # 不偏標準偏差
-sd(df$英語)
+sd(df$english)
 ```
 
 
 ## 要約統計量
 
+### summary()
 `summary()`関数は，データフレームの各行に関する代表値などの情報を取得することができる関数である。
 
 ```{r}
 summary(df)
 ```
 
-「クラス」と「名前」は文字列（character）型なので，Length（行数，標本数）が40であることくらいしか表示されない。
+`class`と`name`は文字列（character）型なので，Length（行数，標本数）が40であることくらいしか表示されない。
 
-「英語」「国語」「数学」は整数（integer）型なので，代表値などの**要約統計量**（summary statistics）が表示されている。
+`english`、`japanese`、`math`は整数（integer）型なので，代表値などの**要約統計量**（summary statistics）が表示されている。
 
 それぞれの統計量の意味は
 
@@ -173,6 +201,13 @@ summary(df)
 
 平均値は**外れ値**（極端に高かったり低かったりする値）の影響を受けやすいため，これらの統計量を見ることで，中央値と平均値が大きく異なるデータは外れ値があったりデータの分布に歪みがあることが推測できるわけである。
 
+### skimr::skim()
+
+`skimr`の`skim()`を使うと、小さなヒストグラムつきの要約統計量の表を出力できる。欠損値の数なども表示してくれる。
+
+```{r}
+skimr::skim(df)
+```
 
 
 # 2変数の関係を要約する
@@ -194,7 +229,7 @@ $$
 Rでは`cor()`で計算できる。相関係数は-1から+1の範囲の値をとり，絶対値で1に近いほど関係が強いことを示す。
 
 ```{r}
-cor(x = df$英語, y = df$数学)
+cor(x = df$english, y = df$math)
 ```
 
 
@@ -216,7 +251,7 @@ cor(df[,3:5])
 
 ```{r}
 # ヒストグラム
-ggplot(df, aes(x = 英語)) +
+ggplot(df, aes(x = english)) +
   geom_histogram(bins = 10) + #指定しない場合はbins binsは棒の数。=30になる
   xlab("English") #X軸タイトルを変更(R Studio cloudは日本語文字化けするため)
 ```
@@ -225,16 +260,22 @@ R本体の機能でヒストグラムを描く場合は`hist()`を使う
 
 ```{r}
 # ヒストグラム
-hist(x = df[["数学"]])
+hist(x = df[["math"]])
 ```
 
 ## 棒グラフ
 
 ```{r}
 # ggplotの棒グラフ
-ggplot(df, aes(x = クラス)) +
+g <- ggplot(df, aes(x = class)) +
   geom_bar() +
   xlab("Class") #X軸タイトルを変更
+
+#グラフ表示
+g
+
+#plolyで表示
+plotly::ggplotly(g) 
 ```
 
 
@@ -247,16 +288,23 @@ ggplot(df, aes(x = クラス)) +
 そして散布図を描く場合は`geom_point()`を`+`でつなげればよい
 
 ```{r}
-ggplot(df, aes(x = 英語, y = 国語)) +
+# ggplot
+g <- ggplot(df, aes(x = english, y = japanese)) +
   geom_point() +
   xlab("English") + #X軸タイトルを変更
   ylab("Japanese") #y軸タイトルを変更
+
+# 散布図表示
+g
+
+# plotlyで表示
+plotly::ggplotly(g) 
 ```
 
 回帰直線を加えるには、`stat_smooth()`を使う。
 
 ```{r}
-ggplot(df, aes(x = 英語, y = 国語)) +
+ggplot(df, aes(x = english, y = japanese)) +
   geom_point() +
   stat_smooth(method = "lm", se =FALSE, colour = "blue") + # lm:最小二乗法、信頼区間は表示させない(FALSE)、色は青(blue)
   xlab("English") + #X軸タイトルを変更
@@ -270,7 +318,7 @@ ggplot(df, aes(x = 英語, y = 国語)) +
 Excelで言うところの「マーカー付き折れ線グラフ」にしたい場合は`geom_point()`を重ねればよい。
 
 ```{r}
-ggplot(df, aes(x = 英語, y = 国語))+
+ggplot(df, aes(x = english, y = japanese)) +
   geom_line()+ # 折れ線
   geom_point() + # マーカー
   xlab("English") +
@@ -292,10 +340,17 @@ head(longley)
 ```
 
 ```{r}
-ggplot(longley, aes(x = Year, y = GNP))+
+# ggplot
+g <- ggplot(longley, aes(x = Year, y = GNP)) +
   geom_line()+ # 折れ線
   geom_point()+ # マーカー
   labs(title = "1947~62年のアメリカのGNP")
+
+# グラフ表示
+g
+
+# plotlyで表示
+ggplotly(g)
 ```
 
 
@@ -304,7 +359,7 @@ ggplot(longley, aes(x = Year, y = GNP))+
 箱ひげ図は**五数要約**の統計量（最小値，第一四分位数，中央値，第三四分位数，最大値）をプロットすることで分布の概形を表示する図である。
 
 ```{r}
-g <- ggplot(df, aes(x = クラス, y = 国語))+
+g <- ggplot(df, aes(x = class, y = japanese)) +
   geom_boxplot()+   # 箱ひげ図
   labs(title = "クラスごとの国語の点数の分布") +
   xlab("Class") +
@@ -319,7 +374,7 @@ ggplotly(g)
 バイオリンプロットは、「カーネル密度推定」という手法で推定されたデータ分布の曲線を左右対称に描いたもので、異なるデータの分布を視覚的に比較できる。デフォルトでは最小値から最大値の範囲でプロットされ、`geom_violin(trim = FALSE)`にすると曲線の端はカットされない。
 
 ```{r}
-g <- ggplot(df, aes(x = クラス, y = 国語))+
+g <- ggplot(df, aes(x = class, y = japanese)) +
   geom_violin() + # バイオリンプロット
   labs(title = "クラスごとの国語の点数の分布") +
   xlab("Class") +
@@ -331,17 +386,14 @@ ggplotly(g)
 ## 箱ひげ図とバイオリンプロットの併用
 
 ```{r}
-g <- ggplot(df, aes(x = クラス, y = 国語)) +
+g <- ggplot(df, aes(x = class, y = japanese)) +
   geom_violin() +     # バイオリンプロット。これを先に描く。
   geom_boxplot(width = 0.3) +       # 箱ひげ図を上書き。幅を0.3に指定
   labs(title = "クラスごとの国語の点数の分布") +
   xlab("Class") +
   ylab("Japanese")
 
-g       #ggplotly(g)だと箱ひげ図が表示されない
-
-# 図の保存にはggsaveを使用する
-ggsave(plot = g, file = "violin_box.png")    # violin_box.pngとして保存される（必要に応じて保存場所は指定する）
+g     #ggplotly(g)だと箱ひげ図が表示されない
 ```
 
 
@@ -352,7 +404,7 @@ ggsave(plot = g, file = "violin_box.png")    # violin_box.pngとして保存さ�
 これにより３つ目の変数の情報を表現できる。
 
 ```{r}
-ggplot(df, aes(x = 英語, y = 国語, fill = クラス, color = クラス))+
+ggplot(df, aes(x = english, y = japanese, fill = class, color = class)) +
   geom_point()+
   labs(title = "英語と国語の得点の散布図をクラスごとに塗り分けたもの") +
   xlab("English") +
@@ -360,16 +412,44 @@ ggplot(df, aes(x = 英語, y = 国語, fill = クラス, color = クラス))+
 
 ```
 
+# バブルチャート
 
+散布図のサークルの大きさを、第三の変数に合わせて変更することもできる。
 
+```{r}
+# ggplot
+g <- ggplot(df, aes(x = english, y = japanese, size = math)) +
+  geom_point(alpha = 0.5) + # alpha:バブルの透過度
+  labs(title = "英語と国語の得点の散布図(バブルサイズは数学の点数を反映)") +
+  scale_size(range = c(1,10)) + # バブルサイズの範囲を設定
+  xlab("English") +
+  ylab("Japanese")
 
+# 散布図表示
+g
 
+#plotly
+ggplotly(g) 
+```
 
+# グラフの保存
 
+図の保存にはggsaveを使用する
+```{r}
+ggsave(plot = g, file = "bubble_chart.png")    # violin_box.pngとして保存される（必要に応じて保存場所は指定する）
+```
 
+# 参考文献
 
+データ可視化については、様々な情報やテキストがある。また、グーグルの画像検索から自分が作りたいグラフ・イメージを探し、そのRコードを参考にするのも一つの方法である。
 
+- Rob Kabacoff(2020) [Data Visualization with R](https://rkabacoff.github.io/datavis/)
 
+- キーラン・ヒーリー(2021) [『データ分析のためのデータ可視化入門』] (https://www.kspub.co.jp/book/detail/5164044.html) 講談社
+
+- ill-identified diary (2021) [『データ分析のためのデータ可視化入門』と最近の R グラフィックスパッケージ事情](https://ill-identified.hatenablog.com/entry/2021/02/03/224034)
+
+- [Using Skimr](https://cran.r-project.org/web/packages/skimr/vignettes/skimr.html)
 
 
 
