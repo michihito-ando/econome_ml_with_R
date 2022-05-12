@@ -30,6 +30,29 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F,
 ```
 
 
+# 本講義の目的
+
+- Rを用いた回帰分析の方法を学ぶ。
+- Rを用いた回帰分析結果の表示方法を学ぶ。
+
+# パッケージの読み込み
+
+まず，{tidyverse}}や{AER}や{stargazer}など、今回用いるパッケージのインストールと読み込みを行う。新しい関数については、適宜説明していく。
+
+```{r}
+pacman::p_load(readxl, tidyverse, skimr, AER, stargazer, gridExtra, estimatr, texreg)
+```
+
+
+# ディレクトリの設定
+
+作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
+
+```{r, eval = FALSE}
+setwd(自分のディレクトリ) # ディレクトリの設定
+getwd # ディレクトリの確認
+```
+
 
 # 回帰分析の基礎
 
@@ -47,27 +70,15 @@ $$
 
 ## データの用意
 
-以下ではRで回帰分析を行っていくが，今回は{AER}パッケージ（Applied Econometrics with Rパッケージ）に収録されているデータセットを例に使用する。
-
-まず，{AER}のインストールを行う。
-
-```{r,eval=F}
-install.packages("AER")
-```
-
-パッケージを読み込み，`data()`関数でデータセットの読み込みを行う。
-
-```{r}
-# パッケージの読み込み
-library(AER)
-
-# データの読み込み
-data("CPS1985")
-```
+以下ではRで回帰分析を行っていくが，今回は{AER}パッケージ（Applied Econometrics with Rパッケージ）に収録されているCPS1985というデータセットを例に使用する。
 
 今回使用する`CPS1985`データセットは，1985年アメリカの時給や教育年数などの変数が入ったものである。
 
+`data()`関数でデータセットの読み込みを行う。
+
 ```{r}
+# データの読み込み
+data("CPS1985")
 head(CPS1985)
 ```
 
@@ -75,30 +86,23 @@ head(CPS1985)
 
 回帰分析を行う前に、ほとんどの場合、分析に用いる統計の要約統計量（summary statistics)を載せる。
 
-要約統計量をチェックするだけならば、`summary()`を使えばよい。
+要約統計量をチェックするだけならば、`summary()`や`skimr::skim(df)`を使えばよい。
 
 ```{r}
 summary(CPS1985)
+skimr::skim(CPS1985)
 ```
 
-だが、これではみにくく、論文などに掲載することはできない。そこで、`stargazer`パッケージを使い、要約統計量の表を作成する。
+だが、これらはそのまま論文などに掲載することはできない。そこで、`stargazer`パッケージを使い、要約統計量の表を作成する。
 
-まず、`stargazer`パッケージをインストールする。
-```{r, eval=F}
-install.packages("stargazer")
-```
+まず、text形式で直接表示する。
 
-次に、`stargazer`を読み込み、要約統計量の表を作成する。
-```{r}
-#stargazerの読み込み
-library(stargazer)
-```
-
-text形式およびhtml形式で表示する場合は、それぞれ以下のように書く。
 ```{r}
 #textでの表示
 stargazer(CPS1985, type = "text")
 ```
+
+次に、html形式で出力し、フォルダに保存する。
 
 ```{r, results = 'asis'}
 #htmlで表示し、summary_CPS1985.htmlという名前での保存
@@ -107,7 +111,6 @@ stargazer(CPS1985, type = "html", out = "summary_CPS1985.html")
 ```
 
 Wordで作成した論文に張り付ける場合はhtml形式のほうがよい。また`stargazer`の表はもっと細かく調整できる。ヘルプを参照したりググったりして、自分用にカスタマイズした表を作ることができる。また、latexを使った出力も可能である。
-
 
 ## 最小二乗法
 
@@ -124,7 +127,9 @@ $$
 
 ```{r}
 # Regression
-reg <- lm(formula = wage ~ education, data = CPS1985) # 教育年数が賃金を決めるモデル
+reg <- lm(formula = wage ~ education, 
+          data = CPS1985) # 教育年数が賃金を決めるモデル
+
 reg
 ```
 
@@ -155,27 +160,20 @@ stargazer(reg,               # 回帰分析の結果
           out = "reg1.html")  # 保存するファイル名
 ```
 
-
-
-
-
-# 変数変換と重回帰モデル
-
-## 対数変換
+# 対数変換
 
 データ分析の過程では，データを対数変換したい場合もある。
 
 例えば，賃金のように「低い人（低所得者層）が多く，高い人（高所得者層）が少ない」ような分布はL字型のような右に歪んだ分布になる。こうした分布は対数変換を行うことで正規分布に近づく。
 
 ```{r}
-library(tidyverse)
-library(gridExtra)
-
 g1 <- ggplot(CPS1985, aes(x = wage))+
   geom_histogram(bins = 10)
+
 g2 <- ggplot(CPS1985, aes(x = log(wage)))+
   geom_histogram(bins = 10)
-grid.arrange(g1, g2)
+
+grid.arrange(g1, g2) #gridextraパッケージによるグラフの結合。他にもpatchworkパッケージなどがある。
 ```
 
 ```{r, echo = FALSE}
@@ -187,7 +185,7 @@ grid.arrange(g1, g2)
 #   geom_smooth(method = "loess", se = F)
 ```
 
-また，変数変換を行うことによって係数の解釈も次のように変わる。
+また，対数変換を行うことによって係数の解釈も次のように変わる。
 
 | モデル                                | 係数の解釈                                                 |
 | ------------------------------------- | ---------------------------------------------------------- |
@@ -208,7 +206,8 @@ $$
 は以下のコードで実行できる。
 
 ```{r}
-reg_logwage <- lm(formula = log(wage) ~ education, data = CPS1985)
+reg_logwage <- lm(formula = log(wage) ~ education, 
+                  data = CPS1985)
 ```
 
 対数変換をしなかった線形回帰の結果`reg`と今回の`reg_logwage`を`stargazer()`に入れることで，まとめて結果表示できる。
@@ -218,8 +217,9 @@ stargazer(reg, reg_logwage, type = "text")
 ```
 
 
-## 重回帰モデル
+# 重回帰モデル
 
+## 重回帰モデルとは
 複数の説明変数を使用した回帰モデルを**重回帰モデル**（multiple regression model）という。
 
 $$
@@ -272,23 +272,29 @@ $$
 
 ```{r}
 # mutate関数で新しい変数を追加したデータをdfオブジェクトに代入
-df = CPS1985 %>% mutate(experience2 = experience^2) 
+df = CPS1985 %>% dplyr::mutate(experience2 = experience^2) 
 ```
 
 次に，このデータフレーム`df`と新たな変数名`experience2`を使って`lm()`関数を書く。
 
 ```{r}
-reg_mincer <- lm(formula = log(wage) ~ education + experience + experience2, data = df)
+reg_mincer <- lm(formula = log(wage) ~ 
+                   education + experience + experience2, 
+                 data = df)
 ```
 
 text形式で分析結果表を作成すると以下のようになる。
 ```{r}
-stargazer(reg_logwage, reg_multiple, reg_mincer, type = "text")
+stargazer(reg_logwage, reg_multiple, reg_mincer, 
+          type = "text")
 ```
 
-html形式で分析結果表を作成すると以下のようになる。なおRMarkdown（このウェブ資料）ではNote以下の部分が正しく表示されていないので、出力されたhtmlファイルを見ること。
+html形式で分析結果表を作成すると以下のようになる。なおRMarkdown（このウェブ資料）ではNote以下の部分が正しく表示されていないので、出力・保存されたhtmlファイルを見ること。
+
 ```{r, results='asis'}
-stargazer(reg_logwage, reg_multiple, reg_mincer, type = "html", out = "./04reg_table.html")
+stargazer(reg_logwage, reg_multiple, reg_mincer, 
+          type = "html", 
+          out = "04reg_table.html")
 ```
 
 # 不均一分散への対応
@@ -313,12 +319,17 @@ install.packages("estimatr")
 library("estimatr")
 
 # ロバスト標準誤差を用いたOLS推定
-reg_logwage_r <- lm_robust(formula = log(wage) ~ education, 
-                           data = CPS1985, se_type = "HC1")
-reg_multiple_r <- lm_robust(formula = log(wage) ~ education + experience, 
-                            data = CPS1985, se_type = "HC1")
-reg_mincer_r <- lm_robust(formula = log(wage) ~ education + experience + experience2, 
-                          data = df, se_type = "HC1")
+reg_logwage_r <- 
+  lm_robust(formula = log(wage) ~ education, 
+            data = CPS1985, se_type = "HC1")
+
+reg_multiple_r <- 
+  lm_robust(formula = log(wage) ~ education + experience, 
+            data = CPS1985, se_type = "HC1")
+
+reg_mincer_r <- 
+  lm_robust(formula = log(wage) ~ education + experience + experience2, 
+            data = df, se_type = "HC1")
 ```
 
 なお、`HC1`は計量経済学でもっともよく使われるロバスト標準誤差であり、経済学者によく使用される計量分析ソフトのStataのロバスト標準誤差と同一のものであり、`lm_robust`では、`HC1`のかわりに`stata`と表記してもよい。
@@ -332,17 +343,7 @@ summary(reg_mincer_r)
 
 論文などで使用するための分析結果表については、`lm_robust`と`stargazer`の相性はよくないため、そのまま`stargazer`を使えない。それでも両者を使う方法は参考文献のリンク先に記されているが、ここでは分析結果表のための別のパッケージである`texreg`を使う。
 
-まず、`texreg`をインストールする。
-```{r, eval=F}
-install.packages("texreg")
-```
-
-次に、`texreg`を読み込み、以下のようにtext表を出力する。
-
 ```{r}
-#読み込み
-library(texreg)
-
 #結果表の出力
 screenreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
           include.ci = FALSE, digits = 3)
@@ -353,11 +354,15 @@ htmlもしくはWordで出力する場合は、次のようにする。
 ```{r, results = 'asis'}
 #html
 htmlreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
-        file = "./04reg_table_r.html", include.ci = FALSE, digits = 3)
+        file = "04reg_table_r.html", 
+        include.ci = FALSE, 
+        digits = 3)
 
 #word
 htmlreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
-        file = "./04reg_table_r.doc", include.ci = FALSE, digits = 3)
+        file = "04reg_table_r.doc", 
+        include.ci = FALSE, 
+        digits = 3)
 ```
 
 # 参考：不均一分散への対応 (lm_robustを使わない方法)
@@ -407,7 +412,6 @@ stargazer(reg_logwage, reg_multiple, reg_mincer,
 
 通常は、均一分散を仮定した標準誤差よりもロバスト標準誤差のほうが大きくなる傾向があるが、今回はほとんど変わらない。なお回帰係数の推定値は全く同じとなる。
 
-
 ## 不均一分散に対して頑健なF検定
 
 上の表において、F統計量は均一分散を仮定したもののままである。下記では、`lm`での回帰分析結果を利用して、不均一分散に対して頑健なF検定を行う方法だけ記す。
@@ -455,7 +459,6 @@ F値が均一分散を仮定したものとは異なっていることが確認�
 #setwd("D:/Dropbox/Lectures/Econome_ml_with_R")
 #Wwrite.csv(df, "04_OLS_df.csv")
 ```
-
 
 # 参考文献
 
