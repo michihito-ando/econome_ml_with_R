@@ -1,5 +1,5 @@
 ---
-title: "Rで学ぶ計量経済学と機械学習 5<br> <br> 計量経済学１：回帰分析/マッチング"
+title: "Rで学ぶ計量経済学と機械学習 5<br> <br> 計量経済学１：差の検定/回帰分析/マッチング"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 date: "`r Sys.Date()`"
 output:
@@ -28,6 +28,17 @@ editor_options:
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
 
+# 本講義の目的
+
+- 差の検定と回帰分析とマッチング法の基礎を学ぶ。
+- データを自分で生成する方法を学ぶ。
+
+# パッケージの読み込み
+
+```{r}
+pacman::p_load(tidyverse, DiagrammeR, stargazer, Matching)
+```
+
 # データの用意
 
 今回から、データの背後に潜む因果関係を推定する手法について学んでいく。
@@ -49,8 +60,6 @@ $$
   
 
 ```{r, echo=F}
-#install.packages("Diagrammes")
-library(DiagrammeR)
 grViz("digraph dot{
 graph[rankdir = LR]
 
@@ -83,8 +92,6 @@ edge[fontname = 'Yu Gothic', fontsize = 10]
 ```{r}
 # 事前準備 --------------------
 
-# パッケージの読み込み
-library(tidyverse)
 
 # 乱数の種を固定　=>　毎回同じように乱数を発生させるようにする。0を他の数値に変えると異なる乱数となる。
 set.seed(0)
@@ -107,22 +114,33 @@ df <- tibble(ID = 1:n, ability)
 # 大卒ダミーの作成
 # 能力が 80 以上の約 2000人の中から約 1000人をランダムに選ばれて大卒にする。
 # dfからdplyr::filter()で抽出し、sample_fram()でさらに半分をランダムに抽出する。
-university_df <- df %>% filter(ability >= 80) %>% sample_frac(0.5) # 大卒の人
+
+university_df <- df %>% filter(ability >= 80) %>% 
+                        sample_frac(0.5) # 大卒の人
 
 # university_df のデータフレームに、universityという変数を作成し、すべて1とする。
-university_df["university"] = 1
+university_df <- university_df %>% 
+                      dplyr::mutate(university = 1)
+
+## なお、university_df["university"] = 1でも作成可能
 
 # dfからdplyr::anti_join()を用いて"university_df"とマッチしなかった人を抽出する。
-no_university_df <- anti_join(df, university_df, by = c("ID","ability")) # 大卒ではない人
+no_university_df <- anti_join(df, university_df, 
+                              by = c("ID","ability")) # 大卒ではない人
 
 # no_university_dfのデータフレームに、universityという変数を作成し、すべて0とする。
-no_university_df["university"] = 0
+no_university_df <- no_university_df %>% 
+                      dplyr::mutate(university = 0)
+
+## なお、no_university_df["university"] = 0でも作成可能
 
 # university_dfとno_university_dfを、dplyr::bind_rowsを用いて結合してあたらしいdfとし、ID順で並べる
-df <- bind_rows(university_df, no_university_df) %>% arrange(ID) # 両者を結合
+df <- bind_rows(university_df, no_university_df) %>%  # 両者を結合
+      arrange(ID) # ID順に並べる
 
 # 所得変数（income)の作成：上記のDGP(母集団回帰モデル）に基づいて生成
-df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, mean = 0, sd = 50)  # 誤差項は平均=0、SD=50
+
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, mean = 0, sd = 50)) # 誤差項は平均=0、SD=50
 
 # 最初の6行
 head(df)
@@ -137,7 +155,8 @@ head(df)
 
 ## 大卒か否かのラベルをデータフレームに加える
 df <- df %>% mutate(edu_label =
-                      case_when(university == 1 ~ "Grad.", university == 0 ~ "Not grad."))
+                      case_when(university == 1 ~ "Grad.", 
+                                university == 0 ~ "Not grad."))
 
 ## 散布図を描く with 大卒ラベル
 ggplot(df, aes(x = ability, y = income, color = edu_label)) + 
@@ -242,10 +261,11 @@ $$
 
 
 ```{r}
-ols_A <- lm(formula = income ~ ability + university, data = df)
+OLS_true_model <- lm(formula = income ~ ability + university, 
+                     data = df)
 
 library(stargazer)
-stargazer(ols_A, type = "text")
+stargazer(OLS_true_model, type = "text")
 ```
 
 能力(`ability`)、学歴（`university`)、ｙ切片（`constant`)の係数推定値は、冒頭のDGPで設定したパラメータとほとんど一致する。すなわち、バイアスのない推定値となっている。
@@ -258,7 +278,9 @@ stargazer(ols_A, type = "text")
 # plot
 
 ## 散布図と回帰直線を描く with 大卒ラベル
-ggplot(df, aes(x = ability, y = income, color = edu_label, group = edu_label)) + # groupごと
+ggplot(df, aes(x = ability, y = income, 
+               color = edu_label, 
+               group = edu_label)) + # groupごと
          geom_point(alpha = 0.5)+ 
          geom_smooth(method = "lm", color = "black") +  # 回帰直線
          labs(title = "Ability and Income")
@@ -277,12 +299,14 @@ $$
 結果は以下のようになる。
 
 ```{r}
-ols_S <- lm(formula = income ~ university, data = df)
-stargazer(ols_S, type = "text")
+OLS_missing_A <- lm(formula = income ~ university, 
+                    data = df)
+stargazer(OLS_missing_A, type = "text")
 ```
 
 ```{r, echo=F}
-lm_score = lm(formula = income ~ university, data = df)
+lm_score = lm(formula = income ~ university, 
+              data = df)
 ```
 
 この推定結果を因果的に解釈すると、「大卒になることによる所得上昇の効果」は、約`r round(lm_score$coefficients[2], 0)`（万円）と推定されたことになる（なおこの値は、上記の「差の検定」における大卒と非大卒の平均所得差と等しい）。すなわち，データ生成時に設定した真の値500よりも過大に推定されている。
@@ -303,23 +327,19 @@ lm_score = lm(formula = income ~ university, data = df)
 
 マッチング法は、Rでは`{Matching}`パッケージで実行できる。
 
-```{r, eval=F}
-# パッケージのインストール
-install.packages("Matching")
-```
-
 マッチングも回帰分析と同じで，必要な共変量が入手できるかどうかによって、推定バイアスの有無や程度に違いがでる。
 
 今回の場合、能力$A$が入手できる場合は、これを唯一の共変量として、次のようにマッチング推定を行うことができる。
 
 ```{r}
-library(Matching)
 # 最近傍マッチング（マッチングの方法の１つ）
-match_nn <- Match(Y = df$income,      # 被説明変数・結果変数
+match_nn <- Matching::Match(Y = df$income,      # 被説明変数・結果変数
                   Tr = df$university, # 処置変数
                   X = df$ability,     # 共変量
                   version = "fast",   # 一部の処理を省略して計算量を減らす設定
                   Weight = 1)         # ユークリッド距離に基づくマッチング
+
+# 結果の表示
 summary(match_nn)
 ```
 
@@ -338,8 +358,15 @@ summary(match_nn)
 
 # 参考文献
 
-今回用いたデータ生成過程（DGP)は、下記のエッセイのものと同一である。
 
-安藤道人（2015) 「[多重回帰分析と回帰不連続デザイン](https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf)」 『日本労働研究雑誌』 No.657 pp.12-13 
+-  [計量経済学応用 回帰分析](https://yukiyanai.github.io/jp/classes/econometrics2/contents/R/regression.html) (矢内勇生氏の講義ノート)
 
+- [計量経済学応用 傾向スコア](https://yukiyanai.github.io/jp/classes/econometrics2/contents/R/propensity-score.html) (矢内勇生氏の講義ノート)
 
+- [Chapter 13 - Regression](https://theeffectbook.net/ch-StatisticalAdjustment.html) (Nick Huntington-Klein (2021)"The Effect: An Introuction to Research Design and Causality")
+
+- [Chapter 14 - Matching](https://theeffectbook.net/ch-Matching.html) (Nick Huntington-Klein (2021)"The Effect: An Introuction to Research Design and Causality")
+
+なお、今回用いたデータ生成過程（DGP)は、下記のエッセイのものと同一である。
+
+- 安藤道人（2015) 「[多重回帰分析と回帰不連続デザイン](https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf)」 『日本労働研究雑誌』 No.657 pp.12-13 
