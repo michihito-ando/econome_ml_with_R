@@ -1,7 +1,6 @@
 ---
 title: "Rで学ぶ計量経済学と機械学習 6<br> <br> 計量経済学２：操作変数法"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
-
 date: "`r Sys.Date()`"
 output:
  html_document:
@@ -29,6 +28,26 @@ editor_options:
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
 
+
+# 本講義の目的
+
+- 操作変数法の実施方法を学ぶ。
+
+
+# パッケージの読み込み
+
+今回の分析で使うパッケージを読み込む。ただし、{DiagrammeR}は因果ダイアグラムを書くために使うものであり、講義中には使わない。
+```{r}
+pacman::p_load(tidyverse, 
+               stargazer, 
+               Hmisc, 
+               AER, 
+               estimatr, 
+               texreg, 
+               ivpack, 
+               DiagrammeR)
+```
+
 # データの用意
 
 前回と同じく，架空のデータを生成して分析を行う。
@@ -49,7 +68,7 @@ $$
 
 ```{r, echo=F}
 #install.packages("Diagrammes")
-library(DiagrammeR)
+
 grViz("digraph dot{
 graph[rankdir = LR]
 
@@ -69,7 +88,6 @@ edge[fontname = 'Yu Gothic', fontsize = 10]
 
 ```{r, echo=F}
 #install.packages("Diagrammes")
-library(DiagrammeR)
 grViz("digraph dot{
 graph[rankdir = LR]
 
@@ -85,8 +103,7 @@ edge[fontname = 'Yu Gothic', fontsize = 10]
 }")
 ```
 
-
-データ生成過程は、以下のように設定できる。
+データ生成過程は、以下のように設定できる。（難しく感じる人は、コピペでかまわな）
 
 ```{r}
 # 事前準備 --------------------
@@ -118,16 +135,22 @@ df <- tibble(ID = 1:n, ability)
 university_df <- df %>% filter(ability >= 80) %>% sample_frac(0.5) # 大卒の人
 
 # university_df のデータフレームに、universityという変数を作成し、すべて1とする。
-university_df["university"] = 1
+university_df <- university_df %>% 
+                      dplyr::mutate(university = 1)
+
+#あるいは university_df["university"] = 1
 
 # dfからdplyr::anti_join()を用いて"university_df"とマッチしなかった人を抽出する。
-no_university_df <- anti_join(df, university_df, by = c("ID","ability")) # 大卒ではない人
+no_university_df <- df %>% 
+  dplyr::anti_join(university_df,
+                   by = c("ID","ability")) # 大卒ではない人
 
 # no_university_dfのデータフレームに、universityという変数を作成し、すべて0とする。
 no_university_df["university"] = 0
 
 # university_dfとno_university_dfを、dplyr::bind_rowsを用いて結合してあたらしいdfとし、ID順で並べる
-df_temp1 <- bind_rows(university_df, no_university_df) %>% arrange(ID) # 両者を結合
+df_temp1 <- bind_rows(university_df, no_university_df) %>% # 両者を結合
+  arrange(ID) # ID順にする
 
 # ここまで前回と同じ ------------
 # ここから追加部分 --------------
@@ -139,7 +162,8 @@ df_temp1 <- bind_rows(university_df, no_university_df) %>% arrange(ID) # 両者�
 
 # df_tempの個体は、能力に関係なく、30%の確率で学費免除（exemption = 1）となる
 # rbinom(n, m, p): 成功確率pの試行をm回試みたときの成功回数の分布をnを生成
-df_temp2 <- df_temp1 %>% mutate(exemption = rbinom(n, 1, 0.3)) 
+df_temp2 <- df_temp1 %>% 
+  dplyr::mutate(exemption = rbinom(n, 1, 0.3)) 
 
 # 学費免除（exemption=1）のときには、50%の確率で卒業できる（university=1）
 # ただし、能力が80以上のときには学費免除の有無に関わりなく卒業できるものとする。
@@ -151,7 +175,14 @@ df <- df_temp2 %>%
                                 TRUE ~ 0)) # それ以外は0
 
 # 所得の生成
-df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, mean = 0, sd = 50)  # 誤差項は平均=0、SD=50
+df <- df %>% 
+  dplyr::mutate(income = 
+                  200 + 
+                  10*ability + 
+                  500*university + 
+                  rnorm(n, mean = 0, sd = 50)) # 誤差項は平均=0、SD=50
+
+# 伝統的なやり方はこちら→df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, mean = 0, sd = 50)  # 誤差項は平均=0、SD=50
 
 # 最初の6行
 head(df)
@@ -162,7 +193,7 @@ head(df)
 生成したデータの記述統計を`Hmisc::describe`で表示し、どのくらいが学費免除および大卒になったかチェックしてみる。
 
 ```{r}
-library(Hmisc)
+library()
 describe(df)
 ```
 
@@ -185,7 +216,6 @@ ggplot(df, aes(x = ability, y = income, color = edu_label)) +
 
 
 以下では、「**学歴（大卒になること）が所得をどれだけ上昇させるのか**」を推定することを目的として分析していく。
-
 
 # 操作変数法の概要
 
@@ -217,19 +247,16 @@ $$
 
 まず、欠落変数（能力$A$)を無視して、$Y$を$X$に回帰してみる。単純な単回帰に加えて、学費補助$Z$をコントロール変数に加えた重回帰分析も行ってみる。
 
-{stargazer}パッケージを読み混む。
-
-```{r}
-library(stargazer)
-```
-
 回帰分析結果は以下のようになる。
 
 ```{r}
-reg_biased1 = lm(income ~ university, data = df)
-reg_biased2 = lm(income ~ university + exemption, data = df)
+reg_biased1 = lm(income ~ university, 
+                 data = df)
+reg_biased2 = lm(income ~ university + exemption, 
+                 data = df)
 
-stargazer(reg_biased1, reg_biased2, type = "text")
+stargazer(reg_biased1, reg_biased2, 
+          type = "text")
 ```
 
 「大卒になることによる所得上昇の効果」は、約`r round(reg_biased1$coefficients[2], 0)`（万円）および約`r round(reg_biased2$coefficients[2], 0)`（万円）と過大推定される。
@@ -255,9 +282,11 @@ $$
 第一段階の推定結果は以下のようになる。
 
 ```{r}
-first_stage = lm(university ~ exemption, data = df)
+first_stage = lm(university ~ exemption, 
+                 data = df)
 
-stargazer(first_stage, type = "text")
+stargazer(first_stage, 
+          type = "text")
 ```
 
 学歴ダミーの係数推定値は、約`r round(first_stage$coefficients[2], 2)`である。本モデルは線形確率モデルであるため、この結果は、学費免除になると大卒になる確率が約40%上昇することを示している。
@@ -269,9 +298,11 @@ stargazer(first_stage, type = "text")
 一方、誘導型の推定結果は以下のようになる。
 
 ```{r}
-reduced_form = lm(income ~ exemption, data = df)
+reduced_form = lm(income ~ exemption, 
+                  data = df)
 
-stargazer(reduced_form, type = "text")
+stargazer(reduced_form, 
+          type = "text")
 ```
 
 学歴ダミーの係数推定値は、約`r round(reduced_form$coefficients[2], 0)`であり、これは、「学費免除にあたると（大卒になることを通じて）平均所得が約`r round(reduced_form$coefficients[2], 0)`万円上昇する」ことを意味している。つまり誘導形推定値は、「学費免除の所得に対する平均処置効果」である。
@@ -284,39 +315,37 @@ reduced_form$coefficients[2] / first_stage$coefficients[2]
 
 「学歴（大卒）が所得に与える効果」である500万を正確に推定できている。ただし、このような方法では、標準誤差を得ることはできない。
 
-
 ## 二段階最小二乗法(TSLS)を実行する
 
-`{AER}`パッケージに操作変数法による回帰を行う`ivreg()`という関数がある。これを実行すればより簡単に操作変数法を実行することができる。（内部では二段階最小二乗法を行っている）
+`{AER}`パッケージに操作変数法による回帰を行う`ivreg()`という関数がある。これを実行すれば操作変数法で推定し、標準誤差を出すことができる。
 
 ```{r}
-library(AER)
-
-iv_reg = ivreg(formula = income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数　と指定
+iv_reg = AER::ivreg(formula = income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数　と指定
            data = df)
-stargazer(iv_reg, type = "text")
+
+summary(iv_reg)
+
+texreg::screenreg(list(iv_reg), # stargazerだとなぜかエラーがでたのでtexregを使用
+                  include.ci = FALSE, 
+                  digits = 3)
 ```
 
 TSLS推定値は、約`r round(iv_reg$coefficients[2],0)`であり、先に求めた値とも一致する。
 
-
 ## ロバスト標準誤差
-なおTSLSにおいても、不均一分散に対して頑健な標準誤差（ロバスト標準誤差）を使うことが望ましい。
-
-{estimatr}パッケージの`iv_robust()`を使えば、ロバスト標準誤差を用いてTSLSを実施できる。
+ただし、TSLSにおいても、一般的には、不均一分散に対して頑健な標準誤差（ロバスト標準誤差）を使うことが望ましい。そこで、{estimatr}パッケージの`iv_robust()`を使えば、ロバスト標準誤差を用いてTSLSを実施できる。実際にデータ分析する際には、この関数を活用することが望ましい。
 
 ```{r}
-library(estimatr)
-library(texreg)
 
-iv_reg_robust <- iv_robust(income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数
-                            data = df, se_type ="HC1") 
+iv_reg_robust <- estimatr::iv_robust(income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数
+                            data = df, 
+                            se_type ="HC1") 
 
 # summary
 summary(iv_reg_robust)
 
 #結果表の出力: コンソールに出力
-screenreg(list(iv_reg, iv_reg_robust), 
+texreg::screenreg(list(iv_reg, iv_reg_robust), 
           include.ci = FALSE, digits = 3)
 ```
 
@@ -326,22 +355,27 @@ htmlで出力するには、{textreg}パッケージの`htmlreg()`を使う。
 
 ```{r}
 #結果表の出力：html
-htmlreg(list(iv_reg, iv_reg_robust), 
-        file = "./06ivreg_table.html", include.ci = FALSE, digits = 3)
+texreg::htmlreg(list(iv_reg, iv_reg_robust), 
+                file = "./06ivreg_table.html", 
+                include.ci = FALSE, 
+                digits = 3)
 ```
 
 
 ## 参考：`ivreg()`と{ivpack}を使ったロバスト標準誤差の計算
-`ivreg()`と{ivpack}パッケージを使うことにより、ロバスト標準誤差を計算することもできる。
+`ivreg()`と{ivpack}パッケージを使うことにより、ロバスト標準誤差を計算することもできる。ただし、{estimatr}パッケージがあるため、現在は使う必要はない。
 
-
-まずはパッケージをダウンロードする。
-```{r}
-library(ivpack)
-```
 
 `robust.se`関数を用いてロバスト標準誤差を計算し、上記の均一分散を仮定した場合の標準誤差と比較する。
 ```{r}
 iv_reg_robust2 <- robust.se(iv_reg)
-stargazer(iv_reg, iv_reg_robust2, type = "text")
+texreg::screenreg(list(iv_reg, iv_reg_robust2), 
+                include.ci = FALSE, 
+                digits = 3)
 ```
+
+# 参考文献
+
+-  [計量経済学応用 操作変数法](https://yukiyanai.github.io/jp/classes/econometrics2/contents/R/IV-method.html) (矢内勇生氏の講義ノート)
+
+- [Chapter 19 - Instrumental Variables](https://theeffectbook.net/ch-InstrumentalVariables.html) (Nick Huntington-Klein (2021)"The Effect: An Introuction to Research Design and Causality")

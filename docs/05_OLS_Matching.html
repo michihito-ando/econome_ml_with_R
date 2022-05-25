@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2022-05-18" />
+<meta name="date" content="2022-05-25" />
 
 <title>Rで学ぶ計量経済学と機械学習 5    計量経済学１：差の検定/回帰分析/マッチング</title>
 
@@ -330,7 +330,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 5<br> <br> 計量経済学１：差の検定/回帰分析/マッチング</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)</h4>
-<h4 class="date">2022-05-18</h4>
+<h4 class="date">2022-05-25</h4>
 
 </div>
 
@@ -362,8 +362,8 @@ Y = 200 + 10A + 500X+ \varepsilon
 <li>大卒だと所得が500万円上昇する</li>
 <li>切片は200万円（能力=0、非大卒の平均給与）</li>
 </ul>
-<div id="htmlwidget-d45d280097da25a997e1" style="width:480px;height:336px;" class="grViz html-widget"></div>
-<script type="application/json" data-for="htmlwidget-d45d280097da25a997e1">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div id="htmlwidget-97383f46af653d22fa9e" style="width:480px;height:336px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-97383f46af653d22fa9e">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>ここで、学歴<span class="math inline">\(X\)</span>が所得<span class="math inline">\(Y\)</span>に与える効果に興味があるとき、<span class="math inline">\(X\)</span>を<strong>処置変数</strong>、<span class="math inline">\(Y\)</span>を<strong>アウトカム変数</strong>と呼ぶ。また、<span class="math inline">\(X\)</span>と<span class="math inline">\(Y\)</span>に影響を及ぼすことが想定される能力<span class="math inline">\(A\)</span>のような変数を<strong>共変量/交絡要因/コントロール変数</strong>と呼ぶ（分野によって呼び方やニュアンスが若干異なるが、ほぼ同じ意味で用いて問題ない）。</p>
 <p>まず、上記のDGPに従うデータを生成する。なお、データ生成は、これまでの学習した内容と比較してやや高度なので、とりあえずは、ただコピペしてデータ生成するだけでも構わない。</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 事前準備 --------------------</span></span>
@@ -511,8 +511,7 @@ Y = \beta_0 + \beta_1 A + \beta_2 X + u
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>OLS_true_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> income <span class="sc">~</span> ability <span class="sc">+</span> university, </span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                     <span class="at">data =</span> df)</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(stargazer)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(OLS_true_model, <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(OLS_true_model, <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
 <pre><code>## 
 ## =================================================
 ##                          Dependent variable:     

@@ -264,7 +264,6 @@ $$
 OLS_true_model <- lm(formula = income ~ ability + university, 
                      data = df)
 
-library(stargazer)
 stargazer(OLS_true_model, type = "text")
 ```
 
@@ -357,7 +356,6 @@ summary(match_nn)
 推定値は、設定した500（万円）に非常に近い値となっている。
 
 # 参考文献
-
 
 -  [計量経済学応用 回帰分析](https://yukiyanai.github.io/jp/classes/econometrics2/contents/R/regression.html) (矢内勇生氏の講義ノート)
 
