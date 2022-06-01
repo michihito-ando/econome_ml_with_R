@@ -1,5 +1,5 @@
 ---
-title: "Rで学ぶ計量経済学と機械学習 7<br> <br> 計量経済学３：回帰不連続デザイン(+モンテカルロ・シミュレーション入門）"
+title: "Rで学ぶ計量経済学と機械学習 7<br> <br> 計量経済学３：回帰不連続デザイン（+モンテカルロ・シミュレーション入門）"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 date: "`r Sys.Date()`"
 output:
@@ -28,6 +28,27 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
 
 
+# パッケージの読み込み
+
+今回の分析で使うパッケージを読み込む。ただし、{DiagrammeR}は因果ダイアグラムを書くために使うものであり、講義中には使わない。
+```{r}
+pacman::p_load(tidyverse, 
+               stargazer, 
+               Hmisc, 
+               estimatr, 
+               texreg, 
+               DiagrammeR)
+```
+
+# ディレクトリの設定
+
+作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
+
+```{r, eval = FALSE}
+setwd(自分のディレクトリ) # ディレクトリの設定
+getwd() # ディレクトリの確認
+```
+
 # データ
 
 ## データ生成過程
@@ -49,7 +70,6 @@ $$
 
 
 ```{r, echo=F}
-pacman::p_load(DiagrammeR)
 grViz("digraph dot{
 graph[rankdir = LR]
 
@@ -68,8 +88,7 @@ edge[fontname = 'Yu Gothic']
 
 ```{r}
 # 事前準備 --------------------
-# パッケージの読み込み
-library(tidyverse)
+
 # 乱数の種を固定
 set.seed(0)
 
@@ -88,11 +107,14 @@ df <- tibble(ID = 1:n, ability)
 ## 今回はmutate()とcase_when()を使用して作成
 
 #学力テストの点数 score
-df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
+df <- df %>% mutate(score = 30*log10(ability) + 
+                            rnorm(n, mean = 115, sd = 10))
 #大卒ダミー university (score 180点以上=1)
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
+                                           TRUE ~ 0))
 #所得 income
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+df <- df %>% mutate(income = 200 + 10*ability + 500*university +
+                             rnorm(n, sd = 50))
 
 ##dplyrを使わないやり方だと、以下の通り。
 #df["score"] = 30*log10(ability) + rnorm(n, mean = 115, sd = 10)
@@ -112,10 +134,13 @@ head(df)
 
 ## 大卒か否かのラベルをデータフレームに加える
 df <- df %>% mutate(edu_label =
-                      case_when(university == 1 ~ "Grad.", university == 0 ~ "Not grad."))
+                      case_when(university == 1 ~ "Grad.", 
+                                university == 0 ~ "Not grad."))
 
 ## 散布図を描く with 大卒ラベル
-ggplot(df, aes(x = ability, y = income, color = edu_label)) + 
+ggplot(df, aes(x = ability, 
+               y = income, 
+               color = edu_label)) + 
          geom_point(alpha = 0.5)+ 
          labs(title = "Ability and Income")
 ```
@@ -123,8 +148,7 @@ ggplot(df, aes(x = ability, y = income, color = edu_label)) +
 また、データの記述統計は以下のようになる。
 
 ```{r}
-library(Hmisc)
-describe(df)
+Hmisc::describe(df)
 ```
 
 # モンテカルロ・シミュレーション入門
@@ -133,19 +157,16 @@ describe(df)
 
 次に、欠落変数（能力$A$)を無視して、$Y$を$X$に回帰してみる。前回同様、単純な単回帰に加えて、学力テストの点数をコントロール変数に加えた重回帰分析も行ってみる。
 
-{stargazer}パッケージを読み混む。
-
-```{r}
-library(stargazer)
-```
-
 回帰分析結果は以下のようになる。
 
 ```{r}
-reg1 = lm(income ~ university, data = df)
-reg2 = lm(income ~ university + score, data = df)
+reg1 = lm(income ~ university, 
+          data = df)
+reg2 = lm(income ~ university + score, 
+          data = df)
 
-stargazer(reg1, reg2, type = "text")
+stargazer(reg1, reg2, 
+          type = "text")
 ```
 
 「大卒になることによる所得上昇の効果」は、単回帰分析(`reg1`)だと約`r round(reg1$coefficients[2], 0)`（万円）と過大推定される。
@@ -176,16 +197,26 @@ coef <- rep(NA,1000)
 # 同じ回帰分析(上のreg2)を1000回繰りかえす。
 
 for(i in 1:1000){ # forによるループ。1000回繰り返す
+
 # データ生成
 n <- 10000
+
 ability <- runif(n, min = 0, max = 100) # 能力は0から100まで均等に分布
+
 df <- tibble(ID = 1:n, ability) # IDとabilityをデータフレームに格納する
-df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
+df <- df %>% mutate(score = 30*log10(ability) + 
+                            rnorm(n, mean = 115, sd = 10))
+
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
+                                           TRUE ~ 0))
+
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
+                             rnorm(n, sd = 50))
 
 # 回帰
-reg2 <- lm(income ~ university + score, data = df)
+reg2 <- lm(income ~ university + score, 
+           data = df)
 
 # 回帰係数推定値の保存
 coef[i] = reg2$coefficients[2] 
@@ -217,12 +248,21 @@ hist(coef)
 ```{r}
 # データ生成
 set.seed(0)
+
 n <- 10000
+
 ability <- runif(n, min = 0, max = 100)
+
 df <- tibble(ID = 1:n, ability)
-df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
+df <- df %>% mutate(score = 30*log10(ability) + 
+                            rnorm(n, mean = 115, sd = 10))
+
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
+                                           TRUE ~ 0))
+
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
+                             rnorm(n, sd = 50))
 ```
 
 X軸を学力テストの点数(`score`)、Y軸を所得(`income`)として散布図を描くと、下記のようになる。
@@ -232,10 +272,13 @@ X軸を学力テストの点数(`score`)、Y軸を所得(`income`)として散�
 
 ## 大卒か否かのラベルをデータフレームに加える
 df <- df %>% mutate(edu_label =
-                      case_when(university == 1 ~ "Grad.", university == 0 ~ "Not grad."))
+                      case_when(university == 1 ~ "Grad.", 
+                                university == 0 ~ "Not grad."))
 
 ## 散布図を描く with 大卒ラベル
-ggplot(df, aes(x = score, y = income, color = edu_label)) + 
+ggplot(df, aes(x = score, 
+               y = income, 
+               color = edu_label)) + 
          geom_point(alpha = 0.5) + 
          labs(title = "Score and Income")
 ```
@@ -258,10 +301,15 @@ RDデザインの推定は、より高度なRD推定方法を扱うパッケー�
 
 ```{R}
 ## 散布図を描く with 大卒ラベル
-ggplot(df, aes(x = score, y = income, color = edu_label, group = edu_label)) + 
-         geom_point(alpha = 0.5)+ 
+ggplot(df, aes(x = score, 
+               y = income, 
+               color = edu_label, 
+               group = edu_label)) + 
+         geom_point(alpha = 0.5) + 
          labs(title = "Score and Income") +
-         geom_smooth(method = lm, se = TRUE, color = "black") # group=edu_labelごとの回帰直線, SEあり
+         geom_smooth(method = lm, 
+                     se = TRUE, 
+                     color = "black") # group=edu_labelごとの回帰直線, SEあり
 ```
 
 
@@ -272,8 +320,10 @@ ggplot(df, aes(x = score, y = income, color = edu_label, group = edu_label)) +
 df <- df %>% mutate(score_gap = score - 180)
 
 # 線形RD: X軸にscore_gapを用いることにより、y切片の変化すなわちuniversityダミーの係数を上図の「ジャンプ」の大きさと解釈できる。
-linear_RD <- lm(income ~ university + score_gap + score_gap:university, data = df) 
-stargazer(linear_RD, type = "text")
+linear_RD <- lm(income ~ university + score_gap + score_gap:university, 
+                data = df) 
+stargazer(linear_RD, 
+          type = "text")
 ```
 
 `university`の係数は閾値でのジャンプの大きさ、`score`の係数は閾値左側の回帰直線の傾き、`score:university`の係数は閾値左側と閾値右側の回帰直線の傾きの変化である。`university`の係数推定値は500に近い。
@@ -286,31 +336,62 @@ stargazer(linear_RD, type = "text")
 
 ```{R}
 ## 散布図を描く with 大卒ラベル
-ggplot(df, aes(x = score, y = income, color = edu_label, group = edu_label)) + 
+ggplot(df, aes(x = score, 
+               y = income, 
+               color = edu_label, 
+               group = edu_label)) + 
          geom_point(alpha = 0.5)+ 
          labs(title = "Score and Income") +
-         geom_smooth(method = lm, se = TRUE, color = "black") + # group=edu_labelごとの回帰直線, SEあり
-         geom_smooth(method = loess, se = TRUE, color = "black")   # group=edu_labelごとのloess曲線, SEあり
+         geom_smooth(method = lm, 
+                     se = TRUE, 
+                     color = "black") + # group=edu_labelごとの回帰直線, SEあり
+         geom_smooth(method = loess, 
+                     se = TRUE, 
+                     color = "black")   # group=edu_labelごとのloess曲線, SEあり
 ```
 
 そこで、閾値の左右における`score`と`income`の関係を、それぞれ異なる二次、三次、四次曲線でとらえた多項式RDを推定してみる。
 
 ```{r}
 # 二次多項式RD, I(score_gap^2)はscore_gap^2
-secondpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = df) 
+secondpoly_RD <- lm(income ~  university + 
+                              score_gap + 
+                              I(score_gap^2) + 
+                              score_gap:university + 
+                              I(score_gap^2):university, 
+                    data = df) 
 
 # 三次多項式RD,  I(score_gap^3)はscore_gap^3
-thirdpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) + I(score_gap^3) +
-               score_gap:university + I(score_gap^2):university + I(score_gap^3):university, data = df) 
+thirdpoly_RD <- lm(income ~  university + 
+                             score_gap + 
+                             I(score_gap^2) + 
+                             I(score_gap^3) +
+                             score_gap:university + 
+                             I(score_gap^2):university + 
+                             I(score_gap^3):university, 
+                   data = df) 
 
 # 四次多項式RD, I(score_gap^4)はscore_gap^4
-fourthpoly_RD <- lm(income ~  university + score_gap + I(score_gap^2) + I(score_gap^3) + I(score_gap^4) +
-               + score_gap:university + I(score_gap^2):university +
-               + I(score_gap^3):university + I(score_gap^4):university , data = df) 
+fourthpoly_RD <- lm(income ~  university + 
+                              score_gap + 
+                              I(score_gap^2) + 
+                              I(score_gap^3) + 
+                              I(score_gap^4) +
+                              score_gap:university + 
+                              I(score_gap^2):university +
+                              I(score_gap^3):university + 
+                              I(score_gap^4):university , 
+                    data = df) 
+
 
 # 一次~四次多項式RD
-stargazer(linear_RD, secondpoly_RD, thirdpoly_RD, fourthpoly_RD, type = "text", digits = 1, df = FALSE) # 幅を狭くするため、digits=1, df=FALSEとする
+stargazer(linear_RD, 
+          secondpoly_RD, 
+          thirdpoly_RD, 
+          fourthpoly_RD, 
+          type = "text", 
+          digits = 1, 
+          df = FALSE) # 幅を狭くするため、digits=1, df=FALSEとする
 ```
 
 どの結果も、`university`の係数推定値は、だいたい500前後になる。ただし、多項式の次元を大きくしていくほど、標準誤差も大きくなる。
@@ -324,21 +405,31 @@ stargazer(linear_RD, secondpoly_RD, thirdpoly_RD, fourthpoly_RD, type = "text", 
 ```{r}
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
-band30_RD <- lm(income ~ university + score_gap + score_gap:university, data = band30_df) 
+band30_RD <- lm(income ~ university + score_gap + score_gap:university, 
+                data = band30_df) 
 
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
-band10_RD <- lm(income ~ university + score_gap + score_gap:university, data = band10_df) 
+band10_RD <- lm(income ~ university + score_gap + score_gap:university, 
+                data = band10_df) 
 
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
-band5_RD <- lm(income ~ university + score_gap + score_gap:university, data = band5_df) 
+band5_RD <- lm(income ~ university + score_gap + score_gap:university, 
+               data = band5_df) 
 
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
-band1_RD <- lm(income ~ university + score_gap + score_gap:university, data = band1_df) 
+band1_RD <- lm(income ~ university + score_gap + score_gap:university, 
+               data = band1_df) 
 
-stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
+stargazer(band30_RD, 
+          band10_RD, 
+          band5_RD, 
+          band1_RD, 
+          type = "text", 
+          digits = 1, 
+          df = FALSE)
 ```
 
 バンド幅が10や5の場合は`university` の係数推定値は500に近いが、バンド幅を1にまで狭めると、推定値はかなり大きくなってしまっている。
@@ -353,32 +444,50 @@ stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, 
 # データ生成
 set.seed(0)
 n <- 1000000
+
 ability <- runif(n, min = 0, max = 100)
+
 df <- tibble(ID = 1:n, ability)
-df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
+df <- df %>% mutate(score = 30*log10(ability) + 
+                            rnorm(n, mean = 115, sd = 10))
+
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
+                                           TRUE ~ 0))
+
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
+                              rnorm(n, sd = 50))
 
 #割当変数score_gapの作成
 df <- df %>% mutate(score_gap = score - 180)
 
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
-band30_RD <- lm(income ~ university + score_gap + score_gap:university, data = band30_df) 
+band30_RD <- lm(income ~ university + score_gap + score_gap:university, 
+                data = band30_df) 
 
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
-band10_RD <- lm(income ~ university + score_gap + score_gap:university, data = band10_df) 
+band10_RD <- lm(income ~ university + score_gap + score_gap:university, 
+                data = band10_df) 
 
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
-band5_RD <- lm(income ~ university + score_gap + score_gap:university, data = band5_df) 
+band5_RD <- lm(income ~ university + score_gap + score_gap:university, 
+               data = band5_df) 
 
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
-band1_RD <- lm(income ~ university + score_gap + score_gap:university, data = band1_df) 
+band1_RD <- lm(income ~ university + score_gap + score_gap:university, 
+               data = band1_df) 
 
-stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
+stargazer(band30_RD, 
+          band10_RD, 
+          band5_RD, 
+          band1_RD, 
+          type = "text",  
+          digits = 1, 
+          df = FALSE)
 ```
 
 バンド幅50だと少し下方バイアスがあるように見えるが、バンド幅を10以下にすると、ほぼ500になる。
@@ -392,11 +501,19 @@ stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, 
 # データ生成
 set.seed(0)
 n <- 10000
+
 ability <- runif(n, min = 0, max = 100)
+
 df <- tibble(ID = 1:n, ability)
-df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
+df <- df %>% mutate(score = 30*log10(ability) + 
+                            rnorm(n, mean = 115, sd = 10))
+
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
+                                           TRUE ~ 0))
+
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
+                             rnorm(n, sd = 50))
 
 #割当変数score_gapの作成
 df <- df %>% mutate(score_gap = score - 180)
@@ -404,24 +521,34 @@ df <- df %>% mutate(score_gap = score - 180)
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
 band30_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = band30_df) 
+              score_gap:university + I(score_gap^2):university, 
+              data = band30_df) 
 
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
 band10_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = band10_df)
+              score_gap:university + I(score_gap^2):university,
+              data = band10_df)
 
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
 band5_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = band5_df)
+              score_gap:university + I(score_gap^2):university, 
+              data = band5_df)
 
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
 band1_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = band1_df)
+              score_gap:university + I(score_gap^2):university, 
+              data = band1_df)
 
-stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
+stargazer(band30_RD, 
+          band10_RD, 
+          band5_RD, 
+          band1_RD, 
+          type = "text", 
+          digits = 1, 
+          df = FALSE)
 ```
 
 全体としてRD推定値(`university`の係数推定値）は500よりも大きくなり、とりわけもっともバンド幅が小さいときには500から大きく離れている。
@@ -431,12 +558,21 @@ stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, 
 ```{r}
 # データ生成
 set.seed(0)
+
 n <- 1000000
+
 ability <- runif(n, min = 0, max = 100)
+
 df <- tibble(ID = 1:n, ability)
-df <- df %>% mutate(score = 30*log10(ability) + rnorm(n, mean = 115, sd = 10))
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, TRUE ~ 0))
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, sd = 50))
+
+df <- df %>% mutate(score = 30*log10(ability) + 
+                            rnorm(n, mean = 115, sd = 10))
+
+df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
+                                           TRUE ~ 0))
+
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
+                             rnorm(n, sd = 50))
 
 #割当変数score_gapの作成
 df <- df %>% mutate(score_gap = score - 180)
@@ -444,24 +580,34 @@ df <- df %>% mutate(score_gap = score - 180)
 # バンド幅=50
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
 band30_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = band30_df) 
+              score_gap:university + I(score_gap^2):university, 
+              data = band30_df) 
 
 # バンド幅=10
 band10_df <- df %>% filter(-10 <= score_gap & score_gap < 10) 
 band10_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = band10_df)
+              score_gap:university + I(score_gap^2):university, 
+              data = band10_df)
 
 # バンド幅=5
 band5_df <- df %>% filter(-5 <= score_gap & score_gap < 5) 
 band5_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = band5_df)
+              score_gap:university + I(score_gap^2):university, 
+              data = band5_df)
 
 # バンド幅=1
 band1_df <- df %>% filter(-1 <= score_gap & score_gap < 1) 
 band1_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
-              score_gap:university + I(score_gap^2):university, data = band1_df)
+              score_gap:university + I(score_gap^2):university, 
+              data = band1_df)
 
-stargazer(band30_RD, band10_RD, band5_RD, band1_RD, type = "text",  digits = 1, df = FALSE)
+stargazer(band30_RD, 
+          band10_RD, 
+          band5_RD, 
+          band1_RD, 
+          type = "text",  
+          digits = 1, 
+          df = FALSE)
 ```
 
 どの推定値も500にかなり近くなる。
@@ -478,8 +624,12 @@ RD推定の最適な方法については様々な専門的議論がなされ、
 
 # 参考文献
 
-安藤道人（2015) 「[多重回帰分析と回帰不連続デザイン](https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf)」 『日本労働研究雑誌』 No.657 pp.12-13
+- 安藤道人（2015) 「[多重回帰分析と回帰不連続デザイン](https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf)」 『日本労働研究雑誌』 No.657 pp.12-13
 
-安藤道人「計量経済学２」あるいは「計量経済特論２」の「回帰不連続デザイン」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)
+- 安藤道人「計量経済学２」あるいは「計量経済特論２」の「回帰不連続デザイン」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)
+
+-  [計量経済学応用 回帰不連続デザイン](https://yukiyanai.github.io/jp/classes/econometrics2/contents/R/regression-discontinuity.html) (矢内勇生氏の講義ノート)
+
+- [Chapter 20 - Regression Discontinuity](https://theeffectbook.net/ch-RegressionDiscontinuity.html) (Nick Huntington-Klein (2021)"The Effect: An Introuction to Research Design and Causality")
 
 

@@ -50,7 +50,7 @@ pacman::p_load(readxl, tidyverse, skimr, AER, stargazer, gridExtra, estimatr, te
 
 ```{r, eval = FALSE}
 setwd(自分のディレクトリ) # ディレクトリの設定
-getwd # ディレクトリの確認
+getwd() # ディレクトリの確認
 ```
 
 
