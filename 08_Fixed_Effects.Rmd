@@ -28,6 +28,30 @@ editor_options:
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
 
+# 本講義の目的
+
+- 固定効果モデルの推定の基礎を学ぶ。
+
+# ディレクトリの設定
+
+作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
+
+```{r, eval = FALSE}
+setwd("自分のディレクトリ") # ディレクトリの設定。 "自分のディレクトリ"には、自分のパソコンの作業フォルダの場所を指定する。
+getwd() # ディレクトリの確認
+```
+
+# パッケージの読み込み
+今回の分析で使うパッケージを読み込む。
+```{r}
+pacman::p_load(tidyverse, 
+               estimatr, # lm_robustによるパネルデータ分析(メイン)
+               stargazer, # lmやplmのときの結果表
+               texreg, # lmやplmやlm_robustのときの結果表
+               plm, # plmによるパネルデータ分析(参考)
+               lmtest) # lmやplmでロバスト標準誤差に修正（参考)
+```
+
 # パネルデータ
 
 **パネルデータ(panel data)**とは，複数の個体を複数の期間にわたって観察したデータである。
@@ -36,14 +60,10 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 例えば以下のような形式のもの。
 
 ```{r}
-library(tidyverse)
-library(plm)
-
-data(Grunfeld)
+data(Grunfeld) #plmパッケージにもともと入っているデータ
 Grunfeld %>% rename(`企業ID`=firm, `年度`=year, `投資額`=inv, `企業価値`=value, `資本ストック`=capital) %>%
   filter(1951 <= `年度` & `年度` <= 1953) %>% head() %>% knitr::kable()
 ```
-
 
 $k$個の説明変数$X$と被説明変数$Y$の個体$i$・時点$t$のパネルデータは，次のように表記される。
 
@@ -157,34 +177,17 @@ $$
   
 なお、パネルデータを活用した計量経済分析では、時間固定効果がないと仮定できるケースはまれであるため、通常はone-way固定効果モデルではなくtwo-way固定効果モデルを用いる。
 
+# 使用するパッケージとデータ
 
-# データの読み込みと可視化
-
-## パッケージとデータの読み込み
+## パッケージとデータ
 Rでは、`{estimatr}`パッケージの`lm_robust`関数や`{plm}`パッケージの`plm`によってパネルデータ分析を行うことができる。
 
-ここでは、ロバスト標準誤差やクラスタロバスト標準誤差を簡単に利用できる`lm_robust`を用いた分析方法を紹介する。`plm`を用いた推定も参考に残している。
+ここでは、ロバスト標準誤差やクラスタロバスト標準誤差を簡単に利用できる`estimatr::lm_robust`を用いた分析方法を紹介する。`plm`を用いた推定も参考に残している。
 
 なお、パネルデータ分析については、誤差項の系列相関も考慮する必要があるため、クラスタロバスト標準誤差を用いることが望ましい。
 
-```{r, eval=F}
-install.packages("estimatr")
-install.packages("plm")
-```
-
-
-```{r}
-# 事前準備 ------------
-# パッケージの読み込み
-library(tidyverse)
-library(estimatr) # lm_robustによるパネルデータ分析
-library(plm) # plmによるパネルデータ分析
-library(stargazer) # lmやplmのときの結果表
-library(texreg) # lmやplmやlm_robustのときの結果表
-library(lmtest) # lmやplmでロバスト標準誤差に修正
-```
-
 今回は、`{plm}`パッケージ含まれている`Grunfeld`データセットを用いる。
+
 ```{r}
 # データ読み込み
 data("Grunfeld")
@@ -202,22 +205,40 @@ head(Grunfeld)
 
 ```{r}
 # 投資総額(Y)
-Grunfeld %>% ggplot(aes(x = year, y = inv, colour = as.factor(firm))) + geom_line()
+Grunfeld %>% ggplot(aes(x = year, 
+                        y = inv, 
+                        colour = as.factor(firm))) +
+　　　　　　geom_line()
 
 # 企業価値(X1)
-Grunfeld %>% ggplot(aes(x = year, y = value, colour = as.factor(firm))) + geom_line()
+Grunfeld %>% ggplot(aes(x = year, 
+                        y = value, 
+                        colour = as.factor(firm))) + 
+            geom_line()
 
 # 資本ストック(X2)
-Grunfeld %>% ggplot(aes(x = year, y = capital, colour = as.factor(firm))) + geom_line()
+Grunfeld %>% ggplot(aes(x = year, 
+                        y = capital, 
+                        colour = as.factor(firm))) + 
+            geom_line()
 
 # 企業価値(X1)と投資総額(Y)
-Grunfeld %>% ggplot(aes(x = value, y = inv, colour = as.factor(firm))) + geom_point()
+Grunfeld %>% ggplot(aes(x = value, 
+                        y = inv, 
+                        colour = as.factor(firm))) + 
+              geom_point()
 
 # 資本ストック(X2)と投資総額(Y)
-Grunfeld %>% ggplot(aes(x = capital, y = inv, colour = as.factor(firm))) + geom_point()
+Grunfeld %>% ggplot(aes(x = capital, 
+                        y = inv, 
+                        colour = as.factor(firm))) + 
+              geom_point()
 
 # 企業価値(X1)と 資本ストック(X2)
-Grunfeld %>% ggplot(aes(x = value, y = capital, colour = as.factor(firm))) + geom_point()
+Grunfeld %>% ggplot(aes(x = value, 
+                        y = capital, 
+                        colour = as.factor(firm))) + 
+              geom_point()
 ```
 
 # lm_robustによる推定
@@ -227,7 +248,7 @@ Grunfeld %>% ggplot(aes(x = value, y = capital, colour = as.factor(firm))) + geo
 $$
 Y_{it} =\beta_1 X1_{it} + \beta_2 X2_{it} +\theta_i + \pi_t + \varepsilon_{it}
 $$
-ここでは、`lm_robust`による推定方法を説明する。
+ここでは、`estimatr::lm_robust`による推定方法を説明する。
 
 ## Pooled OLS
 
@@ -235,16 +256,19 @@ $$
 
 ```{r}
 # lm
-pooled_lm <- lm(inv ~ value + capital, data = Grunfeld)
+pooled_lm <- lm(inv ~ value + capital, 
+                data = Grunfeld)
 
 # lm_robust
-pooled_robust <-  lm_robust(inv ~ value + capital, data = Grunfeld, 
-                              se_type = "HC1") # HC1はロバスト標準誤差の種類
+pooled_robust <-  lm_robust(inv ~ value + capital, 
+                            data = Grunfeld, 
+                            se_type = "HC1") # HC1はロバスト標準誤差の種類
 
 #結果表の出力
 screenreg(list(pooled_lm, pooled_robust), 
           custom.model.names = c("Pooled", "Pooled, robust"),
-          include.ci = FALSE, digits = 3)
+          include.ci = FALSE, 
+          digits = 3)
 ```
 
 ## One-way固定効果モデル
@@ -257,21 +281,22 @@ screenreg(list(pooled_lm, pooled_robust),
 ```{r}
 
 #n-1個の個体ダミーを直接導入
-oneway_fe1 <- lm_robust(inv ~ value + capital + factor(firm) ,
-                               data = Grunfeld, 
-                              clusters = firm, #クラスタのレベルを指定
-                              se_type = "stata") #クラスタSE: Stataと同一のものを使う
+oneway_fe1 <- lm_robust(inv ~ value + capital + factor(firm),
+                        data = Grunfeld, 
+                        clusters = firm, #クラスタのレベルを指定
+                        se_type = "stata") #クラスタSE: Stataと同一のものを使う
 
 #lm_robustの"fixed_effects"オプションを利用
 oneway_fe2 <- lm_robust(inv ~ value + capital, data = Grunfeld, 
                               fixed_effects = ~ firm, #個体固定効果の指定
                               clusters = firm, #クラスタのレベルを指定
-                              se_type = "stata")  #クラスタSE: Stataと同一のものを使う
+                              se_type = "stata") # クラスタロバストはStataと同様の方法で計算
 
 #結果表の出力
 screenreg(list(pooled_robust, oneway_fe1, oneway_fe2), 
           custom.model.names = c("Pooled", "Oneway 1", "Oneway 2"),
-          include.ci = FALSE, digits = 3)
+          include.ci = FALSE, 
+          digits = 3)
 
 ```
 
@@ -284,20 +309,21 @@ screenreg(list(pooled_robust, oneway_fe1, oneway_fe2),
 ```{r}
 #n-1個の個体ダミーとT-1個の年ダミーを直接導入
 twoway_fe1 <- lm_robust(inv ~ value + capital + factor(firm) + factor(year) ,
-                               data = Grunfeld, 
-                              clusters = firm, #クラスタのレベルを指定
-                              se_type = "stata") #クラスタSE: Stataと同一のものを使う
+                        data = Grunfeld, 
+                        clusters = firm, #クラスタのレベルを指定
+                        se_type = "stata") # クラスタロバストはStataと同様の方法で計算
 
 #lm_robustの"fixed_effects"オプションを利用
 twoway_fe2 <- lm_robust(inv ~ value + capital, data = Grunfeld, 
-                              fixed_effects = ~ firm + year, #個体固定効果、時間固定効果の指定
-                              clusters = firm, #クラスタのレベルを指定
-                              se_type = "stata") #クラスタSE: Stataと同一のものを使う
+                        fixed_effects = ~ firm + year, #個体固定効果、時間固定効果の指定
+                        clusters = firm, #クラスタのレベルを指定
+                        se_type = "stata") # クラスタロバストはStataと同様の方法で計算
 
 #結果表の出力
 screenreg(list(pooled_robust, oneway_fe1, oneway_fe2, twoway_fe1, twoway_fe2), 
           custom.model.names = c("Pooled", "Oneway 1", "Oneway 2", "Twoway 1", "Twoway 2"),
-          include.ci = FALSE, digits = 3)
+          include.ci = FALSE, 
+          digits = 3)
 ```
 
 ここでも、どちらの方法を用いても係数推定値および標準誤差は全く同じとなる。しかし、個体ダミー（`factor(firm)`)および時間ダミー(`factor(year)`)を用いた推定の場合、定数項や個々の個体ダミーや年ダミーの推定結果が表示される。
@@ -331,10 +357,13 @@ pool_plm <- plm(inv ~ value + capital, data = panel_df,
                 model = "pooling")
 
 #stargazer
-stargazer(pool_lm, pool_plm, type = "text", 
-          digits = 3, df = FALSE, 
+stargazer(pool_lm, pool_plm, 
+          type = "text", 
+          digits = 3, 
+          df = FALSE, 
           column.labels = c("Pooled lm", "Pooled plm"), 
-          model.names = F, model.numbers = F)
+          model.names = F, 
+          model.numbers = F)
 ```
 
 ## One-way固定効果モデル
@@ -346,18 +375,23 @@ stargazer(pool_lm, pool_plm, type = "text",
 # panel_dfにおけるfirmはすでに因子に変換されているので、
 # そのままでも個体ダミー変数となるが、誤解のないようにfactor(firm)と書く。
 
-fe_oneway_lm <- lm(inv ~ value + capital + factor(firm), data = panel_df)
+fe_oneway_lm <- lm(inv ~ value + capital + factor(firm), 
+                   data = panel_df)
 
 # plmによる固定効果モデル推定（個体固定効果のみ）
 # yearも因子なので、factor(year)と書くと、ダミー変数として認識される。
 fe_oneway_plm <- plm(inv ~ value + capital, 
-                     data = panel_df, model = "within") # within=固定効果モデル
+                     data = panel_df, 
+                     model = "within") # within=固定効果モデル
 
 #stargazer
 stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, 
-          type = "text", digits = 3, df = FALSE, 
+          type = "text", 
+          digits = 3, 
+          df = FALSE, 
           column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm"), 
-          model.names = F, model.numbers = F)
+          model.names = F, 
+          model.numbers = F)
 ```
 
 ## Two-way固定効果モデル
@@ -368,17 +402,27 @@ stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm,
 # lm関数による固定効果モデル推定(個体固定効果と時間固定効果)
 # panel_dfにおけるfirmとyearはすでに因子に変換されているので、
 # そのままでも個体ダミー変数となるが、誤解のないようにfactor(firm), factor(year)と書く。
-fe_twoway_lm <- lm(inv ~ value + capital + factor(firm) + factor(year), data = panel_df)
+fe_twoway_lm <- lm(inv ~ value + capital + factor(firm) + factor(year), 
+                   data = panel_df)
 
 # plmの固定効果モデル推定（個体固定効果と時間固定効果）
 fe_twoway_plm <- plm(inv ~ value + capital,
-          data = panel_df, model = "within", 
+          data = panel_df, 
+          model = "within", 
           effect = "twoways") # within=固定効果モデル
 
 #stargazer
-stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, fe_twoway_lm, fe_twoway_plm, 
-          type = "text", digits = 3, df = FALSE, 
-          column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm", "Twoway lm", "Twoway plm"), 
+stargazer(fe_oneway_lm, 
+          fe_oneway_plm, 
+          fe_twoway_lm, 
+          fe_twoway_plm, 
+          type = "text", 
+          digits = 3, 
+          df = FALSE, 
+          column.labels = c("Oneway lm", 
+                            "Oneway plm", 
+                            "Twoway lm",
+                            "Twoway plm"), 
           model.names = F, model.numbers = F)
 
 ```
@@ -391,13 +435,17 @@ stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, fe_twoway_lm, fe_twowa
 ```{R}
 # plmの固定効果モデル推定2（個体固定効果と時間固定効果）
 fe_twoway_plm2 <- plm(inv ~ value + capital + factor(year),
-          data = panel_df, model = "within") # within =固定効果モデル
+          data = panel_df, 
+          model = "within") # within =固定効果モデル
 
 #stargazerで3つのtwoway FEを比べる。
-stargazer(fe_twoway_lm, fe_twoway_plm, fe_twoway_plm2, type = "text", 
-          digits = 3, df = FALSE,
+stargazer(fe_twoway_lm, fe_twoway_plm, fe_twoway_plm2, 
+          type = "text", 
+          digits = 3, 
+          df = FALSE,
           column.labels = c("Twoway lm", "Twoway plm", "Twoway plm2"), 
-          model.names = F, model.numbers = F)
+          model.names = F, 
+          model.numbers = F)
 ```
 
 ## `coeftest`による（クラスタ）ロバスト標準誤差
@@ -421,18 +469,24 @@ fe_twoway_plm_clustered <- coeftest(fe_twoway_plm,
 
 # stargazerで比べる。
 stargazer(fe_twoway_lm, fe_twoway_lm_robust, fe_twoway_plm, fe_twoway_plm_clustered, 
-          type = "text", digits = 3, df = FALSE,
+          type = "text", 
+          digits = 3, 
+          df = FALSE,
           column.labels = c("lm", "lm,robust", "plm", "plm,clustered"), 
-          model.names = F, model.numbers = F)
+          model.names = F, 
+          model.numbers = F)
 ```
 
 
 # 参考文献
 
-安藤道人「計量経済学２」あるいは「計量経済特論２」の「パネルデータ分析」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)
+- 安藤道人「計量経済学２」あるいは「計量経済特論２」の「パネルデータ分析」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)
 
-
-[Getting started using estimatr](
+- [Getting started using estimatr](
 https://declaredesign.org/r/estimatr/articles/getting-started.html)
 
-[Pacakge `estimatr`](https://cran.r-project.org/web/packages/estimatr/estimatr.pdf)
+- [Pacakge `estimatr`](https://cran.r-project.org/web/packages/estimatr/estimatr.pdf)
+
+- [Chapter 16 Fixed Effects](https://theeffectbook.net/ch-FixedEffects.html) (Nick Huntington-Klein (2021)"The Effect: An Introuction to Research Design and Causality")
+
+- [Chapter 8 Panel Data](https://mixtape.scunning.com/panel-data.html?panelset=r-code) (Scott Cunningham (2021) "Causal Inference: The Mixtape)

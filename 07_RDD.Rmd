@@ -27,6 +27,10 @@ editor_options:
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
 
+# 本講義の目的
+
+- 回帰モデルを用いて不連続回帰デザインによる推定を行う方法を学ぶ。
+- ループの活用やモンテカルロ・シミュレーションの基礎を学ぶ。
 
 # パッケージの読み込み
 
@@ -632,4 +636,4 @@ RD推定の最適な方法については様々な専門的議論がなされ、
 
 - [Chapter 20 - Regression Discontinuity](https://theeffectbook.net/ch-RegressionDiscontinuity.html) (Nick Huntington-Klein (2021)"The Effect: An Introuction to Research Design and Causality")
 
-
+- [RD Packages](https://rdpackages.github.io/) (より学術的に洗練された方法で不連続回帰を実施するためのRパッケージ)
