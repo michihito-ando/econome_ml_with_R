@@ -1,5 +1,5 @@
 ---
-title: "Rで学ぶ計量経済学と機械学習 9<br> <br> 計量経済学5：差の差(DID)法"
+title: "Rで学ぶ計量経済学と機械学習 9<br> <br> 計量経済学5：差分の差分(DID)法"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 date: "`r Sys.Date()`"
 output:
@@ -27,9 +27,35 @@ editor_options:
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
 
+
+# 本講義の目的
+
+- `lm_robust()`を用いた差分の差分法(Difference-in-Differences)の推定の基礎を学ぶ。
+- データの前処理やグラフ作成の復習や練習をする。
+
+# ディレクトリの設定
+
+作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
+
+```{r, eval = FALSE}
+setwd("自分のディレクトリ") # ディレクトリの設定。 "自分のディレクトリ"には、自分のパソコンの作業フォルダの場所を指定する。
+getwd() # ディレクトリの確認
+```
+
+# パッケージの読み込み
+今回の分析で使うパッケージを読み込む。
+```{r}
+pacman::p_load(tidyverse, 
+               estimatr, # lm_robustによるパネルデータ分析(メイン)
+               stargazer, # lmやplmのときの結果表
+               texreg, # lmやplmやlm_robustのときの結果表
+               plm, # plmによるパネルデータ分析(参考)
+               lmtest) # lmやplmでロバスト標準誤差に修正（参考)
+```
+
 # データの生成
 
-パネルデータ分析の応用として、**差の差(difference in differences:DID)法**がある。
+パネルデータ分析の応用として、**差分の差分法(difference in differences:DID)法**がある。
 
 詳しい解説は参考文献などに譲るが、ここではもっとも単純なDID（二群・二期間DID)の推定を行う。
 
@@ -39,9 +65,6 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 ```{r}
 # 事前準備 --------------------
-# パッケージの読み込み
-library(pacman)
-pacman::p_load(tidyverse, estimatr, plm, stargazer,texreg)
 
 # 乱数の種を固定
 set.seed(0)
@@ -55,7 +78,9 @@ ability <- runif(n, min = 0, max = 100)
 df <- tibble(ID = 1:n, ability)
 ```
 
-二期間DIDなので、１年目と２年目のDGPをそれぞれ作成する。1年目は、誰も職業訓練を受けず、所得は、定数項、能力、誤差項のみによって決まるものとする。
+二期間DIDなので、１年目と２年目のデータ生成過程(DGP:Data Generating Process)をそれぞれ作成する。
+
+1年目は、誰も職業訓練を受けず、所得は、定数項、能力、誤差項のみによって決まるものとする。
 
 ```{r}
 # 1年目
@@ -68,12 +93,13 @@ df0 <- df %>% mutate(year = 0)
 df0 <- df0 %>% mutate(training = 0)
 
 #所得 incomeを加える
-df0 <- df0 %>% mutate(income = 200 + 10*ability + rnorm(n, mean = 0, sd = 50))
+df0 <- df0 %>% mutate(income = 200 + 10*ability + 
+                        rnorm(n, mean = 0, sd = 50))
 ```
 
 2年目は、能力を部分的に反映した適正試験が 180 点以上であれば職業訓練(`training`)を受けられるとし、職業訓練を受けた個体は500万円、所得が上乗せされるものとする。ここで、職業訓練を受けた個体が処置群、受けなかった個体が対照群となる。
 
-また、年ショックとして、`n(mean=100、sd=25)`をすべての個体に加える。
+また年ショックとして、`n(mean=100、sd=25)`をすべての個体に加える。
 
 ```{r}
 # 2年目
@@ -88,11 +114,18 @@ df1 <- df %>% mutate(year = 1)
 ## 今回もmutate()とcase_when()を使用して作成
 
 #適正試験の点数 score
-df1 <- df1 %>% mutate(score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10))
+df1 <- df1 %>% mutate(score = 30 * log10(ability) + 
+                        rnorm(n, mean = 115, sd = 10))
+
 #職業訓練ダミー training (score 180点以上=1)
-df1 <- df1 %>% mutate(training = case_when(score >= 180 ~ 1, TRUE ~ 0))
+df1 <- df1 %>% mutate(training = 
+                        case_when(score >= 180 ~ 1, 
+                                 TRUE ~ 0))
+
 #所得 income: 年ショックとしてn(100,25)も追加
-df1 <- df1 %>% mutate(income = 200 + 10*ability + 500*training + rnorm(n, mean = 100, sd = 25) + rnorm(n, mean = 0, sd = 50))
+df1 <- df1 %>% mutate(income = 200 + 10*ability + 500*training + 
+                        rnorm(n, mean = 100, sd = 25) + 
+                        rnorm(n, mean = 0, sd = 50))
 ```
 
 最後に、1年目と2年目のデータを結合し、パネルデータとして認識させる。
@@ -103,11 +136,12 @@ df_binded <- bind_rows(df0, df1)
 head(df_binded)
 ```
 
-# 差の差(DID)推定
+# 差分の差分法(DID)推定
 
 ## グラフを用いた説明
 
 上記のデータを用いてDID推定を実際に行う前に、グラフを使ってDID推定を説明しよう。
+
 まず、処置前と処置後、処置群と対照群について、アウトカム変数(`income`)の４つの平均値を作成する。
 
 今回の場合、処置前と処置後を区別する時間ダミー変数(`year`)はすでにあるが、処置群と対照群を区別する処置群ダミー変数はないため、作成する必要がある。
@@ -140,7 +174,8 @@ df_panel <- df_panel %>% mutate(treated = replace(treated, which(is.na(treated))
 
 ```{r}
 # group_byでグループ分けし、summarise_eachですべての列（変数）でグループごとに平均値を計算
-df_panel_mean <- df_panel %>% group_by(treated, year) %>% #グループわけ
+df_panel_mean <- df_panel %>% 
+  group_by(treated, year) %>% #グループわけ
   dplyr::summarise_each(list(mean)) %>%  # すべての列（変数）でグループごとに平均値を計算
   ungroup() # グループ分けを解除
 ```
@@ -151,7 +186,8 @@ df_panel_mean <- df_panel %>% group_by(treated, year) %>% #グループわけ
 
 # 処置群と対照群のラベルづけ
 df_panel_mean <- df_panel_mean %>% mutate(treated_label =
-                      case_when(treated == 1 ~ "Treated", treated == 0 ~ "Control"))
+                      case_when(treated == 1 ~ "Treated", 
+                                treated == 0 ~ "Control"))
 
 # A, B, C, Dのラベルづけ（図に挿入）
 df_panel_mean <- df_panel_mean %>% mutate(point_label =
@@ -160,12 +196,14 @@ df_panel_mean <- df_panel_mean %>% mutate(point_label =
                                 treated == 0 & year == 1 ~ "C",
                                 treated == 0 & year == 0 ~ "D"))
 # 図の作成
-g <- df_panel_mean %>% ggplot(aes(x = year, y = income, color = treated_label)) +
+g <- df_panel_mean %>% ggplot(aes(x = year, 
+                                  y = income, 
+                                  color = treated_label)) +
   geom_point() + # 散布図
   geom_line() +  # 直線
   labs(title = "Income by year and group") + #タイトル
   scale_x_continuous(breaks = c(0,1)) +　# X軸は0と1のみ
-  geom_text(aes(label = point_label), vjust = -0.3) #A,B,C,Dの文字を点の0.4上に表示。
+  geom_text(aes(label = point_label), vjust = -0.45) #A,B,C,Dの文字を点の0.45上に表示。
 
 # 図の表示  
 g
@@ -202,37 +240,44 @@ $$
 ```{r}
 # incomeのラグ変数および一階の階差変数の作成
 # dplyr::lagとplm::lagの二つがあるためか、dplyr::をつけないとうまくいかなない
-df_panel <- df_panel %>% group_by(ID) %>% # IDでグループ分け
-  mutate(lag_income = dplyr::lag(income, order_by = year)) %>% # lag変数の作成
+df_panel <- df_panel %>% 
+  group_by(ID) %>% # IDでグループ分け
+  mutate(lag_income = dplyr::lag(income, 
+                                 order_by = year)) %>% # lag変数の作成
   mutate(diff_income = income - lag_income) %>%  # 一階の階差変数の作成
   ungroup() # グループ分けの解除
 ```
 
 ### lmを用いた推定
 
-`lm`を用いて、(1)式および(2)式に基づいてDID推定を行う。
-
+`lm`を用いて、(1)式および(2)式に基づいてDID推定を行う。ただし標準誤差は均一分散を仮定して算出されている点に注意する。
 
 ```{r}
 # DID regression
 
 # pooled OLS:(1)式
-DID_pooled <- lm(income ~ treated + year + treated:year, data = df_panel)
+DID_pooled <- lm(income ~ treated + year + treated:year, 
+                 data = df_panel)
 
 # first-differenced (一階の階差) OLS: (2)式
-DID_FD <- lm(diff_income ~ treated, data = df_panel)
+DID_FD <- lm(diff_income ~ treated, 
+             data = df_panel)
 
 # stargazer
-stargazer(DID_pooled, DID_FD, type = "text", digits = 3, df = FALSE,
+stargazer(DID_pooled, 
+          DID_FD, 
+          type = "text", 
+          digits = 3, 
+          df = FALSE,
           column.labels = c("DID (Pooled data)","DID (FD data)"),
-          model.names = F, model.numbers = F)
+          model.names = F, 
+          model.numbers = F)
 
 ```
 
 DID推定値は概ね500近傍となってり、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果$\theta$を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果$\theta_i$を除去しているためである。
 
-
-### lm_robustを用いた推定
+### lm_robustを用いた推定（メイン）
 パネルデータであれば、(1)式の処置群ダミー$\theta D_i$の代わりに、個体ダミーを用いてもよい。（ただし、繰り返しクロスセクションデータを用いたDID推定では個体ダミーは用いることはできない点は留意が必要である。）
 
 この場合、個体ダミーをn-1個用いて推定してもよいが、`lm_robust`関数で個体固定効果モデルを推定してもいい。
@@ -245,51 +290,73 @@ DID_robust1 <- lm_robust(income ~ treated + year + treated:year,
                             clusters = ID,
                             se_type = "stata")
 
-# DID with two-way FE model (年ダミーは活用） 
+# DID with two-way FE model (年ダミー変数は活用し、個体固定効果はlm_robustで指定） 
 DID_robust2 <- lm_robust(income ~ treated:year + year, 
-                            fixed_effects = ~ ID,
+                            fixed_effects = ~ ID, #個体固定効果
                             data = df_panel, 
                             clusters = ID,
                             se_type = "stata")
 
-# DID with two-way FE model（年ダミーも入れない）
+# DID with two-way FE model（個体固定効果と年固定効果をlm_robustで指定）
 DID_robust3 <- lm_robust(income ~ treated:year, 
-                            fixed_effects = ~ ID + year,
+                            fixed_effects = ~ ID + year, #個体固定効果と年固定効果
                             data = df_panel, 
                             clusters = ID,
                             se_type = "stata")
 
 
 #結果表の出力
-screenreg(list(DID_robust1, DID_robust2, DID_robust3), 
-          custom.model.names = c("Pooled", "Oneway", "Twoway"),
-          include.ci = FALSE, digits = 3)
+screenreg(list(DID_robust1, 
+               DID_robust2, 
+               DID_robust3), 
+          custom.model.names = c("Pooled", 
+                                 "Oneway", 
+                                 "Twoway"),
+          include.ci = FALSE, 
+          digits = 3)
 ```
 
-### plmを用いた推定
+### plmを用いた推定(参考)
 
 `plm`関数で個体固定効果モデルを推定してもよいが、標準誤差は均一分散を仮定したものである点は注意が必要。
 
 
 ```{r}
 # df_panelのデータをpanelとして認識
-df_panel <- pdata.frame(df_panel, index = c("ID", "year")) # 個体=firm、時間=yearと認識させたdf
+df_panel <- pdata.frame(df_panel, 
+                        index = c("ID", "year")) # 個体=firm、時間=yearと認識させたdf
 
 # DID regression
 
 # DID with two-way FE model (年ダミーは活用） 
-DID_plm1 <- plm(income ~ treated:year + year, data = df_panel, model = "within")
+DID_plm1 <- plm(income ~ treated:year + year, 
+                data = df_panel, 
+                model = "within")
 
 # DID with two-way FE model（年ダミーも入れない）
-DID_plm2 <- plm(income ~ treated:year, data = df_panel, model = "within", effect = "twoways")
+DID_plm2 <- plm(income ~ treated:year, 
+                data = df_panel, 
+                model = "within", 
+                effect = "twoways")
 
 # stargazer
-stargazer(DID_plm1, DID_plm2, type = "text", digits = 3, df = FALSE,
+stargazer(DID_plm1, 
+          DID_plm2, 
+          type = "text", 
+          digits = 3, 
+          df = FALSE,
           column.labels = c("DID (onewayFE)","DID (twowayFE)"),
-          model.names = F, model.numbers = F)
+          model.names = F, 
+          model.numbers = F)
 ```
 
 
 # 参考文献
 
-安藤道人「計量経済学２」あるいは「計量経済特論２」の「差の差法」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)
+- 安藤道人「計量経済学２」あるいは「計量経済特論２」の「差分の差分法（差の差法）」の[講義資料](https://sites.google.com/site/michihito7ando/lectures)
+
+- [計量経済学応用 差分の差分法](https://yukiyanai.github.io/jp/classes/econometrics2/contents/R/difference-in-differences.html) (矢内勇生氏の講義ノート)
+
+- [Chapter 18 Difference-in-Differences](https://theeffectbook.net/ch-DifferenceinDifference.html) (Nick Huntington-Klein (2021)"The Effect: An Introuction to Research Design and Causality")
+
+- [Chapter 8 Difference-in-Differences](https://mixtape.scunning.com/difference-in-differences.html) (Scott Cunningham (2021) "Causal Inference: The Mixtape)
