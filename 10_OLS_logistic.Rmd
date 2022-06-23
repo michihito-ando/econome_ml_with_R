@@ -165,7 +165,7 @@ library(tidyverse)
 ggplot(data_frame(weight = w, loss = cost_vec),
        aes(x = weight, y = loss))+
   geom_line(color = "SteelBlue")+
-  labs(y = "SSR", x = "パラメータb")+
+  labs(y = "SSR", x = "Parameter b")+
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -206,7 +206,7 @@ ggplot(sse,
   geom_point(aes(x = sse[sse$loss == min(sse$loss),"weight"][[1]],
                  y = min(sse$loss)),
              color = "orange", size = 2)+
-  labs(y = "SSR", x = "パラメータb")+
+  labs(y = "SSR", x = "Parameter b")+
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -394,7 +394,7 @@ y = sigmoid(x)
 ggplot(data_frame(x, y),
        aes(x = x, y = y))+
   geom_line(color = "dodgerblue")+
-  labs(y = expression(sigma(x)), x = expression(x), title = "シグモイド関数")
+  labs(y = expression(sigma(x)), x = expression(x), title = "Sigmoid function")
 ```
 
 
@@ -426,12 +426,12 @@ likelihood = function(p, n = 4, k = 1){
 # 描画用データ
 p = 1:100 * 0.01
 L = likelihood(p)
-df = data_frame(p, L)
+df = tibble(p, L)
 
 # plot
 ggplot(df, aes(x = p, y = L))+
   geom_line(color = "dodgerblue")+
-  labs(y = "L(p)", title = expression(尤度関数L(p)==.[4]*C[1] * p^1 * (1 - p)^3))
+  labs(y = "L(p)", title = "Likelihood function L(p)")
 ```
 
 
@@ -466,14 +466,14 @@ head(TitanicSurvival)
 
 ```{r}
 # NA（欠損値）を含む行を削除
-tita <- na.omit(TitanicSurvival)
+titanic <- na.omit(TitanicSurvival)
 ```
 
 そしてデータを学習用・テスト用に分割する。
 
 ```{r}
 # ID列を追加
-df = tita %>% rownames_to_column("ID")
+df = titanic %>% rownames_to_column("ID")
 
 # 80%を学習用データに
 train <- df %>% sample_frac(size = 0.8)
@@ -575,7 +575,7 @@ $$
 </center>
 
 
-もっともシンプルな考え方で作られていて直感的にもわかりやすいのは正解率である。ただし，世の中の分類問題ではクラスの出現数が大きく異なることが多い（例えばローンを返せなくなる人を予測する場合，そうした人は全体の中のごくわずかである）。そのため適合率・再現率といった指標が作られている。
+もっともシンプルな考え方で作られていて直感的にもわかりやすいのは正解率である。ただし，世の中の分類問題では、それぞれのカテゴリーの出現数が大きく異なることが多い（例えばローンを返せなくなる人を予測する場合，そうした人は全体の中のごくわずかである）。そのため適合率・再現率といった指標が作られている。
 
 
 Rでは`{MLmetrics}`パッケージにそれぞれ用意されている。
@@ -590,6 +590,15 @@ Recall(y_test_pred, y_test_true)
 ```
 
 いずれの指標も7~8割程度には予測できている。
+
+# 参考文献
+
+機械学習の教科書はたくさん出版されており、ウェブ上の解説も多い。各自いろいろ調べて、自分の関心やニーズに合うものを探してほしい。
+
+計量経済学と機械学習の関係については、やや高度な内容だが、下記の文章に詳しい。
+
+- [Katagiri(2020)計量経済学と機械学習の関係‒AI はさだめ, さだめは反事実‒](https://github.com/Gedevan-Aleksizde/20190703_ML_ECON)
+
 
 
 
