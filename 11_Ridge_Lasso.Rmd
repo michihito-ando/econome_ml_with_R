@@ -1,5 +1,5 @@
 ---
-title: "Rで学ぶ計量経済学と機械学習 11<br> <br> 機械学習2：リッジ回帰・Lasso"
+title: "Rで学ぶ計量経済学と機械学習 11<br> <br> 機械学習2：リッジ回帰とラッソ回帰"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 date: "`r Sys.Date()`"
 output:
@@ -32,6 +32,21 @@ $$
 % 定義
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
 $$
+# 本講義の目的
+
+- リッジ回帰とラッソ回帰の考え方を学ぶ
+- リッジ回帰とラッソ回帰を試行してみる。
+
+# パッケージの読み込み
+
+今回の分析で使うパッケージを読み込む。
+```{r}
+pacman::p_load(tidyverse, 
+               MLmetrics, # 機械学習で用いる関数が実装
+               patchwork, # グラフ結合用
+               gridExtra, # グラフ結合用（今回は未使用）
+               glmnet) # lassoやリッジ用
+```
 
 
 
@@ -41,23 +56,31 @@ $$
 
 逆に，学習用データに対しての予測精度は高いものの、未知のデータに対する予測精度が低い（汎化性能が低い）予測モデルのことを**過学習**（overfitting）しているという。
 
-数値例を示そう。ある変数$\{x,y\}$について20個のデータが得られ，そのうち10個を学習用データにして予測モデルを作るとする。
+数値例を示そう。ある変数$\{x,y\}$について50個のデータが得られ，そのうち25個を学習用データにして予測モデルを作るとする。
 
 ```{r, fig.width=8}
-library(tidyverse)
-library(MLmetrics)
-set.seed(0)
+# seedを固定
+set.seed(11111)
 
 # データ生成 ----
-n = 20
+n <- 50
 # x = rnorm(n, sd = 0.5)
-x = 1:n * 1/n
-y = 0.5 + 0.4*sin(2*pi*x) + rnorm(n = n, sd = 0.1)
-df = data_frame(y, x, x2 = x^2, x3 = x^3, x4 = x^4, x5 = x^5, x6 = x^6, x7 = x^7, x8 = x^8, x9 = x^9)
+x <- 1:n * 1/n
+y <- 0.5 + 0.4*sin(2*pi*x) + rnorm(n = n, sd = 0.1)
+df <- tibble(y, 
+            x, 
+            x2 = x^2, 
+            x3 = x^3, 
+            x4 = x^4, 
+            x5 = x^5, 
+            x6 = x^6, 
+            x7 = x^7, 
+            x8 = x^8, 
+            x9 = x^9)
 
 # データを分割 ----
 # ID列を追加
-df = df %>% rownames_to_column("ID")
+df <- df %>% rownames_to_column("ID")
 
 # 50%を学習用データに
 train <- df %>% sample_frac(size = 0.5)
@@ -66,9 +89,9 @@ train <- df %>% sample_frac(size = 0.5)
 test <- anti_join(df, train, by = "ID")
 
 # ID列の削除
-df <- df %>% select(-ID)
-train <- train %>% select(-ID)
-test <- test %>% select(-ID)
+df <- df %>% dplyr::select(-ID)
+train <- train %>% dplyr::select(-ID)
+test <- test %>% dplyr::select(-ID)
 ```
 
 
@@ -87,51 +110,68 @@ $$
 
 ```{r}
 # plot
-p = 1
+p <- 1
 p1 <- ggplot(train, aes(x, y))+
   geom_point()+
-  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 1))+
+  geom_smooth(method = "lm", 
+              se = F, 
+              formula = y ~ poly(x, 1)) +
   labs(title = str_c(p,"次多項式回帰"))
 
-p = 2
-p2 <- ggplot(train, aes(x, y))+
-  geom_point()+
-  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 2))+
+p <- 2
+p2 <- ggplot(train, aes(x, y)) +
+  geom_point() +
+  geom_smooth(method = "lm", 
+              se = F, 
+              formula = y ~ poly(x, 2)) +
   labs(title = str_c(p,"次多項式回帰"))
 
-p = 3
-p3 <- ggplot(train, aes(x, y))+
-  geom_point()+
-  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 3))+
+p <- 3
+p3 <- ggplot(train, aes(x, y)) +
+  geom_point() +
+  geom_smooth(method = "lm", 
+              se = F, 
+              formula = y ~ poly(x, 3)) +
   labs(title = str_c(p,"次多項式回帰"))
 
-p = 5
+p <- 5
 p5 <- ggplot(train, aes(x, y))+
   geom_point()+
-  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 5))+
+  geom_smooth(method = "lm", 
+              se = F, 
+              formula = y ~ poly(x, 5)) +
   labs(title = str_c(p,"次多項式回帰"))
 
-p = 7
+p <- 7
 p7 <- ggplot(train, aes(x, y))+
   geom_point()+
-  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 7))+
+  geom_smooth(method = "lm", 
+              se = F, 
+              formula = y ~ poly(x, 7)) +
   labs(title = str_c(p,"次多項式回帰"))
 
-p = 9
+p <- 9
 p9 <- ggplot(train, aes(x, y))+
   geom_point()+
-  geom_smooth(method = "lm", se = F, formula = y ~ poly(x, 9))+
+  geom_smooth(method = "lm", 
+              se = F, 
+              formula = y ~ poly(x, 9)) +
   labs(title = str_c(p,"次多項式回帰"))
 
-library(gridExtra)
-grid.arrange(grobs = list(p1, p2, p3, p5, p7, p9), ncol = 3)
+# patchworkを使ってグラフ結合
+(p1 + p2 + p3) / (p5 + p7 + p9)
+
+#grid.arrange()を使ってもいい
+#library(gridExtra) # 複数のグラフをまとめるためのパッケージ
+#grid.arrange(grobs = list(p1, p2, p3, p5, p7, p9), ncol = 3)
+
 ```
 
 次数の高いモデルのほうがデータの分布をよく近似する曲線を描いている。
 
 では次数が最も高い多項式回帰が最も良い汎化性能を持つのかというと，そうとは限らない。
 
-以下の図は，10個の学習用データでの誤差と，10個のテストデータでの誤差をモデルごとに示したものである。
+以下の図は，25個の学習用データでの誤差と，25個のテストデータでの誤差をモデルごとに示したものである。
 
 ```{r}
 # 次数を変えながら学習・予測
@@ -143,17 +183,21 @@ for(p in 1:9){
   # testへの予測精度
   y_test_pred <- predict(reg, test[,1:(p+1)])   # 予測
   test_error <- RMSE(y_test_pred, test$y) # 誤差
-  if(p == 1) result <- data_frame(p, train_error, test_error) # p=1の場合、データフレーム作る
-  if(p != 1) result <- rbind(result, data_frame(p, train_error, test_error)) # p=2以上の場合はrbindで繋げる
+  if(p == 1) result <- tibble(p, train_error, test_error) # p=1の場合、データフレーム作る
+  if(p != 1) result <- rbind(result, tibble(p, train_error, test_error)) # p=2以上の場合はrbindで繋げる
 }
 
 # ggplotで多項式回帰と誤差(RMSE)の関係を描画
 ggplot(result %>% gather(key, error, -p),
-       aes(x = p, y = error, color = key))+
-  geom_point()+
-  geom_line(size = 1)+
-  scale_x_continuous(breaks = c(1:9))+
-  labs(color = "", x = "多項式回帰の次数", y = "誤差（RMSE)",
+       aes(x = p, 
+           y = error, 
+           color = key)) +
+  geom_point() +
+  geom_line(size = 1) +
+  scale_x_continuous(breaks = c(1:9)) +
+  labs(color = "", 
+       x = "多項式回帰の次数", 
+       y = "誤差（RMSE)",
        title = "モデルの複雑さと過学習")
 ```
 
@@ -255,21 +299,27 @@ $$
 # data
 x1 <- rnorm(n = 100, mean = 5, sd = 3)
 e <- rnorm(n = 100, mean = 5, sd = 6)
-X <- data_frame(x1, 
+X <- tibble(x1, 
                 x2 = 2*x1 + e)
 
 # plot
-g1 <- ggplot(X, aes(x = x1, y = x2))+
-  geom_point()+
-  geom_vline(xintercept = 0)+
-  geom_hline(yintercept = 0)+
+g1 <- ggplot(X, aes(x = x1, y = x2)) +
+  geom_point() +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
   labs(title = "元のデータ")
-g2 <- ggplot(scale(X) %>% data.frame(), aes(x = x1, y = x2))+
+
+g2 <- ggplot(scale(X) %>% data.frame(), aes(x = x1, y = x2)) +
   geom_point()+
   geom_vline(xintercept = 0)+
   geom_hline(yintercept = 0)+
   labs(title = "標準化後のデータ")
-grid.arrange(g1,g2, ncol = 2)
+
+
+#patchworkを使ってグラフ結合
+g1 + g2
+
+#grid.arrange(g1,g2, ncol = 2)でもよい
 
 ```
 
@@ -294,40 +344,9 @@ grid.arrange(g1,g2, ncol = 2)
 Rでは`scale()`関数で標準化を行うことができる。
 
 
-
-
 ## Rでの実践
 
-### データの用意
-
-```{r}
-# パッケージの読み込み
-library(tidyverse)
-library(MLmetrics)
-
-# 乱数の種を固定
-set.seed(0)
-# データ生成 ----
-n = 20
-x = 1:n * 1/n
-y = 0.5 + 0.4*sin(2*pi*x) + rnorm(n = n, sd = 0.1)
-# xの2乗～9乗の変数を作成
-df = data_frame(y, x, x2 = x^2, x3 = x^3, x4 = x^4, x5 = x^5, x6 = x^6, x7 = x^7, x8 = x^8, x9 = x^9)
-
-# データを分割 ----
-# ID列を追加
-df = df %>% rownames_to_column("ID")
-
-# 50%を学習用データに
-train <- df %>% sample_frac(size = 0.5)
-
-# 学習用データに使っていないIDの行をテスト用データに
-test <- anti_join(df, train, by = "ID")
-
-# ID列の削除
-train <- train %>% select(-ID)
-test <- test %>% select(-ID)
-```
+冒頭で作成したデータを用いて検証していく。
 
 リッジ回帰を実行する関数`glmnet()`では説明変数と目的変数を分ける必要があるので，あらかじめ分けておく
 
@@ -335,22 +354,18 @@ test <- test %>% select(-ID)
 # glmnetは説明変数Xと目的変数yを別々に入れる必要があるので分ける
 
 # train
-X_train = train %>% select(-y) %>% as.matrix() # as.matrix()でmatrix型のデータにする
-y_train = train$y
+X_train <- train %>% select(-y) %>% as.matrix() # as.matrix()でmatrix型のデータにする
+y_train <- train$y
 
 # test
-X_test = test %>% select(-y) %>% as.matrix()
-y_test = test$y
+X_test <- test %>% select(-y) %>% as.matrix()
+y_test <- test$y
 ```
 
 
 ### glmnet関数
 
 {`glmnet`}パッケージの`glmnet()`関数で正則化回帰を行うことができる。
-
-```{r,eval=F}
-install.packages("glmnet")
-```
 
 `glmnet()`関数は以下のように書く。
 
@@ -369,7 +384,6 @@ glmnet(x = X, y = y, lambda = 1, alpha = 0)
 
 ```{r}
 # 9次多項式でリッジ回帰
-library(glmnet)
 reg_ridge <- glmnet(x = X_train, # 説明変数
                     y = y_train, # 目的変数
                     lambda = 0.1, # λ：任意の値
@@ -446,13 +460,21 @@ coef(ridge_cv, s = "lambda.1se") %>% round(3)
 
 ```{r}
 # trainに対する予測精度
-y_train_pred <- predict(ridge_cv, X_train, s = "lambda.min") # 予測
+y_train_pred <- predict(ridge_cv, 
+                        X_train, 
+                        s = "lambda.min") # 予測
+
 train_error <- RMSE(y_train_pred, y_train) # 誤差
+
 str_c("train_error: ", round(train_error, 3)) %>% print() # 結果を表示
 
 # testに対する予測精度
-y_test_pred <- predict(ridge_cv, X_test, s = "lambda.min") # 予測
+y_test_pred <- predict(ridge_cv, 
+                       X_test, 
+                       s = "lambda.min") # 予測
+
 test_error <- RMSE(y_test_pred, y_test) # 誤差
+
 str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
 ```
 
@@ -470,38 +492,40 @@ y_train_pred_ridge <- y_train_pred
 テスト用データに対する予測値のグラフをみても，最小二乗法（OLS）は（学習用データに対してぴったり予測するように過学習しているため）極端に外している値があるのに対し，リッジ回帰（Ridge）は9次多項式回帰であっても穏当な誤差になっている様子がみられる。
 
 
-
 ```{r}
 # testへの9次多項式OLS
-reg_ls <- lm(y ~ ., train)
-y_test_pred_ls <- predict(reg_ls, test)
+reg_ols <- lm(y ~ ., train)
+y_test_pred_ols <- predict(reg_ols, test)
 
 # data
-data_for_plot <- tibble(x = test$x, y = test$y,
-                            OLS = y_test_pred_ls, 
-                            Ridge = c(y_test_pred)) %>% 
-  gather(model, value, -x,-y)
+data_for_plot <- tibble(x = test$x, 
+                        y = test$y,
+                        OLS = y_test_pred_ols,
+                        Ridge = c(y_test_pred)) 
+
+#long形式に変換
+data_for_plot <- data_for_plot %>%
+  tidyr::pivot_longer(OLS:Ridge,
+                      names_to = "model",
+                      values_to = "value")
 
 # plot
-ggplot(data_for_plot, aes(x, y = value, color = model))+
-  geom_point(aes(x,y), size = 1.5, color = "black")+
-  geom_line(size = 1.5, alpha = 0.5)+
-  geom_point(size = 2, alpha = 0.5)+
+data_for_plot %>% ggplot(aes(x = x,
+                             y = value,
+                             color = model))　+
+  geom_point(aes(x = x,
+                 y = y),
+             size = 1.5, 
+             color = "black") +
+  geom_line(size = 1.5, alpha = 0.5) +
+  geom_point(size = 2, alpha = 0.5) +
   scale_color_brewer(palette = "Set1")+
-  labs(title = "9次多項式回帰によるtestデータに対する予測")
-
-# ggplot(test, aes(x, y))+
-#   geom_point()+
-#   geom_line(aes(y = y_test_pred_ls), color = "blue", size = 1, alpha = 0.7)+
-#   geom_point(aes(y = y_test_pred_ls), color = "blue", size = 1, alpha = 0.7)+
-#   geom_line(aes(y = y_test_pred), color = "orange", size = 1, alpha = 0.7)+
-#   geom_point(aes(y = y_test_pred), color = "orange", size = 1, alpha = 0.7)+
-#   labs(title = "testデータでの9次多項式回帰による予測")
+  labs(title = "9次多項式回帰によるtestデータに対する予測",
+       y = "y and predicted y")
 ```
 
 
-
-# lasso
+# ラッソ回帰
 
 ## 特徴量選択
 
@@ -511,11 +535,15 @@ ggplot(data_for_plot, aes(x, y = value, color = model))+
 
 ```{r, fig.width=5, fig.height=3, echo=F}
 ggplot(result %>% gather(key, error, -p),
-       aes(x = p, y = error, color = key))+
-  geom_point()+
-  geom_line(size = 1)+
+       aes(x = p, 
+           y = error, 
+           color = key)) +
+  geom_point() +
+  geom_line(size = 1) +
   scale_x_continuous(breaks = c(1:9))+
-  labs(color = "", x = "多項式回帰の次数", y = "誤差（RMSE)",
+  labs(color = "", 
+       x = "多項式回帰の次数", 
+       y = "誤差（RMSE)",
        title = "モデルの複雑さと過学習（再掲）")
 ```
 
@@ -530,7 +558,7 @@ ggplot(result %>% gather(key, error, -p),
 次節で紹介するlassoは特徴量エンジニアリングのうち**特徴量選択**をデータから自動的に行うことができる手法である。
 
 
-## lasso
+## ラッソ回帰
 
 **lasso**（least absolute shrinkage and selection operator）は
 $$
@@ -596,13 +624,21 @@ coef(lasso_cv, s = "lambda.1se") %>% round(3)
 
 ```{r}
 # trainに対する予測精度
-y_train_pred <- predict(lasso_cv, X_train, s = "lambda.min") # 予測
+y_train_pred <- predict(lasso_cv, 
+                        X_train, 
+                        s = "lambda.min") # 予測
+
 train_error <- RMSE(y_train_pred, y_train) # 誤差
+
 str_c("train_error: ", round(train_error, 3)) %>% print() # 結果を表示
 
 # testに対する予測精度
-y_test_pred = predict(lasso_cv, X_test, s = "lambda.min") # 予測
-test_error = RMSE(y_test_pred, y_test) # 誤差(MSE)
+y_test_pred <- predict(lasso_cv, 
+                      X_test, 
+                      s = "lambda.min") # 予測
+
+test_error <- RMSE(y_test_pred, y_test) # 誤差(MSE)
+
 str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
 ```
 
@@ -643,10 +679,17 @@ $$
 まず，最小二乗法，リッジ回帰，lassoで推定されたパラメータは次のようになった。
 
 ```{r, echo=F}
-coef_df = cbind(LS = coef(reg_ls) %>% round(3),
-                Ridge = coef(ridge_cv, s = "lambda.min") %>% as.matrix() %>% round(3),
-                Lasso = coef(lasso_cv, s = "lambda.min") %>% as.matrix() %>% round(3)) %>% as.data.frame()
-colnames(coef_df) = c("LS","Ridge","Lasso")
+coef_df <- cbind(OLS = coef(reg_ols) %>% round(3),
+                Ridge = coef(ridge_cv, 
+                             s = "lambda.min") %>% 
+                  as.matrix() %>% round(3),
+                Lasso = coef(lasso_cv, 
+                             s = "lambda.min") %>% 
+                  as.matrix() %>% round(3)) %>% 
+  as.data.frame()
+
+colnames(coef_df) <- c("OLS","Ridge","Lasso")
+
 knitr::kable(coef_df)
 ```
 
@@ -654,33 +697,49 @@ knitr::kable(coef_df)
 
 ```{r, echo=F}
 # 予測値のオブジェクト名を一応変えておく
-y_test_pred_lasso = y_test_pred
+y_test_pred_lasso <- y_test_pred
 
 # data
-data_for_plot <- data_frame(x = test$x, y = test$y,
-                            LS = y_test_pred_ls, 
-                            Ridge = c(y_test_pred_ridge),
-                            Lasso = c(y_test_pred_lasso)) %>% 
-  gather(model, value, -x,-y)
+data_for_plot <- tibble(x = test$x, 
+                        y = test$y,
+                        OLS = y_test_pred_ols,
+                        Ridge = c(y_test_pred_ridge),
+                        Lasso = c(y_test_pred_lasso))　
+# long形式に変換
+data_for_plot <- data_for_plot %>% tidyr::pivot_longer(OLS:Lasso,
+                                                      names_to = "model",
+                                                      values_to = "value")
+
+#旧式のgather()を使う場合は以下のようになる
+#data_for_plot <- data_for_plot %>% gather(model, value, -x,-y)
+
+
 ## 順番を指定
-data_for_plot$model = factor(data_for_plot$model, levels = unique(data_for_plot$model))
+data_for_plot$model <- factor(data_for_plot$model, 
+                             levels = unique(data_for_plot$model))
 
 # plot
-ggplot(data_for_plot, aes(x, y = value, color = model))+
-  geom_point(aes(x,y), size = 1.5, color = "black")+
-  geom_line(size = 1.5, alpha = 0.5)+
-  geom_point(size = 2, alpha = 0.5)+
-  scale_color_brewer(palette = "Set1")+
-  labs(title = "9次多項式回帰によるtestデータに対する予測")
+data_for_plot %>% ggplot(aes(x = x,
+                             y = value,
+                             color = model)) +
+  geom_point(aes(x = x,
+                 y = y), 
+             size = 1.5, 
+             color = "black") +
+  geom_line(size = 1.5, alpha = 0.5) +
+  geom_point(size = 2, alpha = 0.5) +
+  scale_color_brewer(palette = "Set1") +
+  labs(title = "9次多項式回帰によるtestデータに対する予測",
+       y = "y and predicted y")
 ```
 
 その予測誤差（RMSEで測ったもの）は次のようになった。
 
 ```{r, echo=F}
-error_df = data.frame(LS = RMSE(y_test_pred_ls, y_test),
+error_df <- data.frame(OLS = RMSE(y_test_pred_ols, y_test),
                       Ridge = RMSE(y_test_pred_ridge, y_test),
                       Lasso = RMSE(y_test_pred_lasso, y_test)) 
-rownames(error_df) = "RMSE"
+rownames(error_df) <- "RMSE"
 knitr::kable(error_df)
 ```
 
@@ -713,8 +772,11 @@ EN_cv <- cv.glmnet(x = X_train, # 説明変数
                       alpha = 0.35) # 任意のα
 
 # testに対する予測精度
-y_test_pred = predict(EN_cv, X_test, s = "lambda.min") # 予測
-test_error = RMSE(y_test_pred, y_test) # 誤差
+y_test_pred <- predict(EN_cv, 
+                      X_test, 
+                      s = "lambda.min") # 予測
+test_error <- RMSE(y_test_pred, 
+                  y_test) # 誤差
 str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
 ```
 

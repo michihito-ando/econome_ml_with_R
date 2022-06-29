@@ -30,7 +30,6 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F,
 set.seed(0)
 ```
 
-
 # 人工知能と機械学習
 
 ## 人工知能とは
@@ -82,8 +81,6 @@ set.seed(0)
      - 例：顧客情報から，その顧客が商品を「買う」か「買わない」かを予測する
 
 今回は回帰を行う機械学習の例として**線形回帰**に再度触れ，分類を行う機械学習の例として**ロジスティック回帰**を紹介する。
-
-
 
 # 線形回帰
 
@@ -161,7 +158,6 @@ for(i in 1:length(w)){
 }
 
 # plot
-library(tidyverse)
 ggplot(data_frame(weight = w, loss = cost_vec),
        aes(x = weight, y = loss))+
   geom_line(color = "SteelBlue")+
@@ -230,13 +226,22 @@ $$
 
 ## Rでの実践
 
+### パッケージの読み込み
+今回の分析で使うパッケージを読み込む。
+```{r}
+pacman::p_load(tidyverse, 
+               AER, # HousePricesデータを使用
+               stargazer, # lmやplmのときの結果表
+               MLmetrics, # 機械学習で用いる関数が実装
+               carData) # タイタニック号データを使用
+```
+
 ### データの用意
 
 `{AER}`パッケージの`HousePrices`データを使用し，住宅の価格を予測する問題に取り組むことにする。
 
 ```{r}
-library(AER)
-data("HousePrices")
+data("HousePrices") #AERパッケージのデータ
 head(HousePrices)
 ```
 
@@ -285,8 +290,6 @@ test <- test %>% select(-ID)
 線形回帰は`lm()`関数で行うことができる。
 
 ```{r}
-library(stargazer)
-
 reg <- lm(log(price) ~ . , data = train)
 stargazer(reg, type = "text")
 ```
@@ -311,15 +314,6 @@ $$
 なお、ここでの「**誤差**」とは、$y_i - \hat{y}_i$すなわち観測値と予測値の差であって、統計学や計量経済学でいうところの誤差項($\varepsilon$)とは異なる点に注意されたい。
 
 `{MLmetrics}`パッケージにはMSEのような機械学習で用いる関数が実装されているため，このパッケージをインストールして読み込む
-
-```{r, eval=F}
-install.packages("MLmetrics")
-library(MLmetrics)
-```
-
-```{r, echo=F}
-library(MLmetrics)
-```
 
 ```{r}
 # 平均二乗誤差（MSE）による予測精度の評価
@@ -440,14 +434,23 @@ ggplot(df, aes(x = p, y = L))+
 
 ## Rでの実践
 
+### パッケージの読み込み
+今回の分析で使うパッケージを読み込む（すでに一度やっているので、飛ばしても良い）。
+
+```{r}
+pacman::p_load(tidyverse, 
+               AER, # HousePricesデータを使用
+               stargazer, # lmやplmのときの結果表
+               MLmetrics, # 機械学習で用いる関数が実装
+               carData) # タイタニック号データを使用
+```
+
 ### データの用意
 
 `{carData}`パッケージの`TitanicSurvival`データセットを使う
 
-```{r, eval=F}
-install.packages("carData")
-library(carData)
-data("TitanicSurvival")
+```{r}
+data("TitanicSurvival")　#carDataに入っている。
 head(TitanicSurvival)
 ```
 
