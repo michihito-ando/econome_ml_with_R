@@ -32,6 +32,21 @@ $$
 % 定義
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
 $$
+# 本講義の目的
+
+- 決定木やランダムフォレストの考え方を学ぶ
+- 決定木やランダムフォレストを試行してみる。
+
+# パッケージの読み込み
+今回の分析で使うパッケージを読み込む。
+```{r}
+pacman::p_load(tidyverse, 
+               carData, # タイタニック号データを使用
+               rpart, # 決定木の実行
+               partykit, #決定木の作図
+               randomForest, #ランダムフォレストの実行
+               MLmetrics) # 機械学習で用いる関数が実装
+```
 
 # 決定木
 
@@ -165,11 +180,7 @@ $$
 `{carData}`パッケージに含まれるタイタニック号の乗客データ`TitanicSurvival`を使う。
 
 ```{r}
-# 準備
-library(tidyverse)
-
 # データ読み込み
-library(carData)
 data("TitanicSurvival")
 head(TitanicSurvival)
 ```
@@ -199,33 +210,28 @@ set.seed(1)  # 乱数の種を固定
 train <- df %>% sample_frac(size = 0.8)
 
 # 学習用データに使っていないIDの行をテスト用データに
-test <- anti_join(df, train, by = "ID")
+test <- anti_join(df, 
+                  train, 
+                  by = "ID")
 
 # ID列は予測に使わないため削除しておく
-train <- train %>% select(-ID)
-test <- test %>% select(-ID)
+train <- train %>% dplyr::select(-ID)
+test <- test %>% dplyr::select(-ID)
 ```
 
 
 ### 決定木の実行
 
-決定木の実行には`{rpart}`パッケージを使う。決定木の作図用に`{partykit}`もインストールしておく。
+決定木の実行には`{rpart}`パッケージを使う。決定木の作図用に`{partykit}`も使う。
 
-```{r, eval=F}
-# パッケージのインストール
-install.packages(c("rpart", "partykit"))
-```
 
 `rpart()`関数を用いて決定木を実行できる。`lm()`関数と同様に，`formula`の引数にモデルの構造すなわち被特徴量・特徴量の関係を記述し`data`の引数にデータのオブジェクトを入れる。
 
 
 ```{r}
-# パッケージの読み込み
-library(rpart)
-
 # rpartを実施し，titanic_treeに結果を保存
 # lmと同様に「y ~ x1 + x2」の形で変数を指定できる。"." は「残りのすべての変数」の意味
-titanic_tree <- rpart(survived ~ . , data = train)  
+titanic_tree <- rpart::rpart(survived ~ . , data = train)  
 ```
 
 ここでは表示しないが，結果は`summary()`や`print()`で表示できる。
@@ -235,50 +241,49 @@ summary(titanic_tree)
 print(titanic_tree)
 ```
 
-
 `{partykit}`パッケージを使えば決定木を描くことができる。
 
 ```{r, fig.height=6, fig.width=10}
-# パッケージの読み込み
-library(partykit)
-
 # 決定木のプロット
 plot(as.party(titanic_tree))
 ```
 
 まず性別で分岐し，男性の場合は年齢が9.5歳未満だと生存する割合が高くなるが，9.5歳以上だと生存する割合は低くなっている。
+
 女性の場合，船室の等級が1stや2ndであれば生存する割合が極めて高いが，3rdの場合は年齢が高いほど生存する割合は低くなっていることがわかる。
 
 決定木はこのようにデータの解釈・説明を行うことができる。そのため線形回帰などと並んでマーケティングの現場などビジネスにおいても使われる。
 
-次に，実際の値と予測値を比べる。正解率を計算するために`Accuracy()`を使用するので，`MLmetrics`パッケージを読み込んでおく
-
-```{r}
-library(MLmetrics)
-```
+次に，実際の値と予測値を比べる。正解率を計算するため`MLmetrics`パッケージの`Accuracy()`を使用する。
 
 まずは訓練データで検証する。
 ```{r}
 # 予測値を保存
-y_pred_train <- predict(titanic_tree, train, type = "class")
+y_pred_train <- predict(titanic_tree, 
+                        train, 
+                        type = "class")
 
 # 混同行列:実際の値と予測値を比べる
 table(train$survived, y_pred_train)
 
 # 訓練データでの正解率
-Accuracy(y_pred = y_pred_train, y_true = train$survived)
+MLmetrics::Accuracy(y_pred = y_pred_train, 
+                    y_true = train$survived)
 ```
 
 次いで，テストデータで検証する。
 ```{r}
 # 予測値を保存
-y_pred_test <- predict(titanic_tree, test, type = "class")
+y_pred_test <- predict(titanic_tree, 
+                       test, 
+                       type = "class")
 
 # 混同行列:実際の値と予測値を比べる
 table(test$survived, y_pred_test)
 
 # テストデータでの正解率
-Accuracy(y_pred = y_pred_test, y_true = test$survived)
+MLmetrics::Accuracy(y_pred = y_pred_test, 
+                    y_true = test$survived)
 ```
 
 
@@ -353,25 +358,17 @@ ggplot(df, aes(x=iteration, y=value, color=予測モデル))+
 3. 予測を行う際は，目的変数がカテゴリカル変数なら$B$個の決定木の予測結果の多数決をランダムフォレストの予測結果とする。目的変数が量的変数なら$B$個の決定木の予測結果の平均をランダムフォレストの予測結果とする。
 
 
-
-
 ## Rで実践
 
 `{randomForest}`パッケージを使う。
 
-```{r, eval=F}
-# パッケージのインストール
-install.packages("randomForest")
-```
-
-
 ```{r}
 # パッケージの読み込み
-library(randomForest)
 set.seed(0)
 
 # randomForestを実施し，titanic_RFに保存。
-titanic_RF <- randomForest(survived ~ . , data = train,
+titanic_RF <- randomForest::randomForest(survived ~ . , 
+                           data = train,
                            mtry = 3,       # ランダムに選んで使用する特徴量の数
                            nodesize = 5,   # 葉ノードに含まれる学習データの最小数
                            sampsize = 100, # ブートストラップサンプルのサンプルサイズ
@@ -419,13 +416,17 @@ ggplot(errors, aes(x=1:nrow(errors), y=OOB))+
 
 ```{r}
 # 予測値を保存
-y_pred_train = predict(titanic_RF, train, type = "class")
+y_pred_train = predict(titanic_RF, 
+                       train, 
+                       type = "class")
 
 # 混同行列
-table(train$survived, y_pred_train)
+table(train$survived, 
+      y_pred_train)
 
 # 正解率
-Accuracy(y_pred = y_pred_train, y_true = train$survived)
+MLmetrics::Accuracy(y_pred = y_pred_train, 
+                    y_true = train$survived)
 ```
 
 
@@ -433,13 +434,16 @@ Accuracy(y_pred = y_pred_train, y_true = train$survived)
 
 ```{r}
 # 予測
-y_pred_test = predict(titanic_RF, test, type = "class")
+y_pred_test = predict(titanic_RF, 
+                      test, 
+                      type = "class")
 
 # 混同行列
 table(test$survived, y_pred_test)
 
 # 正解率
-Accuracy(y_pred = y_pred_test, y_true = test$survived)
+MLmetrics::Accuracy(y_pred = y_pred_test, 
+                    y_true = test$survived)
 ```
 
 また，ランダムフォレストでは，`$importance`でジニ係数の減少に基づいて算出される**変数重要度**（variable importance）を確認することができる。これは分割時の不純度の減少量の観点から，予測モデルにおいて各特徴量がどの程度予測に寄与しているのかの目安を示している。

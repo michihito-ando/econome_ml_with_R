@@ -95,8 +95,8 @@ test <- test %>% dplyr::select(-ID)
 ```
 
 
-```{r, fig.width=5, fig.height=3.5, echo=F}
-ggplot(train, aes(x, y))+
+```{r, fig.width=5, fig.height=3.5}
+train %>% ggplot(aes(x, y)) +
   geom_point()
 ```
 
