@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2022-06-01" />
+<meta name="date" content="2022-10-20" />
 
 <title>Rで学ぶ計量経済学と機械学習 4    回帰分析</title>
 
@@ -1576,7 +1576,7 @@ div.tocify {
 回帰分析</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2022-06-01</h4>
+<h4 class="date">2022-10-20</h4>
 
 </div>
 
@@ -1592,7 +1592,14 @@ technologies)</h4>
 <h1><span class="header-section-number">2</span>
 パッケージの読み込み</h1>
 <p>まず，{tidyverse}}や{AER}や{stargazer}など、今回用いるパッケージのインストールと読み込みを行う。新しい関数については、適宜説明していく。</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(readxl, tidyverse, skimr, AER, stargazer, gridExtra, estimatr, texreg)</span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(readxl, </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>               tidyverse, </span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>               skimr, </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>               AER, </span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>               stargazer, </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>               gridExtra, </span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>               estimatr, </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>               texreg)</span></code></pre></div>
 </div>
 <div id="ディレクトリの設定" class="section level1" number="3">
 <h1><span class="header-section-number">3</span> ディレクトリの設定</h1>
@@ -1871,7 +1878,8 @@ statistics)を載せる。</p>
 <p>だが、これらはそのまま論文などに掲載することはできない。そこで、<code>stargazer</code>パッケージを使い、要約統計量の表を作成する。</p>
 <p>まず、text形式で直接表示する。</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#textでの表示</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(CPS1985, <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(CPS1985, </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
 <pre><code>## 
 ## ===========================================
 ## Statistic   N   Mean  St. Dev.  Min   Max  
@@ -1883,7 +1891,9 @@ statistics)を載せる。</p>
 ## -------------------------------------------</code></pre>
 <p>次に、html形式で出力し、フォルダに保存する。</p>
 <div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co">#htmlで表示し、summary_CPS1985.htmlという名前での保存</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(CPS1985, <span class="at">type =</span> <span class="st">&quot;html&quot;</span>, <span class="at">out =</span> <span class="st">&quot;summary_CPS1985.html&quot;</span>)</span></code></pre></div>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(CPS1985, </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;html&quot;</span>, </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">out =</span> <span class="st">&quot;summary_CPS1985.html&quot;</span>)</span></code></pre></div>
 <table style="text-align:center">
 <tr>
 <td colspan="6" style="border-bottom: 1px solid black">
@@ -2052,7 +2062,8 @@ least squares method, OLS method）である。この方法では，実測値<sp
 回帰分析の結果表示</h2>
 <p><code>summary()</code>による結果表示は論文に使用できるような整った形ではない。そこで再び<code>{stargazer}</code>パッケージを使って整形する。</p>
 <p><code>stargazer()</code>に<code>lm()</code>関数のオブジェクトを入れ，<code>type</code>引数に<code>&quot;text&quot;</code>を指定することで以下のように表示される</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg, <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg, </span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
 <pre><code>## 
 ## ===============================================
 ##                         Dependent variable:    
@@ -2083,10 +2094,10 @@ least squares method, OLS method）である。この方法では，実測値<sp
 <h1><span class="header-section-number">5</span> 対数変換</h1>
 <p>データ分析の過程では，データを対数変換したい場合もある。</p>
 <p>例えば，賃金のように「低い人（低所得者層）が多く，高い人（高所得者層）が少ない」ような分布はL字型のような右に歪んだ分布になる。こうした分布は対数変換を行うことで正規分布に近づく。</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>g1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(CPS1985, <span class="fu">aes</span>(<span class="at">x =</span> wage))<span class="sc">+</span></span>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>g1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(CPS1985, <span class="fu">aes</span>(<span class="at">x =</span> wage)) <span class="sc">+</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">10</span>)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>g2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(CPS1985, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">log</span>(wage)))<span class="sc">+</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>g2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(CPS1985, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">log</span>(wage))) <span class="sc">+</span></span>
 <span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">10</span>)</span>
 <span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="fu">grid.arrange</span>(g1, g2) <span class="co">#gridextraパッケージによるグラフの結合。他にもpatchworkパッケージなどがある。</span></span></code></pre></div>
@@ -2136,7 +2147,9 @@ X\)</span></td>
 <div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>reg_logwage <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> <span class="fu">log</span>(wage) <span class="sc">~</span> education, </span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">data =</span> CPS1985)</span></code></pre></div>
 <p>対数変換をしなかった線形回帰の結果<code>reg</code>と今回の<code>reg_logwage</code>を<code>stargazer()</code>に入れることで，まとめて結果表示できる。</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg, reg_logwage, <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg, </span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>          reg_logwage, </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
 <pre><code>## 
 ## ===========================================================
 ##                                    Dependent variable:     
@@ -2175,9 +2188,12 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip}
 \text{Experience}_i + u_i
 \]</span></p>
 <p>をRで推定する場合，<code>lm()</code>関数の引数<code>formula</code>に<code>+ experience</code>を追加し，</p>
-<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>reg_multiple <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> <span class="fu">log</span>(wage) <span class="sc">~</span> education <span class="sc">+</span> experience, <span class="at">data =</span> CPS1985)</span></code></pre></div>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>reg_multiple <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> <span class="fu">log</span>(wage) <span class="sc">~</span> education <span class="sc">+</span> experience, </span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">data =</span> CPS1985)</span></code></pre></div>
 <p>と書けばよい。</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg_logwage, reg_multiple, <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg_logwage, </span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>          reg_multiple, </span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
 <pre><code>## 
 ## ===================================================================
 ##                                   Dependent variable:              
@@ -2226,14 +2242,17 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip}
 <p>まず，２乗の変数を作成する。</p>
 <p><code>mutate(新しい変数の名前 = 既存の変数の名前^2)</code>のように書くことで任意の変数の2乗項を作成できる。</p>
 <div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="co"># mutate関数で新しい変数を追加したデータをdfオブジェクトに代入</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> CPS1985 <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">experience2 =</span> experience<span class="sc">^</span><span class="dv">2</span>) </span></code></pre></div>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">=</span> CPS1985 <span class="sc">%&gt;%</span> </span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">experience2 =</span> experience<span class="sc">^</span><span class="dv">2</span>) </span></code></pre></div>
 <p>次に，このデータフレーム<code>df</code>と新たな変数名<code>experience2</code>を使って<code>lm()</code>関数を書く。</p>
 <div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>reg_mincer <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="at">formula =</span> <span class="fu">log</span>(wage) <span class="sc">~</span> </span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>                   education <span class="sc">+</span> experience <span class="sc">+</span> experience2, </span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">data =</span> df)</span></code></pre></div>
 <p>text形式で分析結果表を作成すると以下のようになる。</p>
-<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, </span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg_logwage, </span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>          reg_multiple, </span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>          reg_mincer, </span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
 <pre><code>## 
 ## ===========================================================================================
 ##                                               Dependent variable:                          
@@ -2262,9 +2281,11 @@ Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip}
 ## ===========================================================================================
 ## Note:                                                           *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 <p>html形式で分析結果表を作成すると以下のようになる。なおRMarkdown（このウェブ資料）ではNote以下の部分が正しく表示されていないので、出力・保存されたhtmlファイルを見ること。</p>
-<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, </span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;html&quot;</span>, </span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">out =</span> <span class="st">&quot;04reg_table.html&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg_logwage, </span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>          reg_multiple, </span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>          reg_mincer, </span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;html&quot;</span>, </span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">out =</span> <span class="st">&quot;04reg_table.html&quot;</span>)</span></code></pre></div>
 <table style="text-align:center">
 <tr>
 <td colspan="4" style="border-bottom: 1px solid black">
@@ -2565,11 +2586,13 @@ heteroskedasticity robust standard error)を用いる。</p>
 <span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>reg_multiple_r <span class="ot">&lt;-</span> </span>
 <span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm_robust</span>(<span class="at">formula =</span> <span class="fu">log</span>(wage) <span class="sc">~</span> education <span class="sc">+</span> experience, </span>
-<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> CPS1985, <span class="at">se_type =</span> <span class="st">&quot;HC1&quot;</span>)</span>
-<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>reg_mincer_r <span class="ot">&lt;-</span> </span>
-<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm_robust</span>(<span class="at">formula =</span> <span class="fu">log</span>(wage) <span class="sc">~</span> education <span class="sc">+</span> experience <span class="sc">+</span> experience2, </span>
-<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> df, <span class="at">se_type =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> CPS1985, </span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">se_type =</span> <span class="st">&quot;HC1&quot;</span>)</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>reg_mincer_r <span class="ot">&lt;-</span> </span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm_robust</span>(<span class="at">formula =</span> <span class="fu">log</span>(wage) <span class="sc">~</span> education <span class="sc">+</span> experience <span class="sc">+</span> experience2, </span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>            <span class="at">data =</span> df, </span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>            <span class="at">se_type =</span> <span class="st">&quot;HC1&quot;</span>)</span></code></pre></div>
 <p>なお、<code>HC1</code>は計量経済学でもっともよく使われるロバスト標準誤差であり、経済学者によく使用される計量分析ソフトのStataのロバスト標準誤差と同一のものであり、<code>lm_robust</code>では、<code>HC1</code>のかわりに<code>stata</code>と表記してもよい。</p>
 <p>推定結果は、lmと同じく<code>summary()</code>関数で見ることができる。</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(reg_logwage_r)</span></code></pre></div>
@@ -2621,8 +2644,11 @@ heteroskedasticity robust standard error)を用いる。</p>
 ## F-statistic: 53.46 on 3 and 530 DF,  p-value: &lt; 2.2e-16</code></pre>
 <p>論文などで使用するための分析結果表については、<code>lm_robust</code>と<code>stargazer</code>の相性はよくないため、そのまま<code>stargazer</code>を使えない。それでも両者を使う方法は参考文献のリンク先に記されているが、ここでは分析結果表のための別のパッケージである<code>texreg</code>を使う。</p>
 <div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co">#結果表の出力</span></span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(reg_logwage_r, reg_multiple_r, reg_mincer_r), </span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">include.ci =</span> <span class="cn">FALSE</span>, <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(reg_logwage_r, </span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>               reg_multiple_r, </span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>               reg_mincer_r), </span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>## 
 ## ==================================================
 ##              Model 1      Model 2      Model 3    
@@ -2644,16 +2670,20 @@ heteroskedasticity robust standard error)を用いる。</p>
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 <p>htmlもしくはWordで出力する場合は、次のようにする。</p>
 <div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co">#html</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">htmlreg</span>(<span class="fu">list</span>(reg_logwage_r, reg_multiple_r, reg_mincer_r), </span>
-<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>        <span class="at">file =</span> <span class="st">&quot;04reg_table_r.html&quot;</span>, </span>
-<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>        <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
-<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">digits =</span> <span class="dv">3</span>)</span>
-<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a><span class="co">#word</span></span>
-<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a><span class="fu">htmlreg</span>(<span class="fu">list</span>(reg_logwage_r, reg_multiple_r, reg_mincer_r), </span>
-<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">file =</span> <span class="st">&quot;04reg_table_r.doc&quot;</span>, </span>
-<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>        <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
-<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>        <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">htmlreg</span>(<span class="fu">list</span>(reg_logwage_r, </span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>             reg_multiple_r, </span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>             reg_mincer_r), </span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>        <span class="at">file =</span> <span class="st">&quot;04reg_table_r.html&quot;</span>, </span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>        <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>        <span class="at">digits =</span> <span class="dv">3</span>)</span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a><span class="co">#word</span></span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a><span class="fu">htmlreg</span>(<span class="fu">list</span>(reg_logwage_r, </span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>             reg_multiple_r, </span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>             reg_mincer_r), </span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>        <span class="at">file =</span> <span class="st">&quot;04reg_table_r.doc&quot;</span>, </span>
+<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>        <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
 </div>
 </div>
 <div id="参考不均一分散への対応-lm_robustを使わない方法" class="section level1" number="8">
@@ -2670,21 +2700,30 @@ heteroskedasticity robust standard error)を用いる。</p>
 <p>上記の3種類の重回帰モデルの推定結果の標準誤差を、ロバスト標準誤差に置き換える。</p>
 <p>まず、<code>vcovHC</code>関数を用いてロバスト標準誤差を得る。</p>
 <div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (1) reg_lowage</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>vcov_reg_lowage <span class="ot">&lt;-</span> <span class="fu">vcovHC</span>(reg_logwage, <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></span>
-<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>robustSE_reg_logwage <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(vcov_reg_lowage)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></span>
-<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a><span class="co"># (2) reg_multiple</span></span>
-<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>vcov_reg_multiple <span class="ot">&lt;-</span> <span class="fu">vcovHC</span>(reg_multiple, <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>) <span class="co"># 分散共分散行列</span></span>
-<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>robustSE_reg_multiple <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(vcov_reg_multiple)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></span>
-<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a><span class="co"># (3) reg_mincer</span></span>
-<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>vcov_reg_mincer <span class="ot">&lt;-</span> <span class="fu">vcovHC</span>(reg_mincer, <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></span>
-<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>robustSE_reg_mincer <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(vcov_reg_mincer)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></span></code></pre></div>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>vcov_reg_lowage <span class="ot">&lt;-</span> <span class="fu">vcovHC</span>(reg_logwage, </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>robustSE_reg_logwage <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(vcov_reg_lowage)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a><span class="co"># (2) reg_multiple</span></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>vcov_reg_multiple <span class="ot">&lt;-</span> <span class="fu">vcovHC</span>(reg_multiple, </span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>                            <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>) <span class="co"># 分散共分散行列</span></span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>robustSE_reg_multiple <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(vcov_reg_multiple)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a><span class="co"># (3) reg_mincer</span></span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>vcov_reg_mincer <span class="ot">&lt;-</span> <span class="fu">vcovHC</span>(reg_mincer, </span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>                          <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>)  <span class="co"># 分散共分散行列</span></span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-16"><a href="#cb43-16" aria-hidden="true" tabindex="-1"></a>robustSE_reg_mincer <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">diag</span>(vcov_reg_mincer)) <span class="co"># ロバスト標準誤差（分散共分散行列の対角成分の平方根）</span></span></code></pre></div>
 <p>ここで、<code>type = &quot;HC1&quot;</code>とは、ロバスト標準誤差の種類の指定であり、<code>HC1</code>は計量経済学でもっともよく使われるものである。</p>
 <p>{stargazer}で表を作成する際には、以下のように標準誤差をロバスト標準誤差に置き換える。</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg_logwage, reg_multiple, reg_mincer, </span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">se =</span> <span class="fu">list</span>(robustSE_reg_logwage, robustSE_reg_multiple, robustSE_reg_mincer), <span class="co"># robust SEに置き換え</span></span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(reg_logwage, </span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>          reg_multiple, </span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>          reg_mincer, </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">se =</span> <span class="fu">list</span>(robustSE_reg_logwage, </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>                    robustSE_reg_multiple, </span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>                    robustSE_reg_mincer), <span class="co"># robust SEに置き換え</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>)</span></code></pre></div>
 <pre><code>## 
 ## ===========================================================================================
 ##                                               Dependent variable:                          
@@ -2719,10 +2758,12 @@ heteroskedasticity robust standard error)を用いる。</p>
 不均一分散に対して頑健なF検定</h2>
 <p>上の表において、F統計量は均一分散を仮定したもののままである。下記では、<code>lm</code>での回帰分析結果を利用して、不均一分散に対して頑健なF検定を行う方法だけ記す。</p>
 <p>次に、F検定に使用する「制約なし」の回帰モデル（被説明変数を定数項のみに回帰するモデル）を実行し、オブジェクトに保存する。</p>
-<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>reg_no_X <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">log</span>(wage) <span class="sc">~</span> <span class="dv">1</span>, <span class="at">data =</span> CPS1985)　<span class="co"># no_X:説明変数なし</span></span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>reg_no_X <span class="ot">&lt;-</span> <span class="fu">lm</span>(<span class="fu">log</span>(wage) <span class="sc">~</span> <span class="dv">1</span>, </span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> CPS1985)　<span class="co"># no_X:説明変数なし</span></span></code></pre></div>
 <p>均一分散を仮定したF検定は、{AER}パッケージの<code>waldtest</code>関数を使って、以下のような形で行うことができる。上記の（均一分散下での）回帰分析でのF検定の結果と一致することが確認できる。</p>
 <div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (1) reg_lowage</span></span>
-<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_logwage, reg_no_X)</span></code></pre></div>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_logwage, </span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>         reg_no_X)</span></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education
@@ -2733,7 +2774,8 @@ heteroskedasticity robust standard error)を用いる。</p>
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (2) reg_multiple</span></span>
-<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_multiple, reg_no_X)</span></code></pre></div>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_multiple, </span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>         reg_no_X)</span></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience
@@ -2744,7 +2786,8 @@ heteroskedasticity robust standard error)を用いる。</p>
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (3) reg_mincer</span></span>
-<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_mincer, reg_no_X)</span></code></pre></div>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_mincer, </span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>         reg_no_X)</span></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience + experience2
@@ -2756,8 +2799,10 @@ heteroskedasticity robust standard error)を用いる。</p>
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <p>一方、不均一分散に対して頑健なF検定は、以下のように実施できる。</p>
 <div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (1) reg_lowage</span></span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_logwage, reg_no_X, </span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">vcov =</span> <span class="fu">vcovHC</span>(reg_logwage, <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></span></code></pre></div>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_logwage, </span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>         reg_no_X, </span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">vcov =</span> <span class="fu">vcovHC</span>(reg_logwage, </span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></span></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education
@@ -2768,8 +2813,10 @@ heteroskedasticity robust standard error)を用いる。</p>
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (2) reg_multiple</span></span>
-<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_multiple, reg_no_X, </span>
-<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">vcov =</span> <span class="fu">vcovHC</span>(reg_multiple, <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>)) <span class="co"># HC1を用いたF検定</span></span></code></pre></div>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_multiple, </span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>         reg_no_X, </span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">vcov =</span> <span class="fu">vcovHC</span>(reg_multiple, </span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>)) <span class="co"># HC1を用いたF検定</span></span></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience
@@ -2780,8 +2827,10 @@ heteroskedasticity robust standard error)を用いる。</p>
 ## ---
 ## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</code></pre>
 <div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="co"># (3) reg_mincer</span></span>
-<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_mincer, reg_no_X, </span>
-<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">vcov =</span> <span class="fu">vcovHC</span>(reg_mincer, <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></span></code></pre></div>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a><span class="fu">waldtest</span>(reg_mincer, </span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>         reg_no_X, </span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>         <span class="at">vcov =</span> <span class="fu">vcovHC</span>(reg_mincer, </span>
+<span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>                       <span class="at">type =</span> <span class="st">&quot;HC1&quot;</span>))　<span class="co"># HC1を用いたF検定</span></span></code></pre></div>
 <pre><code>## Wald test
 ## 
 ## Model 1: log(wage) ~ education + experience + experience2

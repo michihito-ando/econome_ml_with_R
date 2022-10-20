@@ -40,7 +40,14 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F,
 まず，{tidyverse}}や{AER}や{stargazer}など、今回用いるパッケージのインストールと読み込みを行う。新しい関数については、適宜説明していく。
 
 ```{r}
-pacman::p_load(readxl, tidyverse, skimr, AER, stargazer, gridExtra, estimatr, texreg)
+pacman::p_load(readxl, 
+               tidyverse, 
+               skimr, 
+               AER, 
+               stargazer, 
+               gridExtra, 
+               estimatr, 
+               texreg)
 ```
 
 
@@ -99,14 +106,17 @@ skimr::skim(CPS1985)
 
 ```{r}
 #textでの表示
-stargazer(CPS1985, type = "text")
+stargazer(CPS1985, 
+          type = "text")
 ```
 
 次に、html形式で出力し、フォルダに保存する。
 
 ```{r, results = 'asis'}
 #htmlで表示し、summary_CPS1985.htmlという名前での保存
-stargazer(CPS1985, type = "html", out = "summary_CPS1985.html")
+stargazer(CPS1985, 
+          type = "html", 
+          out = "summary_CPS1985.html")
 
 ```
 
@@ -149,7 +159,8 @@ summary(reg)
 
 ```{r}
 
-stargazer(reg, type = "text")
+stargazer(reg, 
+          type = "text")
 ```
 
 `type = "html", out = "reg1.html"`とおけばhtml形式で保存できる
@@ -167,10 +178,10 @@ stargazer(reg,               # 回帰分析の結果
 例えば，賃金のように「低い人（低所得者層）が多く，高い人（高所得者層）が少ない」ような分布はL字型のような右に歪んだ分布になる。こうした分布は対数変換を行うことで正規分布に近づく。
 
 ```{r}
-g1 <- ggplot(CPS1985, aes(x = wage))+
+g1 <- ggplot(CPS1985, aes(x = wage)) +
   geom_histogram(bins = 10)
 
-g2 <- ggplot(CPS1985, aes(x = log(wage)))+
+g2 <- ggplot(CPS1985, aes(x = log(wage))) +
   geom_histogram(bins = 10)
 
 grid.arrange(g1, g2) #gridextraパッケージによるグラフの結合。他にもpatchworkパッケージなどがある。
@@ -213,7 +224,9 @@ reg_logwage <- lm(formula = log(wage) ~ education,
 対数変換をしなかった線形回帰の結果`reg`と今回の`reg_logwage`を`stargazer()`に入れることで，まとめて結果表示できる。
 
 ```{r}
-stargazer(reg, reg_logwage, type = "text")
+stargazer(reg, 
+          reg_logwage, 
+          type = "text")
 ```
 
 
@@ -235,13 +248,16 @@ $$
 をRで推定する場合，`lm()`関数の引数`formula`に` + experience`を追加し，
 
 ```{r}
-reg_multiple <- lm(formula = log(wage) ~ education + experience, data = CPS1985)
+reg_multiple <- lm(formula = log(wage) ~ education + experience, 
+                   data = CPS1985)
 ```
 
 と書けばよい。
 
 ```{r}
-stargazer(reg_logwage, reg_multiple, type = "text")
+stargazer(reg_logwage, 
+          reg_multiple, 
+          type = "text")
 ```
 
 
@@ -272,7 +288,8 @@ $$
 
 ```{r}
 # mutate関数で新しい変数を追加したデータをdfオブジェクトに代入
-df = CPS1985 %>% dplyr::mutate(experience2 = experience^2) 
+df = CPS1985 %>% 
+  dplyr::mutate(experience2 = experience^2) 
 ```
 
 次に，このデータフレーム`df`と新たな変数名`experience2`を使って`lm()`関数を書く。
@@ -285,14 +302,18 @@ reg_mincer <- lm(formula = log(wage) ~
 
 text形式で分析結果表を作成すると以下のようになる。
 ```{r}
-stargazer(reg_logwage, reg_multiple, reg_mincer, 
+stargazer(reg_logwage, 
+          reg_multiple, 
+          reg_mincer, 
           type = "text")
 ```
 
 html形式で分析結果表を作成すると以下のようになる。なおRMarkdown（このウェブ資料）ではNote以下の部分が正しく表示されていないので、出力・保存されたhtmlファイルを見ること。
 
 ```{r, results='asis'}
-stargazer(reg_logwage, reg_multiple, reg_mincer, 
+stargazer(reg_logwage, 
+          reg_multiple, 
+          reg_mincer, 
           type = "html", 
           out = "04reg_table.html")
 ```
@@ -325,11 +346,13 @@ reg_logwage_r <-
 
 reg_multiple_r <- 
   lm_robust(formula = log(wage) ~ education + experience, 
-            data = CPS1985, se_type = "HC1")
+            data = CPS1985, 
+            se_type = "HC1")
 
 reg_mincer_r <- 
   lm_robust(formula = log(wage) ~ education + experience + experience2, 
-            data = df, se_type = "HC1")
+            data = df, 
+            se_type = "HC1")
 ```
 
 なお、`HC1`は計量経済学でもっともよく使われるロバスト標準誤差であり、経済学者によく使用される計量分析ソフトのStataのロバスト標準誤差と同一のものであり、`lm_robust`では、`HC1`のかわりに`stata`と表記してもよい。
@@ -345,21 +368,28 @@ summary(reg_mincer_r)
 
 ```{r}
 #結果表の出力
-screenreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
-          include.ci = FALSE, digits = 3)
+screenreg(list(reg_logwage_r, 
+               reg_multiple_r, 
+               reg_mincer_r), 
+          include.ci = FALSE, 
+          digits = 3)
 ```
 
 htmlもしくはWordで出力する場合は、次のようにする。
 
 ```{r, results = 'asis'}
 #html
-htmlreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
+htmlreg(list(reg_logwage_r, 
+             reg_multiple_r, 
+             reg_mincer_r), 
         file = "04reg_table_r.html", 
         include.ci = FALSE, 
         digits = 3)
 
 #word
-htmlreg(list(reg_logwage_r, reg_multiple_r, reg_mincer_r), 
+htmlreg(list(reg_logwage_r, 
+             reg_multiple_r, 
+             reg_mincer_r), 
         file = "04reg_table_r.doc", 
         include.ci = FALSE, 
         digits = 3)
@@ -388,15 +418,20 @@ library(sandwich)
 
 ```{r}
 # (1) reg_lowage
-vcov_reg_lowage <- vcovHC(reg_logwage, type = "HC1")  # 分散共分散行列
+vcov_reg_lowage <- vcovHC(reg_logwage, 
+                          type = "HC1")  # 分散共分散行列
 robustSE_reg_logwage <- sqrt(diag(vcov_reg_lowage)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
 
 # (2) reg_multiple
-vcov_reg_multiple <- vcovHC(reg_multiple, type = "HC1") # 分散共分散行列
+vcov_reg_multiple <- vcovHC(reg_multiple, 
+                            type = "HC1") # 分散共分散行列
+
 robustSE_reg_multiple <- sqrt(diag(vcov_reg_multiple)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
 
 # (3) reg_mincer
-vcov_reg_mincer <- vcovHC(reg_mincer, type = "HC1")  # 分散共分散行列
+vcov_reg_mincer <- vcovHC(reg_mincer, 
+                          type = "HC1")  # 分散共分散行列
+
 robustSE_reg_mincer <- sqrt(diag(vcov_reg_mincer)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
 ```
 
@@ -405,8 +440,12 @@ robustSE_reg_mincer <- sqrt(diag(vcov_reg_mincer)) # ロバスト標準誤差（
 {stargazer}で表を作成する際には、以下のように標準誤差をロバスト標準誤差に置き換える。
 
 ```{R}
-stargazer(reg_logwage, reg_multiple, reg_mincer, 
-          se = list(robustSE_reg_logwage, robustSE_reg_multiple, robustSE_reg_mincer), # robust SEに置き換え
+stargazer(reg_logwage, 
+          reg_multiple, 
+          reg_mincer, 
+          se = list(robustSE_reg_logwage, 
+                    robustSE_reg_multiple, 
+                    robustSE_reg_mincer), # robust SEに置き換え
           type = "text")
 ```
 
@@ -419,36 +458,46 @@ stargazer(reg_logwage, reg_multiple, reg_mincer,
 次に、F検定に使用する「制約なし」の回帰モデル（被説明変数を定数項のみに回帰するモデル）を実行し、オブジェクトに保存する。
 
 ```{R}
-reg_no_X <- lm(log(wage) ~ 1, data = CPS1985)　# no_X:説明変数なし
+reg_no_X <- lm(log(wage) ~ 1, 
+               data = CPS1985)　# no_X:説明変数なし
 ```
 
 均一分散を仮定したF検定は、{AER}パッケージの`waldtest`関数を使って、以下のような形で行うことができる。上記の（均一分散下での）回帰分析でのF検定の結果と一致することが確認できる。
 
 ```{R}
 # (1) reg_lowage
-waldtest(reg_logwage, reg_no_X)
+waldtest(reg_logwage, 
+         reg_no_X)
 
 # (2) reg_multiple
-waldtest(reg_multiple, reg_no_X)
+waldtest(reg_multiple, 
+         reg_no_X)
 
 # (3) reg_mincer
-waldtest(reg_mincer, reg_no_X)
+waldtest(reg_mincer, 
+         reg_no_X)
 ```
 
 一方、不均一分散に対して頑健なF検定は、以下のように実施できる。
 
 ```{R}
 # (1) reg_lowage
-waldtest(reg_logwage, reg_no_X, 
-         vcov = vcovHC(reg_logwage, type = "HC1"))　# HC1を用いたF検定
+waldtest(reg_logwage, 
+         reg_no_X, 
+         vcov = vcovHC(reg_logwage, 
+                       type = "HC1"))　# HC1を用いたF検定
 
 # (2) reg_multiple
-waldtest(reg_multiple, reg_no_X, 
-         vcov = vcovHC(reg_multiple, type = "HC1")) # HC1を用いたF検定
+waldtest(reg_multiple, 
+         reg_no_X, 
+         vcov = vcovHC(reg_multiple, 
+                       type = "HC1")) # HC1を用いたF検定
 
 # (3) reg_mincer
-waldtest(reg_mincer, reg_no_X, 
-         vcov = vcovHC(reg_mincer, type = "HC1"))　# HC1を用いたF検定
+waldtest(reg_mincer, 
+         reg_no_X, 
+         vcov = vcovHC(reg_mincer, 
+                       type = "HC1"))　# HC1を用いたF検定
 ```
 
 F値が均一分散を仮定したものとは異なっていることが確認できる。

@@ -142,7 +142,7 @@ tita <- na.omit(TitanicSurvival)
 
 ```{r}
 # ID列を追加
-df = tita %>% rownames_to_column("ID")
+df <- tita %>% rownames_to_column("ID")
 
 # 80%を学習用データに
 train <- df %>% sample_frac(size = 0.8)
