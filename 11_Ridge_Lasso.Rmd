@@ -32,6 +32,7 @@ $$
 % 定義
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
 $$
+
 # 本講義の目的
 
 - リッジ回帰とラッソ回帰の考え方を学ぶ
