@@ -458,7 +458,7 @@ titanic_RF$importance
 
 [Breiman, L. (2001). Random forests. *Machine learning*, *45*(1), 5-32. ](https://link.springer.com/content/pdf/10.1023/A:1010933404324.pdf)
 
-Hastie, T., Tibshirani, R., & Friedman, J. (2014) 『統計的学習の基礎: データマイニング・推論・予測』、共立出版
+Hastie, T., Tibshirani, R., & Friedman, J. (2014) 『統計的学習の基礎: データマイニング・推論・予測』, 共立出版
 
 James et al.(2018)『Rによる統計的学習入門』8章「木に基づく方法」
 
