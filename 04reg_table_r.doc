@@ -70,16 +70,28 @@
 <td style="padding-left: 5px;padding-right: 5px;">0.234</td>
 </tr>
 <tr>
-<td style="padding-left: 5px;padding-right: 5px;">Num. obs.</td>
-<td style="padding-left: 5px;padding-right: 5px;">534</td>
-<td style="padding-left: 5px;padding-right: 5px;">534</td>
-<td style="padding-left: 5px;padding-right: 5px;">534</td>
+<td style="padding-left: 5px;padding-right: 5px;">Statistic</td>
+<td style="padding-left: 5px;padding-right: 5px;">90.416</td>
+<td style="padding-left: 5px;padding-right: 5px;">77.265</td>
+<td style="padding-left: 5px;padding-right: 5px;">53.462</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">P Value</td>
+<td style="padding-left: 5px;padding-right: 5px;">0.000</td>
+<td style="padding-left: 5px;padding-right: 5px;">0.000</td>
+<td style="padding-left: 5px;padding-right: 5px;">0.000</td>
+</tr>
+<tr>
+<td style="padding-left: 5px;padding-right: 5px;">DF Resid.</td>
+<td style="padding-left: 5px;padding-right: 5px;">532.000</td>
+<td style="padding-left: 5px;padding-right: 5px;">531.000</td>
+<td style="padding-left: 5px;padding-right: 5px;">530.000</td>
 </tr>
 <tr style="border-bottom: 2px solid #000000;">
-<td style="padding-left: 5px;padding-right: 5px;">RMSE</td>
-<td style="padding-left: 5px;padding-right: 5px;">0.489</td>
-<td style="padding-left: 5px;padding-right: 5px;">0.470</td>
-<td style="padding-left: 5px;padding-right: 5px;">0.462</td>
+<td style="padding-left: 5px;padding-right: 5px;">nobs</td>
+<td style="padding-left: 5px;padding-right: 5px;">534</td>
+<td style="padding-left: 5px;padding-right: 5px;">534</td>
+<td style="padding-left: 5px;padding-right: 5px;">534</td>
 </tr>
 </tbody>
 <tfoot>
