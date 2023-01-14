@@ -1621,7 +1621,7 @@ Script」をクリックする</p>
 <p>分析対象のデータや計算結果の値などのデータを格納するもののことを<strong>オブジェクト</strong>（object）と呼ぶ。</p>
 <p>あるオブジェクトに何らかの値を代入するときは，<code>=</code>や<code>&lt;-</code>という記号（演算子）を使う。<br />
 （なお，Rは<code>&lt;-</code>による代入のほうが正統な記法である）</p>
-<p>RStudio上では，<code>&lt;-</code>は<code>Ctrl</code>と<code>-</code>のキーを同時に押すことで簡単に入力できる。</p>
+<p>RStudio上では，<code>&lt;-</code>は<code>Alt</code>と<code>-</code>のキーを同時に押すことで簡単に入力できる（Macの場合は<code>Option + -</code>）。</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>x <span class="ot">&lt;-</span> <span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span>  <span class="co"># オブジェクト x に 1+1の演算結果を代入</span></span></code></pre></div>
 </div>
 <div id="オブジェクトの確認" class="section level2" number="3.2">
@@ -1718,19 +1718,26 @@ Script」をクリックする</p>
 <div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>LETTERS</span></code></pre></div>
 <pre><code>##  [1] &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;D&quot; &quot;E&quot; &quot;F&quot; &quot;G&quot; &quot;H&quot; &quot;I&quot; &quot;J&quot; &quot;K&quot; &quot;L&quot; &quot;M&quot; &quot;N&quot; &quot;O&quot; &quot;P&quot; &quot;Q&quot; &quot;R&quot; &quot;S&quot;
 ## [20] &quot;T&quot; &quot;U&quot; &quot;V&quot; &quot;W&quot; &quot;X&quot; &quot;Y&quot; &quot;Z&quot;</code></pre>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>LETTERS[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">12</span>, <span class="dv">23</span>)] <span class="co">#lLETTERSの1,12,23の要素抜出</span></span></code></pre></div>
+<p>ベクトルの要素を取り出すには，<code>ベクトル[要素の番号]</code>
+のように指定する。</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>LETTERS[<span class="dv">1</span>] <span class="co"># LETTERSの最初の要素</span></span></code></pre></div>
+<pre><code>## [1] &quot;A&quot;</code></pre>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>] <span class="co"># LETTERSの1~3番目の要素</span></span></code></pre></div>
+<pre><code>## [1] &quot;A&quot; &quot;B&quot; &quot;C&quot;</code></pre>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>LETTERS[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">12</span>, <span class="dv">23</span>)] <span class="co"># LETTERSの1,12,23番号の要素</span></span></code></pre></div>
 <pre><code>## [1] &quot;A&quot; &quot;L&quot; &quot;W&quot;</code></pre>
 </div>
 </div>
 <div id="関数" class="section level1" number="5">
 <h1><span class="header-section-number">5</span> 関数</h1>
 <p>何らかの処理を行う機能を持ったオブジェクトを<strong>関数</strong>（function）という。</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">#関数</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>) <span class="co">#1~100の合計</span></span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">100</span>) <span class="co"># sum: 数値ベクトルの合計値を返す</span></span></code></pre></div>
 <pre><code>## [1] 5050</code></pre>
+<div class="sourceCode" id="cb27"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(LETTERS) <span class="co"># length: ベクトルの長さ（要素数）を返す</span></span></code></pre></div>
+<pre><code>## [1] 26</code></pre>
 <div id="ヘルプ" class="section level2" number="5.1">
 <h2><span class="header-section-number">5.1</span> ヘルプ</h2>
-<p>関数の使い方など，わからないことがある場合はヘルプを参照するのが便利である。</p>
+<p>関数の使い方など，わからないことがある場合はヘルプを参照すると便利である。</p>
 <p>ヘルプは</p>
 <ol style="list-style-type: decimal">
 <li>調べたい関数名を<code>help()</code>に入れて実行する</li>
@@ -1738,7 +1745,7 @@ Script」をクリックする</p>
 <li>（RStudioの場合）関数名にカーソルを置いた状態で<code>F1</code>キーを押す</li>
 </ol>
 <p>といった方法で呼び出すことができる。</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>?sum</span></code></pre></div>
+<div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>?sum</span></code></pre></div>
 </div>
 </div>
 <div id="データフレーム" class="section level1" number="6">
@@ -1750,10 +1757,10 @@ frame）とは，Excelのワークシートのようにデータを表形式で�
 <div id="データフレームの作成" class="section level2" number="6.1">
 <h2><span class="header-section-number">6.1</span>
 データフレームの作成</h2>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(クラス <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>                 　　英語 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>                     数学 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>))</span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>df1</span></code></pre></div>
+<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(クラス <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                  英語 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>                  数学 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>))</span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>df1</span></code></pre></div>
 <pre><code>##   クラス 英語 数学
 ## 1      B   79   75
 ## 2      A   91   81
@@ -1765,32 +1772,27 @@ frame）とは，Excelのワークシートのようにデータを表形式で�
 <p><code>df[行番号,列番号]</code>のように座標を指定して要素を取り出すことができる。下記のコードの前に
 <code>x &lt;- ...</code>
 などとして新しいオブジェクト（数値、ベクトル、データフレーム）にすることもできる。</p>
-<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">1</span>, ] <span class="co"># 1行目を表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">1</span>, ] <span class="co"># 1行目を表示</span></span></code></pre></div>
 <pre><code>##   クラス 英語 数学
 ## 1      B   79   75</code></pre>
-<div class="sourceCode" id="cb28"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>df1[ ,<span class="dv">2</span>] <span class="co"># 2列目を表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>df1[ ,<span class="dv">2</span>] <span class="co"># 2列目を表示</span></span></code></pre></div>
 <pre><code>## [1] 79 91 89</code></pre>
-<div class="sourceCode" id="cb30"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">2</span>] <span class="co"># 2列目をデータフレームとして表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">2</span>] <span class="co"># 2列目をデータフレームとして表示</span></span></code></pre></div>
 <pre><code>##   英語
 ## 1   79
 ## 2   91
 ## 3   89</code></pre>
-<div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>] <span class="co">#1~3行の1~3列を表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>] <span class="co"># 1~3行の1~3列を表示</span></span></code></pre></div>
 <pre><code>##   クラス 英語 数学
 ## 1      B   79   75
 ## 2      A   91   81
 ## 3      A   89   92</code></pre>
-<div class="sourceCode" id="cb34"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>), <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">3</span>)] <span class="co">#1,2,3行の1,2,3列を表示</span></span></code></pre></div>
-<pre><code>##   クラス 英語 数学
-## 1      B   79   75
-## 2      A   91   81
-## 3      A   89   92</code></pre>
-<div class="sourceCode" id="cb36"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>)] <span class="co">#1,3行の1,3列を表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>)] <span class="co"># 1,3行の1,3列を表示</span></span></code></pre></div>
 <pre><code>##   クラス 数学
 ## 1      B   75
 ## 3      A   92</code></pre>
 <p><code>df[&quot;列名&quot;]</code>や<code>df$クラス</code>のように列を指定することもできる</p>
-<div class="sourceCode" id="cb38"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="st">&quot;クラス&quot;</span>]</span></code></pre></div>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="st">&quot;クラス&quot;</span>]</span></code></pre></div>
 <pre><code>##   クラス
 ## 1      B
 ## 2      A
@@ -1823,40 +1825,40 @@ frame）とは，Excelのワークシートのようにデータを表形式で�
 <p>csvやxlsxのデータを読み込む場合はファイルが存在する場所を指定する必要があるため，ワークスペースを意識する必要がある。</p>
 <p>（RStudio
 Cloudではあまり意識しなくてもよいが，クラウドでなく手元のパソコンの中でRStudioを使う際には重要になる）</p>
-<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ワークスペース</span></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">getwd</span>()  <span class="co"># ワークスペースを調べる（get working directory）</span></span></code></pre></div>
+<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ワークスペース</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="fu">getwd</span>()  <span class="co"># ワークスペースを調べる（get working directory）</span></span></code></pre></div>
 <pre><code>## [1] &quot;C:/Users/mitama/Documents/github-local/econome_ml_with_R&quot;</code></pre>
-<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;./&quot;</span>) <span class="co"># ワークスペースの場所を設定する</span></span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="co"># &quot;./&quot;は現在のフォルダを指すのでsetwd(&quot;./&quot;) は実質なにも指定していない</span></span></code></pre></div>
+<div class="sourceCode" id="cb46"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;./&quot;</span>) <span class="co"># ワークスペースの場所を設定する</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="co"># &quot;./&quot;は現在のフォルダを指すのでsetwd(&quot;./&quot;) は実質なにも指定していない</span></span></code></pre></div>
 </div>
 <div id="csvデータの書き出し" class="section level2" number="7.2">
 <h2><span class="header-section-number">7.2</span>
 csvデータの書き出し</h2>
 <p>データの書き出しには<code>write.csv()</code>関数を使う。</p>
-<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co">#データをcsvファイルに書き出す</span></span>
-<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(df1, <span class="st">&quot;df1.csv&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co">#データをcsvファイルに書き出す</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(df1, <span class="st">&quot;df1.csv&quot;</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
 <p>なお，<code>row.names = FALSE</code>というオプションの<strong>引数</strong>（argument）は，行番号をcsvに含めずに保存することを指定するものである。（こうしないと行番号の列を含んだ状態でcsvが保存される）</p>
 </div>
 <div id="csvデータの読み込み" class="section level2" number="7.3">
 <h2><span class="header-section-number">7.3</span>
 csvデータの読み込み</h2>
 <p>データの読み込みには<code>read.csv()</code>関数を使う。</p>
-<div class="sourceCode" id="cb44"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co">#データをcsvファイルから読み込んでdf2という名前にする</span></span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>df2 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;df1.csv&quot;</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb48"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="co">#データをcsvファイルから読み込んでdf2という名前にする</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>df2 <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">&quot;df1.csv&quot;</span>)</span></code></pre></div>
 </div>
 <div id="colmeans" class="section level2" number="7.4">
 <h2><span class="header-section-number">7.4</span> colMeans()</h2>
 <p><code>colMeans()</code>はデータフレームの各列に対して平均値の計算（ベクトルの場合は<code>mean()</code>関数が使える）を行った結果を返す関数である。以下は、すべて同じ結果を返す。</p>
-<div class="sourceCode" id="cb45"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df2[<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>]) <span class="co"># 2~3行の2~3列の平均を表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df2[<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>]) <span class="co"># 2~3行の2~3列の平均を表示</span></span></code></pre></div>
 <pre><code>## 英語 数学 
 ## 90.0 86.5</code></pre>
-<div class="sourceCode" id="cb47"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df2[<span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>), <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>)]) <span class="co"># 2,3行の2,3列の平均を表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df2[<span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>), <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">3</span>)]) <span class="co"># 2,3行の2,3列の平均を表示</span></span></code></pre></div>
 <pre><code>## 英語 数学 
 ## 90.0 86.5</code></pre>
-<div class="sourceCode" id="cb49"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df2[<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>,<span class="sc">-</span><span class="dv">1</span>]) <span class="co"># 2~3行の1列目以外の平均を表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df2[<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>,<span class="sc">-</span><span class="dv">1</span>]) <span class="co"># 2~3行の1列目以外の平均を表示</span></span></code></pre></div>
 <pre><code>## 英語 数学 
 ## 90.0 86.5</code></pre>
-<div class="sourceCode" id="cb51"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df2[<span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>),<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span>)]) <span class="co"># 2,3行の1列目以外の平均を表示</span></span></code></pre></div>
+<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df2[<span class="fu">c</span>(<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>),<span class="sc">-</span><span class="fu">c</span>(<span class="dv">1</span>)]) <span class="co"># 2,3行の1列目以外の平均を表示</span></span></code></pre></div>
 <pre><code>## 英語 数学 
 ## 90.0 86.5</code></pre>
 </div>
@@ -1864,29 +1866,29 @@ csvデータの読み込み</h2>
 <div id="因子factor型" class="section level1" number="8">
 <h1><span class="header-section-number">8</span> 因子（factor）型</h1>
 <p>文字列と似たデータ型で<strong>因子</strong>（factor）型というものがある。</p>
-<div class="sourceCode" id="cb53"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 因子(ファクター)</span></span>
-<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>classes <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>クラス)</span>
-<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>classes</span></code></pre></div>
+<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 因子(ファクター)</span></span>
+<span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>classes <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>クラス)</span>
+<span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>classes</span></code></pre></div>
 <pre><code>## [1] B A A
 ## Levels: A B</code></pre>
-<div class="sourceCode" id="cb55"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(classes) <span class="co"># str() = structure</span></span></code></pre></div>
+<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(classes) <span class="co"># str() = structure</span></span></code></pre></div>
 <pre><code>##  Factor w/ 2 levels &quot;A&quot;,&quot;B&quot;: 2 1 1</code></pre>
 <p><code>str()</code>というデータの内部構造を表示する関数を使うと，<code>classes</code>は因子型であり，値の水準（levels）が<code>&quot;A&quot;,&quot;B&quot;</code>の2つあり，内部的には2,1,1と数値で保持されていることがわかる。</p>
 <div id="データ型の変換" class="section level2" number="8.1">
 <h2><span class="header-section-number">8.1</span> データ型の変換</h2>
 <p><code>as.factor()</code>と同様に<code>as.character()</code>を使えば文字列型に戻すことができる。</p>
-<div class="sourceCode" id="cb57"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(<span class="fu">as.character</span>(classes))</span></code></pre></div>
+<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(<span class="fu">as.character</span>(classes))</span></code></pre></div>
 <pre><code>##  chr [1:3] &quot;B&quot; &quot;A&quot; &quot;A&quot;</code></pre>
 </div>
 <div id="参考-文字列型の因子型への自動変換" class="section level2" number="8.2">
 <h2><span class="header-section-number">8.2</span> （参考）
 文字列型の因子型への自動変換</h2>
 <p>バージョン4.0.0より前のRではデータフレーム作成時（<code>data.frame()</code>）やcsvの読み込み時（<code>read.csv()</code>）には，文字列型のデータは因子型に自動的に変換する処理が<code>data.frame()</code>や<code>read.csv()</code>の関数ではデフォルト設定となっていたため、不意に因子型に遭遇することがあった。もし古いRを使っていて自動変換を防ぎたい場合は，<code>stringsAsFactors = FALSE</code>という引数を追加して関数を実行すればよい。</p>
-<div class="sourceCode" id="cb59"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>df3 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(クラス <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>                  英語 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</span>
-<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>                  数学 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>),</span>
-<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(df3)</span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>df3 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(クラス <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>                  英語 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>                  数学 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>),</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(df3)</span></code></pre></div>
 <pre><code>## &#39;data.frame&#39;:    3 obs. of  3 variables:
 ##  $ クラス: chr  &quot;B&quot; &quot;A&quot; &quot;A&quot;
 ##  $ 英語  : num  79 91 89
@@ -1904,11 +1906,11 @@ csvデータの読み込み</h2>
 <p>リストの中にリストを内包するようなこともできる。</p>
 <div id="リストの作成" class="section level3" number="9.1.1">
 <h3><span class="header-section-number">9.1.1</span> リストの作成</h3>
-<div class="sourceCode" id="cb61"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="co"># リストの作成</span></span>
-<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>list_ex <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">vector =</span> <span class="fu">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>, <span class="st">&quot;C&quot;</span>), </span>
-<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">df =</span> df1,</span>
-<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">list =</span> <span class="fu">list</span>(LETTERS, letters))</span>
-<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>list_ex</span></code></pre></div>
+<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co"># リストの作成</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>list_ex <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">vector =</span> <span class="fu">c</span>(<span class="st">&quot;A&quot;</span>, <span class="st">&quot;B&quot;</span>, <span class="st">&quot;C&quot;</span>), </span>
+<span id="cb65-3"><a href="#cb65-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">df =</span> df1,</span>
+<span id="cb65-4"><a href="#cb65-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">list =</span> <span class="fu">list</span>(LETTERS, letters))</span>
+<span id="cb65-5"><a href="#cb65-5" aria-hidden="true" tabindex="-1"></a>list_ex</span></code></pre></div>
 <pre><code>## $vector
 ## [1] &quot;A&quot; &quot;B&quot; &quot;C&quot;
 ## 
@@ -1931,15 +1933,15 @@ csvデータの読み込み</h2>
 <h3><span class="header-section-number">9.1.2</span>
 リストの要素へのアクセス</h3>
 <p>要素に名前がついていれば<code>list$要素名</code>で参照できる</p>
-<div class="sourceCode" id="cb63"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="co"># リストの中のdfという要素（データフレーム）の取り出し</span></span>
-<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>list_ex<span class="sc">$</span>df</span></code></pre></div>
+<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co"># リストの中のdfという要素（データフレーム）の取り出し</span></span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>list_ex<span class="sc">$</span>df</span></code></pre></div>
 <pre><code>##   クラス 英語 数学
 ## 1      B   79   75
 ## 2      A   91   81
 ## 3      A   89   92</code></pre>
 <p>要素に名前がついていない場合，要素の番号（<code>list[[i]]</code>）を指定して参照する</p>
-<div class="sourceCode" id="cb65"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="co"># リストの中のlistという要素（リスト）の第一要素([[1]])の取り出し</span></span>
-<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a>list_ex<span class="sc">$</span>list[[<span class="dv">1</span>]]</span></code></pre></div>
+<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co"># リストの中のlistという要素（リスト）の第一要素([[1]])の取り出し</span></span>
+<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a>list_ex<span class="sc">$</span>list[[<span class="dv">1</span>]]</span></code></pre></div>
 <pre><code>##  [1] &quot;A&quot; &quot;B&quot; &quot;C&quot; &quot;D&quot; &quot;E&quot; &quot;F&quot; &quot;G&quot; &quot;H&quot; &quot;I&quot; &quot;J&quot; &quot;K&quot; &quot;L&quot; &quot;M&quot; &quot;N&quot; &quot;O&quot; &quot;P&quot; &quot;Q&quot; &quot;R&quot; &quot;S&quot;
 ## [20] &quot;T&quot; &quot;U&quot; &quot;V&quot; &quot;W&quot; &quot;X&quot; &quot;Y&quot; &quot;Z&quot;</code></pre>
 </div>
@@ -1955,14 +1957,14 @@ csvデータの読み込み</h2>
 <div id="行列の作成" class="section level3" number="9.2.1">
 <h3><span class="header-section-number">9.2.1</span> 行列の作成</h3>
 <p>行列は基本的にひとつのベクトルを用意して行数（nrow）や列数（ncol）を指定して作成する</p>
-<div class="sourceCode" id="cb67"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ベクトルから行列を作る場合</span></span>
-<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a><span class="fu">matrix</span>(<span class="at">data =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">3</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb71"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ベクトルから行列を作る場合</span></span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a><span class="fu">matrix</span>(<span class="at">data =</span> <span class="fu">c</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>##      [,1] [,2] [,3]
 ## [1,]    1    3    5
 ## [2,]    2    4    6</code></pre>
 <p><code>as.matrix()</code>関数でデータフレームを行列にすることもできる。</p>
-<div class="sourceCode" id="cb69"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="co"># データフレームの行列への変換</span></span>
-<span id="cb69-2"><a href="#cb69-2" aria-hidden="true" tabindex="-1"></a><span class="fu">as.matrix</span>(df1[,<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>])</span></code></pre></div>
+<div class="sourceCode" id="cb73"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a><span class="co"># データフレームの行列への変換</span></span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a><span class="fu">as.matrix</span>(df1[,<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>])</span></code></pre></div>
 <pre><code>##      英語 数学
 ## [1,]   79   75
 ## [2,]   91   81
