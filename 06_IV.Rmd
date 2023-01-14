@@ -44,7 +44,6 @@ pacman::p_load(tidyverse,
                AER, 
                estimatr, 
                texreg, 
-               ivpack, 
                DiagrammeR)
 ```
 
@@ -362,17 +361,19 @@ texreg::htmlreg(list(iv_reg, iv_reg_robust),
 ```
 
 
-## 参考：`ivreg()`と{ivpack}を使ったロバスト標準誤差の計算
-`ivreg()`と{ivpack}パッケージを使うことにより、ロバスト標準誤差を計算することもできる。ただし、{estimatr}パッケージがあるため、現在は使う必要はない。
+<!-- NOTE: ivpackはCRANから削除されたため非表示 -->
+<!-- ## 参考：`ivreg()`と{ivpack}を使ったロバスト標準誤差の計算 -->
+<!-- `ivreg()`と{ivpack}パッケージを使うことにより、ロバスト標準誤差を計算することもできる。ただし、{estimatr}パッケージがあるため、現在は使う必要はない。 -->
 
 
-`robust.se`関数を用いてロバスト標準誤差を計算し、上記の均一分散を仮定した場合の標準誤差と比較する。
-```{r}
-iv_reg_robust2 <- robust.se(iv_reg)
-texreg::screenreg(list(iv_reg, iv_reg_robust2), 
-                include.ci = FALSE, 
-                digits = 3)
-```
+<!-- `robust.se`関数を用いてロバスト標準誤差を計算し、上記の均一分散を仮定した場合の標準誤差と比較する。 -->
+<!-- ```{r} -->
+<!-- iv_reg_robust2 <- robust.se(iv_reg) -->
+<!-- texreg::screenreg(list(iv_reg, iv_reg_robust2),  -->
+<!--                 include.ci = FALSE,  -->
+<!--                 digits = 3) -->
+<!-- ``` -->
+
 
 # 参考文献
 
