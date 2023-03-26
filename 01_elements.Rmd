@@ -121,7 +121,7 @@ Rの基本的なデータ型は次の通り。
 | 整数（integer）     | 1、10、100        |
 | 実数（double）      | 0.1、3.14         |
 | 文字列（character） | "A"、"あいうえお" |
-| 論理値（bool）      | TRUE、FALSE       |
+| 論理値（bool）      | TRUE、FALSE、T、F |
 
 
 # ベクトル
