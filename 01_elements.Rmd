@@ -39,13 +39,13 @@ knitr::opts_chunk$set(warning = F)
 
 # Rの起動
 
-## RStudio Cloudの用意
+## RStudioのセットアップ
 
-RStudio Cloudというサービスを利用して、次の手順によりRを実行する
+Posit Cloud（旧名：RStudio Cloud）というサービスを利用して、次の手順によりRの開発環境を準備する
 
-1. RStudio Cloud（ https://rstudio.cloud/ ）に行き、「Get Started」をクリックする
-2. 「Sign up with Google」などでログインする（立教のアカウントで入れる）
-3. 「New Project」をクリックして新しいプロジェクトを立ち上げる
+1. Posit Cloud（ https://posit.cloud/ ）に行き、右上の「Log In」をクリックする
+2. 「Log In with Google」から立教のアカウントを選び、ログインする
+3. 「New Project」から「New RStudio Project」をクリックして新しいプロジェクトを立ち上げる
 
 ## RStudioの基本操作
 
