@@ -96,14 +96,16 @@ ggplotは次のように２つ以上の手順をとり、２つ以上の関数�
 
 ```{r}
 # 棒グラフをつくり、gに代入する
-g <- ggplot(df, aes(x = class)) + # dfのデータでキャンバスを作る
+g <- ggplot(df, aes(x = `class`)) + # dfのデータでキャンバスを作る（`class`と`で囲っているのは関数のclass()と名前が被っているため）
   geom_bar() + # キャンバスに棒グラフgeom_bar()を重ねる
-  xlab("Class") # X軸タイトルの変更（R Studio Cloudでは日本語文字化けするため）
+  xlab("Class") # X軸タイトルの変更（R Studio Cloudでは日本語が文字化けするため）
 
 g # 表示
 ```
 
-- 参考：ggplot2のチートシートは、[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の下の方の「Japanese Translations – 日本語翻訳」で見ることができる。
+
+**（参考）** ggplot2のチートシートは、[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の「[Japanese Translations – 日本語翻訳](https://posit.co/resources/cheatsheets/?type=translations/#translation-7)」で見ることができる。
+
 
 ## plotly
 
@@ -137,11 +139,13 @@ $$
 \sigma^2=\frac{1}{n}\sum_{i=1}^{n}(x_i-\bar{x})^2
 $$
 
-ただし、Rの`var()`関数の算出する値は、母集団の分散（母分散）の不偏推定量としての分散すなわち**不偏分散**である。
+ただし、Rの`var()`関数の算出する値は、母集団の分散（母分散）の不偏推定量としての分散すなわち**不偏分散**
 
 $$
 s^2=\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2
 $$
+
+である。
 
 ```{r, eval=F, include=F}
 simple_var <- function(x) {
@@ -252,11 +256,11 @@ cor(df[,3:5])
 ```{r}
 # ヒストグラム
 ggplot(df, aes(x = english)) +
-  geom_histogram(bins = 10) + #指定しない場合はbins binsは棒の数。=30になる
-  xlab("English") #X軸タイトルを変更(R Studio cloudは日本語文字化けするため)
+  geom_histogram(bins = 10) + # binsは棒の数。指定しない場合はbins=30になる
+  xlab("English") # X軸タイトルを変更(R Studio cloudは日本語文字化けするため)
 ```
 
-R本体の機能でヒストグラムを描く場合は`hist()`を使う
+なおR本体の機能でヒストグラムを描く場合は`hist()`を使う
 
 ```{r}
 # ヒストグラム
@@ -267,7 +271,7 @@ hist(x = df[["math"]])
 
 ```{r}
 # ggplotの棒グラフ
-g <- ggplot(df, aes(x = class)) +
+g <- ggplot(df, aes(x = `class`)) +
   geom_bar() +
   xlab("Class") #X軸タイトルを変更
 
@@ -277,6 +281,8 @@ g
 #plolyで表示
 plotly::ggplotly(g) 
 ```
+
+
 
 
 # 2変数のグラフ
@@ -306,9 +312,9 @@ plotly::ggplotly(g)
 ```{r}
 ggplot(df, aes(x = english, y = japanese)) +
   geom_point() +
-  stat_smooth(method = "lm", se =FALSE, colour = "blue") + # lm:最小二乗法、信頼区間は表示させない(FALSE)、色は青(blue)
-  xlab("English") + #X軸タイトルを変更
-  ylab("Japanese") #y軸タイトルを変更
+  stat_smooth(method = "lm", se =FALSE, colour = "blue") + # lm: 最小二乗法、信頼区間は表示させない(FALSE)、色は青(blue)
+  xlab("English") + # X軸タイトルを変更
+  ylab("Japanese")  # y軸タイトルを変更
 ```
 
 ## 折れ線グラフ
@@ -319,7 +325,7 @@ Excelで言うところの「マーカー付き折れ線グラフ」にしたい
 
 ```{r}
 ggplot(df, aes(x = english, y = japanese)) +
-  geom_line()+ # 折れ線
+  geom_line() +   # 折れ線
   geom_point() + # マーカー
   xlab("English") +
   ylab("Japanese")
@@ -405,7 +411,7 @@ g     #ggplotly(g)だと箱ひげ図が表示されない
 
 ```{r}
 ggplot(df, aes(x = english, y = japanese, fill = class, color = class)) +
-  geom_point()+
+  geom_point() +
   labs(title = "英語と国語の得点の散布図をクラスごとに塗り分けたもの") +
   xlab("English") +
   ylab("Japanese")
@@ -439,20 +445,37 @@ ggplotly(g)
 ggsave(plot = g, file = "bubble_chart.png")    # violin_box.pngとして保存される（必要に応じて保存場所は指定する）
 ```
 
+
+# （参考）事前に集計をしてからplotを描く場合{-}
+
+`geom_bar()`はstatという引数があり、デフォルトでは`geom_bar(stat="count")`と、観測値の数をカウントして表示するようになっている。そのため`aes()`にはxを指定するだけで自動的にy軸も描画された。
+
+事前に集計を行って自分でx軸とy軸の変数を用意し、`geom_bar(stat="identity")`と指定することもできる。
+
+```{r}
+# クラスごとに国語の平均点を集計
+mean_ja <- df %>% group_by(class) %>% summarise(mean_ja=mean(japanese))
+mean_ja
+
+# プロット
+mean_ja %>% ggplot(aes(x=`class`, y=mean_ja)) + geom_bar(stat="identity")
+```
+
+```{r}
+# pivot_longerで縦持ちデータに変え、科目ごとに平均得点を計算して描画する
+g <- df %>% tidyr::pivot_longer(cols=c(japanese, english, math), names_to="subject", values_to="score") %>%
+  dplyr::group_by(subject) %>% dplyr::summarise(mean_score=mean(score)) %>%
+  ggplot(aes(x=subject, y=mean_score)) + geom_bar(stat="identity")
+ggplotly(g)
+```
+
+
 # 参考文献
 
 データ可視化については、様々な情報やテキストがある。また、グーグルの画像検索から自分が作りたいグラフ・イメージを探し、そのRコードを参考にするのも一つの方法である。
 
 - Rob Kabacoff(2020) [Data Visualization with R](https://rkabacoff.github.io/datavis/)
-
-- キーラン・ヒーリー(2021) [『データ分析のためのデータ可視化入門』] (https://www.kspub.co.jp/book/detail/5164044.html) 講談社
-
+- キーラン・ヒーリー(2021) [『データ分析のためのデータ可視化入門』](https://www.kspub.co.jp/book/detail/5164044.html) 講談社
 - ill-identified diary (2021) [『データ分析のためのデータ可視化入門』と最近の R グラフィックスパッケージ事情](https://ill-identified.hatenablog.com/entry/2021/02/03/224034)
-
 - [Using Skimr](https://cran.r-project.org/web/packages/skimr/vignettes/skimr.html)
-
-
-
-
-
 
