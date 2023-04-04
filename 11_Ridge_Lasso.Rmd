@@ -1,5 +1,5 @@
 ---
-title: "Rで学ぶ計量経済学と機械学習 11<br> <br> 機械学習2：リッジ回帰とラッソ回帰"
+title: "Rで学ぶ計量経済学と機械学習 11<br> <br> 機械学習2：リッジ回帰とlasso"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 date: "`r Sys.Date()`"
 output:
@@ -35,8 +35,10 @@ $$
 
 # 本講義の目的
 
-- リッジ回帰とラッソ回帰の考え方を学ぶ
-- リッジ回帰とラッソ回帰を試行してみる。
+- リッジ回帰とlassoの考え方を学ぶ
+- 交差検証の考え方を学ぶ
+- ハイパーパラメータについて学ぶ
+
 
 # パッケージの読み込み
 
@@ -526,7 +528,7 @@ data_for_plot %>% ggplot(aes(x = x,
 ```
 
 
-# ラッソ回帰
+# lasso
 
 ## 特徴量選択
 
@@ -559,7 +561,7 @@ ggplot(result %>% gather(key, error, -p),
 次節で紹介するlassoは特徴量エンジニアリングのうち**特徴量選択**をデータから自動的に行うことができる手法である。
 
 
-## ラッソ回帰
+## lasso
 
 **lasso**（least absolute shrinkage and selection operator）は
 $$
@@ -573,7 +575,7 @@ $$
 \hat{\boldsymbol{\beta}}^{lasso} = \argmin_{\boldsymbol{\beta}} \left\{\sum_{i=1}^n(y_i - \hat{y}_i)^2 + \lambda \sum_{j=1}^p |\beta_j|\right\}
 $$
 
-となる。上記の式は、リッジ回帰のものと非常に似ているが、正則化項が$\sum_{j=1}^p \beta_j^2$ではなく$\sum_{j=1}^p |\beta_j|$である点が異なっている。なお、前者を$L_2$正則化項、後者を$L_1$正則化項と呼ぶ。
+となる。上記の式は、リッジ回帰のものと非常に似ているが、正則化項が$\sum_{j=1}^p \beta_j^2$ではなく$\sum_{j=1}^p |\beta_j|$である点が異なっている。なお、前者を$L_2$正則化、後者を$L_1$正則化と呼ぶ。
 
 最小二乗法による推定値($(\hat{\beta}_1^{LS}, \hat{\beta}_2^{LS})$)とlassoによる推定値($(\hat{\beta}_1^{lasso}, \hat{\beta}_2^{lasso})$)を視覚的に比較したものが下の図である。
 
@@ -694,7 +696,7 @@ colnames(coef_df) <- c("OLS","Ridge","Lasso")
 knitr::kable(coef_df)
 ```
 
-テスト用データに対する予測値は次のような分布になった。
+テスト用データに対する予測値は次のようになった。
 
 ```{r, echo=F}
 # 予測値のオブジェクト名を一応変えておく
@@ -783,9 +785,12 @@ str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
 
 # 参考文献
 
-James他(2018)『[Rによる統計的学習入門](https://www.asakura.co.jp/books/isbn/978-4-254-12224-4/)』朝倉書店 ([原著ウェブサイト](http://www-bcf.usc.edu/~gareth/ISL/)(原著PDFあり))
+Jamesほか（2018）『[Rによる統計的学習入門](https://www.asakura.co.jp/books/isbn/978-4-254-12224-4/)』、朝倉書店。 （[原著ウェブサイト](https://www.statlearning.com/)、[原著PDF](https://hastie.su.domains/ISLR2/ISLRv2_website.pdf)）
 
-岩波データサイエンス刊行委員会編(2017)『[岩波データサイエンス Vol.5 スパ―スモデリングと多変量データ解析](https://www.iwanami.co.jp/book/b280246.html)』
+Hastieほか（2014）『[統計的学習の基礎-データマイニング・推論・予測](https://www.kyoritsu-pub.co.jp/book/b10004471.html)』、共立出版。
+（[原著ウェブサイト](https://hastie.su.domains/ElemStatLearn/)、[原著PDF](https://hastie.su.domains/ElemStatLearn/printings/ESLII_print12_toc.pdf)）
 
+岩波データサイエンス刊行委員会編（2017）『[岩波データサイエンス Vol.5 スパ―スモデリングと多変量データ解析](https://www.iwanami.co.jp/book/b280246.html)』
 
+川野ほか（2018） 『[スパース推定法による統計モデリング](https://www.kyoritsu-pub.co.jp/book/b10003918.html)』、共立出版。
 
