@@ -102,41 +102,40 @@ ggplot(data_frame(y, x),
         axis.ticks = element_blank())
 ```
 
-**線形回帰**（linear regression）は、予測の目的変数$y_i$と説明変数$x_{i1}, x_{i2}, ..., x_{ip}$の間に次のような線形関係を仮定したモデルを置いて予測する。
-$$
-y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \cdots + \beta_p x_{ip} + \varepsilon_i
-$$
-
-ここで$\varepsilon_i$は誤差項である。
-
-## 最小二乗法
-
-<!-- 線形回帰では一般的に最小二乗法という手法でパラメータ$\beta_j \hspace{1em} (j = 1,...,p)$を推定する -->
-
-### 残差平方和の最小化
-
-線形回帰でパラメータ$\boldsymbol{\beta}$（$=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_p\end{pmatrix}$）を推定するために多く使われる方法は**最小二乗法**（OLS: ordinary least squares method）というもので、これは実測値$y_i$と予測値$\hat{y}_i$の**残差平方和（残差二乗和）**（SSR: sum of squared residuals）
+**線形回帰**（linear regression）は、予測の**目的変数**（objective variable, target variable）$y_i$と**特徴量**（feature）$x_{i1}, x_{i2}, ..., x_{im}$の間に次のような線形関係を仮定したモデルを建てて予測を行う[^1]。
 
 $$
-SSR = \sum_{i=1}^n (y_i - \hat{y}_i)^2
+y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \cdots + \beta_m x_{im} + \varepsilon_i
+$$
+
+ここで$\varepsilon_i$は誤差項である。
+
+[^1]: 統計学や計量経済学では$y$は被説明変数、$x$は説明変数のように呼ばれるが、機械学習の文脈ではそれぞれ目的変数、特徴量と呼ばれる。同様に残差（residual）を誤差（error）や損失（loss）と呼ぶ。
+
+## パラメータの推定方法
+
+### 二乗誤差の最小化
+
+線形回帰でパラメータ$\boldsymbol{\beta}=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_m\end{pmatrix}^\top$を推定するために多く使われる方法は**最小二乗法**（OLS: ordinary least squares method）というもので、これは実測値$y_i$と予測値$\hat{y}_i$の二乗誤差$(y_i - \hat{y}_i)^2$の和による誤差関数$L(\boldsymbol{\beta})$
+
+$$
+L(\boldsymbol{\beta})
+= \sum_{i=1}^n (y_i - \hat{y}_i)^2
 $$
 
 を最小にするパラメータ
 
-
 $$
 % 定義
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
-\hat{\boldsymbol{\beta}}^{OLS} = \argmin_{\boldsymbol{b}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
+\hat{\boldsymbol{\beta}}^{OLS} = \argmin_{\boldsymbol{\beta}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
 $$
 
-を採用するというものである。
+を採用するというものである（なお、$\argmin$という記号は「関数の最小値を与える引数」という意味である）。
 
-なお、$\argmin$という記号は「関数の最小値を与える引数」という意味である。
+二乗和誤差$L(\boldsymbol{\beta})$は（パラメータが1つの場合）U字型のカーブを描く関数になる。
 
-SSRは（パラメータが1つの場合）U字型のカーブを描く関数になる。
-
-最小値が１つであり微分可能なので、推定量$\hat{\boldsymbol{\beta}}^{OLS}$を得るための計算が容易であるという便利な特性をもっている。
+最小値が１つであり微分可能なので、推定量$\hat{\boldsymbol{\beta}}^{OLS}$を得るための計算が容易であるという便利な特性をもっている。
 
 ```{r, echo=F}
 # data 
@@ -161,7 +160,7 @@ for(i in 1:length(w)){
 ggplot(data_frame(weight = w, loss = cost_vec),
        aes(x = weight, y = loss))+
   geom_line(color = "SteelBlue")+
-  labs(y = "SSR", x = "Parameter b")+
+  labs(y = "L(β)", x = "β")+
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -170,7 +169,7 @@ ggplot(data_frame(weight = w, loss = cost_vec),
 
 ### 推定量
 
-以下では説明の簡単のために、説明変数が１つの**単回帰モデル**（simple regression model）
+以下では説明の簡単のために、特徴量が１つの**単回帰モデル**（simple regression model）
 
 $$
 y_i = \beta_0 + \beta_1 x_{i} + \varepsilon_i
@@ -178,10 +177,13 @@ $$
 
 の場合で説明していく。
 
-最小二乗法では、残差平方和(RSS)を最小化するようなパラメータ$\beta_j^*$の値を推定するのが目的であり、それはU字型の関数であるRSSの最小値であるので、次の条件（接線の傾きが0であること）を満たすパラメータとなる。
+最小二乗法では二乗和誤差$L(\boldsymbol{\beta})$を最小化するようなパラメータ$\beta_j^*$の値を推定するのが目的である。$L(\boldsymbol{\beta})$は二次元で見たときU字型の関数であるため、最小値は次の条件（接線の傾きが0であること）を満たすパラメータとなる。
 
 $$
-\begin{cases}\frac{\partial SSR}{\partial b_0} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i) = 0\\\frac{\partial SSR}{\partial b_1} = -2 \sum_{i=1}^n (y_i - b_0 - b_1 x_i)x_i = 0\end{cases}
+\begin{cases}
+\frac{\partial L(\boldsymbol{\beta})}{\partial \beta_0} = -2 \sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_i) = 0\\
+\frac{\partial L(\boldsymbol{\beta})}{\partial \beta_1} = -2 \sum_{i=1}^n (y_i - \beta_0 - \beta_1 x_i)x_i = 0
+\end{cases}
 $$
 
 
@@ -202,7 +204,7 @@ ggplot(sse,
   geom_point(aes(x = sse[sse$loss == min(sse$loss),"weight"][[1]],
                  y = min(sse$loss)),
              color = "orange", size = 2)+
-  labs(y = "SSR", x = "Parameter b")+
+  labs(y = "L(β)", x = "β")+
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
@@ -227,7 +229,9 @@ $$
 ## Rでの実践
 
 ### パッケージの読み込み
+
 今回の分析で使うパッケージを読み込む。
+
 ```{r}
 pacman::p_load(tidyverse, 
                AER, # HousePricesデータを使用
@@ -307,6 +311,7 @@ y_train_true = train$price
 ```
 
 予測精度の評価を行うには、何らかの指標を使う必要がある。例えば**平均二乗誤差**（Mean of Squared Error: MSE）のような誤差関数で評価を行う。
+
 $$
 MSE = \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2
 $$
@@ -323,6 +328,7 @@ MSE(y_train_true, y_train_pred)
 MSEは二乗しているため、非常に値が大きくなってしまう。
 
 MSEの平方根をとることでこの点を修正したものが$RMSE$(root mean squared error)である。
+
 $$
 RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2}
 $$
@@ -354,26 +360,30 @@ RMSE(y_test_true, y_test_pred)
 
 # ロジスティック回帰
 
-**ロジスティック回帰**（logistic regression）は、被説明変数に$\{0,1\}$のような二値変数や確率を使う回帰モデルである。
+**ロジスティック回帰**（logistic regression）は、目的変数に$\{0,1\}$のような二値変数や確率を使う回帰モデルである。
 
-説明変数$x_{ij}$の下で被説明変数$y_i$が1の値をとる確率$P(y_i = 1| x_{i1}, x_{i2}, ..., x_{ip})$を$p$、$P(y_i = 0| x_{i1}, x_{i2}, ..., x_{ip})$を$1-p$とおくと、ロジスティック回帰モデルは
+特徴量$x_{i1}, x_{i2}, ..., x_{im}$の下で目的変数$y_i$が1の値をとる確率$P(y_i = 1| x_{i1}, x_{i2}, ..., x_{im})$を$p$、$P(y_i = 0| x_{i1}, x_{i2}, ..., x_{im})$を$1-p$とおくと、ロジスティック回帰モデルは
+
 $$
-\log \left( \frac{p}{1-p} \right)= \beta_0 + \beta_1 x_{i1} + \cdots + \beta_p x_{ip}
+\log \left( \frac{p}{1-p} \right) = \beta_0 + \beta_1 x_{i1} + \cdots + \beta_m x_{im}
 $$
 
 あるいは両辺の指数をとって整理した
+
 $$
-P(y_i = 1| x_{i1}, x_{i2}, ..., x_{ip}) 
-= \frac{\exp(\beta_0 + \beta_1 x_{i1} + \cdots + \beta_p x_{ip})}
-{1 + \exp(\beta_0 + \beta_1 x_{i1} + \cdots + \beta_p x_{ip})}
+P(y_i = 1| x_{i1}, x_{i2}, ..., x_{im}) 
+= \frac{\exp(\beta_0 + \beta_1 x_{i1} + \cdots + \beta_m x_{im})}
+{1 + \exp(\beta_0 + \beta_1 x_{i1} + \cdots + \beta_m x_{im})}
 $$
 と表される。
 
-後者の式
+後者の式の右辺は**ロジスティック・シグモイド関数**（logistic sigmoid function）あるいは単に**シグモイド関数**（sigmoid function）と呼ばれる関数
+
 $$
-\sigma(x) = \frac{\exp(x)}{1 + \exp(x)} = \frac{1}{1 + \exp(-x)}
+\sigma(z) = \frac{\exp(z)}{1 + \exp(z)} = \frac{1}{1 + \exp(-z)}
 $$
-は**ロジスティック・シグモイド関数**（logistic sigmoid function）あるいは単に**シグモイド関数**（sigmoid function）と呼ばれる関数で、任意の数を0から1の範囲に変換するS字型の関数である。
+
+で、任意の数を0から1の範囲に変換する関数である。
 
 
 ```{r, echo=F}
@@ -392,16 +402,21 @@ ggplot(data_frame(x, y),
 ```
 
 
-
-## 最尤法
+## パラメータの推定方法
 
 ロジスティック回帰では**最尤法**（さいゆうほう、method of maximum likelihood）によりパラメータを推定する。
 
-最尤法はデータが従う確率分布を仮定し、そのデータが生成される確率分布として最も尤もらしいパラメータを推定する。
+最尤法は「得られたデータはデータが従う確率分布でもっとも出現確率が高い値が生じたもの」という仮定の下で、その確率分布のパラメータとして最も尤もらしい（最も確率が高くなる）パラメータを推定する。
 
-例えば、あるコインを4回投げて表が1回出たとする。このとき、「このコインを投げて表が出る確率」というパラメータとして最も尤もらしい（妥当な推論となる）のは「4分の1」であると考えるのが最尤法の考え方である。
+例えば、あるコインを4回投げて表が1回出たとする。表が出る回数が二項分布に従うと仮定すると、このデータをもたらす確率が最も高い二項分布は、表が出る確率が「4分の1」の二項分布になる。そのため、このコインが表を出す確率の推定値として「4分の1」を採用する、というのが最尤法の考え方である。
 
-具体的には、コイン投げの結果が従う確率分布を二項分布${}_n\mathrm{C}_kp^k(1-p)^{n-k}$とし、4回投げて表が1回という結果（データ）を踏まえて**尤度関数**（likelihood function）$L(p)$を
+より具体的には、コイン投げの結果が、コインの表が出る回数$k$が、表が出る確率$p$、試行回数$n$の二項分布
+
+$$
+Bin(k|n,p) = {}_n\mathrm{C}_kp^k(1-p)^{n-k}
+$$
+
+に従うと仮定し、4回投げて表が1回という結果（データ）を踏まえて、**尤度関数**（likelihood function）$L(p)$を
 
 $$
 L(p) = {}_4\mathrm{C}_1p^1(1-p)^3
@@ -413,14 +428,14 @@ $$
 
 ```{r, echo=F}
 # 尤度関数
-likelihood = function(p, n = 4, k = 1){
+likelihood <- function(p, n = 4, k = 1){
   choose(n, k) * p^k * (1 - p)^(n-k) # nCk p^k (1-p)^{n-k}
 }
 
 # 描画用データ
-p = 1:100 * 0.01
-L = likelihood(p)
-df = tibble(p, L)
+p <- 1:100 * 0.01
+L <- likelihood(p)
+df <- tibble(p, L)
 
 # plot
 ggplot(df, aes(x = p, y = L))+
@@ -429,12 +444,28 @@ ggplot(df, aes(x = p, y = L))+
 ```
 
 
-ロジスティック回帰の最尤推定では、**ニュートン・ラフソン法**（Newton-Raphson method）や**勾配降下法**（gradient descent method）などを用いて繰り返し近似計算を行うことによって、パラメータを推定する。
+最尤法では一般に解析的に解が求まらないため、ロジスティック回帰の推定では**ニュートン・ラフソン法**（Newton-Raphson method）という方法を用いて数値的に解く。これは尤度が高くなる方向へ少しずつ推定値を変える計算を何度も反復することで推定する。
+
+
+### （参考）対数尤度と交差エントロピー誤差{-}
+
+確率の積は非常に小さな値になってしまうため、実際に計算する際は対数で変換した**対数尤度**（log-likelihood）を使用する。
+
+また統計学の分野では最尤法という言葉を使うことが多いが、機械学習の分野では対数尤度の符号を反転させたもの
+
+$$
+\mathcal{L}(p)
+= - \ln L(p)
+= \sum^N_{i=1} \{ y_i \ln p + (1 - y_i) \ln (1 - p)\}
+$$
+
+を**交差エントロピー誤差**（cross entropy error）と呼ぶ。
 
 
 ## Rでの実践
 
 ### パッケージの読み込み
+
 今回の分析で使うパッケージを読み込む（すでに一度やっているので、飛ばしても良い）。
 
 ```{r}
@@ -578,7 +609,9 @@ $$
 </center>
 
 
-もっともシンプルな考え方で作られていて直感的にもわかりやすいのは正解率である。ただし、世の中の分類問題では、それぞれのカテゴリーの出現数が大きく異なることが多い（例えばローンを返せなくなる人を予測する場合、そうした人は全体の中のごくわずかである）。そのため適合率・再現率といった指標が作られている。
+もっともシンプルな考え方で作られていて直感的にもわかりやすいのは正解率である。ただし、世の中の分類問題では、それぞれのカテゴリーの出現頻度が大きく異なることが少なくない（例えばローンを返せなくなる人を予測する場合、そうした人は全体の中のごくわずかである）。そのため適合率・再現率など正解率以外の様々な評価指標が作られている[^2]。
+
+[^2]: なお、そのようなクラスごとの出現頻度の異なるデータは**不均衡データ**（imbalanced data）と呼ばれ、研究も多い（[大崎、2022](https://www.ai-gakkai.or.jp/resource/my-bookmark/my-bookmark_vol37-no3/)）
 
 
 Rでは`{MLmetrics}`パッケージにそれぞれ用意されている。
@@ -601,9 +634,4 @@ Recall(y_test_pred, y_test_true)
 計量経済学と機械学習の関係については、やや高度な内容だが、下記の文章に詳しい。
 
 - [Katagiri(2020)計量経済学と機械学習の関係‒AI はさだめ, さだめは反事実‒](https://github.com/Gedevan-Aleksizde/20190703_ML_ECON)
-
-
-
-
-
 
