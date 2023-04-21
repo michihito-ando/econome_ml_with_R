@@ -176,14 +176,14 @@ library("tidyverse") # 読み込み
 
 {tidyverse}パッケージで読み込まれるパッケージは、例えば次のようなものである
 
--   前処理を便利にするもの
-    -   [dplyr](http://dplyr.tidyverse.org/)や[tidyr](http://tidyr.tidyverse.org/)：データフレームの操作のためのパッケージ
-    -   [stringr](https://github.com/tidyverse/stringr)：文字列の操作のためのパッケージ
--   既存の関数の機能拡張
-    -   [readr](http://readr.tidyverse.org/)：`read.csv()`関数をもっと便利なものに置き換える
-    -   [readxl](https://readxl.tidyverse.org/)：Excelのファイル（.xlsx）を読み込む関数を提供する
-    -   [tibble](http://tibble.tidyverse.org/)：`data.frame()`関数をもっと便利なものに置き換える
-    -   [ggplot2](http://ggplot2.tidyverse.org/) ：綺麗なグラフやGIS（統計地図）などを描くことができる
+- 前処理を便利にするもの
+  - [dplyr](http://dplyr.tidyverse.org/)や[tidyr](http://tidyr.tidyverse.org/)：データフレームの操作のためのパッケージ
+  - [stringr](https://github.com/tidyverse/stringr)：文字列の操作のためのパッケージ
+- 既存の関数の機能拡張
+  - [readr](http://readr.tidyverse.org/)：`read.csv()`関数をもっと便利なものに置き換える
+  - [readxl](https://readxl.tidyverse.org/)：Excelのファイル（.xlsx）を読み込む関数を提供する
+  - [tibble](http://tibble.tidyverse.org/)：`data.frame()`関数をもっと便利なものに置き換える
+  - [ggplot2](http://ggplot2.tidyverse.org/) ：綺麗なグラフやGIS（統計地図）などを描くことができる
 
 ## 条件指定による行の取り出し
 
@@ -454,7 +454,7 @@ dplyr::full_join(customers, sales, by = "顧客id")
 
 となっている。
 
-<center><img src="02_data_wrangling.assets/join.png" width="50%"/></center>
+<center><img src="02_data_wrangling.assets/join.png" width="50%"></center>
 
 ### inner_join()
 
@@ -551,7 +551,7 @@ df[["名前"]] %>% str_which("川") # "川"が入っている要素の位置
 
 ![](02_data_wrangling.assets/1549118953251.png)
 
-有志による日本語のチートシートは[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の下の方の「Japanese Translations -- 日本語翻訳」で見ることができる。
+有志による日本語のチートシートは[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の下の方の「Japanese Translations - 日本語翻訳」で見ることができる（翻訳版は更新頻度が低く内容がやや古い場合があるので注意）。
 
 # 参考文献
 
