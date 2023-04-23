@@ -31,7 +31,8 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 # 本講義の目的
 
-- ggplotやplotlyなどを用いたデータの可視化やグラフ作成の基礎を学ぶ。
+- 要約統計量の算出方法を学ぶ。
+- ggplotやplotlyなどを用いたデータの可視化の基礎を学ぶ。
 
 # パッケージの読み込み
 
@@ -69,7 +70,6 @@ head(df)
 今回は、`dplyr::rename()`によって変数名を英語に変換してから使う。
 
 ```{r}
-#dfの名前変更
 df <- df %>% dplyr::rename(class = クラス,
                            name = 名前,
                            math = 数学,
@@ -92,13 +92,11 @@ ggplotは次のように２つ以上の手順をとり、２つ以上の関数�
 2. グラフを用意する（`geom_histogram()`などgeom_なんたらという関数）
 3. グラフの装飾のための関数を使う場合は、さらにレイヤーを重ねていく
 
-**※R Studio Cloudで図を描くとき、タイトルや軸タイトルに日本語を使うと文字化けしてしまう。したがって、英語やローマ字を使うか、日本語を使いたい場合はパソコンにRとR Studioをインストールして使用する必要がある。(2019.4.22時点）**
 
 ```{r}
 # 棒グラフをつくり、gに代入する
-g <- ggplot(df, aes(x = `class`)) + # dfのデータでキャンバスを作る（`class`と`で囲っているのは関数のclass()と名前が被っているため）
-  geom_bar() + # キャンバスに棒グラフgeom_bar()を重ねる
-  xlab("Class") # X軸タイトルの変更（R Studio Cloudでは日本語が文字化けするため）
+g <- ggplot(df, aes(x = `class`)) + # dfのデータでキャンバスを作る（`で囲っているのは関数のclass()と名前が被っているため）
+  geom_bar() # キャンバスに棒グラフgeom_bar()を重ねる
 
 g # 表示
 ```
@@ -113,7 +111,6 @@ g # 表示
 
 `ggplotly()`関数を使うと、`{ggplot2}`で描いたグラフをインタラクティブなものに変換できる。
 
-**※R Studio Cloudで　`{ggplotly}`　を使うと、日本語表示は `{ggplot2}` そのものよりも適切に表示されるが、やはり少しおかしい。(2019.4.22時点)**
 
 
 ```{r}
@@ -256,8 +253,7 @@ cor(df[,3:5])
 ```{r}
 # ヒストグラム
 ggplot(df, aes(x = english)) +
-  geom_histogram(bins = 10) + # binsは棒の数。指定しない場合はbins=30になる
-  xlab("English") # X軸タイトルを変更(R Studio cloudは日本語文字化けするため)
+  geom_histogram(bins = 10) # binsは棒の数。指定しない場合はbins=30になる
 ```
 
 なおR本体の機能でヒストグラムを描く場合は`hist()`を使う
@@ -272,8 +268,7 @@ hist(x = df[["math"]])
 ```{r}
 # ggplotの棒グラフ
 g <- ggplot(df, aes(x = `class`)) +
-  geom_bar() +
-  xlab("Class") #X軸タイトルを変更
+  geom_bar()
 
 #グラフ表示
 g
@@ -281,7 +276,6 @@ g
 #plolyで表示
 plotly::ggplotly(g) 
 ```
-
 
 
 
@@ -297,8 +291,8 @@ plotly::ggplotly(g)
 # ggplot
 g <- ggplot(df, aes(x = english, y = japanese)) +
   geom_point() +
-  xlab("English") + #X軸タイトルを変更
-  ylab("Japanese") #y軸タイトルを変更
+  xlab("English") + # X軸のラベルを変更
+  ylab("Japanese") # y軸のラベルを変更
 
 # 散布図表示
 g
@@ -312,9 +306,7 @@ plotly::ggplotly(g)
 ```{r}
 ggplot(df, aes(x = english, y = japanese)) +
   geom_point() +
-  stat_smooth(method = "lm", se =FALSE, colour = "blue") + # lm: 最小二乗法、信頼区間は表示させない(FALSE)、色は青(blue)
-  xlab("English") + # X軸タイトルを変更
-  ylab("Japanese")  # y軸タイトルを変更
+  stat_smooth(method = "lm", se =FALSE, colour = "blue") # lm: 最小二乗法、信頼区間は表示させない(FALSE)、色は青(blue)
 ```
 
 ## 折れ線グラフ
@@ -325,11 +317,8 @@ Excelで言うところの「マーカー付き折れ線グラフ」にしたい
 
 ```{r}
 ggplot(df, aes(x = english, y = japanese)) +
-  geom_line() +   # 折れ線
-  geom_point() + # マーカー
-  xlab("English") +
-  ylab("Japanese")
-
+  geom_line() + # 折れ線
+  geom_point()  # マーカー
 ```
 
 
@@ -367,9 +356,7 @@ ggplotly(g)
 ```{r}
 g <- ggplot(df, aes(x = class, y = japanese)) +
   geom_boxplot()+   # 箱ひげ図
-  labs(title = "クラスごとの国語の点数の分布") +
-  xlab("Class") +
-  ylab("Japanese")
+  labs(title = "クラスごとの国語の点数の分布")
 
 
 ggplotly(g)
@@ -382,9 +369,7 @@ ggplotly(g)
 ```{r}
 g <- ggplot(df, aes(x = class, y = japanese)) +
   geom_violin() + # バイオリンプロット
-  labs(title = "クラスごとの国語の点数の分布") +
-  xlab("Class") +
-  ylab("Japanese")
+  labs(title = "クラスごとの国語の点数の分布")
 
 ggplotly(g)
 ```
@@ -393,13 +378,11 @@ ggplotly(g)
 
 ```{r}
 g <- ggplot(df, aes(x = class, y = japanese)) +
-  geom_violin() +     # バイオリンプロット。これを先に描く。
-  geom_boxplot(width = 0.3) +       # 箱ひげ図を上書き。幅を0.3に指定
-  labs(title = "クラスごとの国語の点数の分布") +
-  xlab("Class") +
-  ylab("Japanese")
+  geom_violin() +             # バイオリンプロット。これを先に描く。
+  geom_boxplot(width = 0.3) + # 箱ひげ図を上書き。幅を0.3に指定
+  labs(title = "クラスごとの国語の点数の分布")
 
-g     #ggplotly(g)だと箱ひげ図が表示されない
+g  # ggplotly(g)だと箱ひげ図が表示されない
 ```
 
 
@@ -412,10 +395,7 @@ g     #ggplotly(g)だと箱ひげ図が表示されない
 ```{r}
 ggplot(df, aes(x = english, y = japanese, fill = class, color = class)) +
   geom_point() +
-  labs(title = "英語と国語の得点の散布図をクラスごとに塗り分けたもの") +
-  xlab("English") +
-  ylab("Japanese")
-
+  labs(title = "英語と国語の得点の散布図をクラスごとに塗り分けたもの")
 ```
 
 # バブルチャート
@@ -427,9 +407,7 @@ ggplot(df, aes(x = english, y = japanese, fill = class, color = class)) +
 g <- ggplot(df, aes(x = english, y = japanese, size = math)) +
   geom_point(alpha = 0.5) + # alpha:バブルの透過度
   labs(title = "英語と国語の得点の散布図(バブルサイズは数学の点数を反映)") +
-  scale_size(range = c(1,10)) + # バブルサイズの範囲を設定
-  xlab("English") +
-  ylab("Japanese")
+  scale_size(range = c(1,10)) # バブルサイズの範囲を設定
 
 # 散布図表示
 g
@@ -463,9 +441,15 @@ mean_ja %>% ggplot(aes(x=`class`, y=mean_ja)) + geom_bar(stat="identity")
 
 ```{r}
 # pivot_longerで縦持ちデータに変え、科目ごとに平均得点を計算して描画する
-g <- df %>% tidyr::pivot_longer(cols=c(japanese, english, math), names_to="subject", values_to="score") %>%
-  dplyr::group_by(subject) %>% dplyr::summarise(mean_score=mean(score)) %>%
-  ggplot(aes(x=subject, y=mean_score)) + geom_bar(stat="identity")
+g <- df %>%
+  tidyr::pivot_longer(cols=c(japanese, english, math),
+                      names_to="subject",
+                      values_to="score") %>%
+  dplyr::group_by(subject) %>%
+  dplyr::summarise(mean_score=mean(score)) %>%
+  ggplot(aes(x=subject, y=mean_score)) +
+  geom_bar(stat="identity")
+
 ggplotly(g)
 ```
 
