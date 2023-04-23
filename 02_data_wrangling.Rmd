@@ -494,9 +494,9 @@ sales_wide
 ```{r}
 # ロング形式に戻す
 sales_long <- sales_wide %>% 
-  tidyr::pivot_longer(cols = -顧客id, names_to = "商品", values_to = "金額")
+  tidyr::pivot_longer(cols = c(-顧客id, -取引id), names_to = "商品", values_to = "金額")
 
-sales_long
+sales_long %>% dplyr::filter(!is.na(金額))
 ```
 
 # （参考）文字列の操作
