@@ -51,7 +51,8 @@ pacman::p_load(readxl, tidyverse, plotly, skimr)
 
 # ディレクトリの設定
 
-作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
+（RStudio CloudではなくローカルPCで作業する場合）作業ディレクトリを設定する。
+プロジェクト機能を活用できるのであれば、そちらを活用する。
 
 ```{r, eval = FALSE}
 setwd(自分のディレクトリ) # ディレクトリの設定
@@ -78,44 +79,6 @@ df <- df %>% dplyr::rename(class = クラス,
 head(df)
 ```
 
-# 描画用パッケージ
-
-グラフの描画で役立つパッケージを紹介する。
-
-## ggplot2
-
-`{ggplot2}`というグラフの描画用パッケージは綺麗なグラフを描くことができる。
-
-ggplotは次のように２つ以上の手順をとり、２つ以上の関数を`+`でつなげていき、レイヤーを重ねるように描画していく。
-
-1. キャンバスを用意する（`ggplot(データフレーム, aes(x, y))`）
-2. グラフを用意する（`geom_histogram()`などgeom_なんたらという関数）
-3. グラフの装飾のための関数を使う場合は、さらにレイヤーを重ねていく
-
-
-```{r}
-# 棒グラフをつくり、gに代入する
-g <- ggplot(df, aes(x = `class`)) + # dfのデータでキャンバスを作る（`で囲っているのは関数のclass()と名前が被っているため）
-  geom_bar() # キャンバスに棒グラフgeom_bar()を重ねる
-
-g # 表示
-```
-
-
-**（参考）** ggplot2のチートシートは、[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の「[Japanese Translations – 日本語翻訳](https://posit.co/resources/cheatsheets/?type=translations/#translation-7)」で見ることができる。
-
-
-## plotly
-
-`{plotly}`パッケージを使うと、簡単なインタラクティブなグラフ（カーソルを合わせると情報が表示されたり、表示情報を変更したりできるグラフ）を描くことができる。
-
-`ggplotly()`関数を使うと、`{ggplot2}`で描いたグラフをインタラクティブなものに変換できる。
-
-
-
-```{r}
-plotly::ggplotly(g)   # ggplot2のグラフをplotlyのグラフへ変換
-```
 
 
 # データの分布を要約する
@@ -242,6 +205,46 @@ cor(x = df$english, y = df$math)
 cor(df[,3:5])
 ```
 
+
+
+# 描画用パッケージ
+
+グラフの描画で役立つパッケージを紹介する。
+
+## ggplot2
+
+`{ggplot2}`というグラフの描画用パッケージは綺麗なグラフを描くことができる。
+
+ggplotは次のように２つ以上の手順をとり、２つ以上の関数を`+`でつなげていき、レイヤーを重ねるように描画していく。
+
+1. キャンバスを用意する（`ggplot(データフレーム, aes(x, y))`）
+2. グラフを用意する（`geom_histogram()`などgeom_なんたらという関数）
+3. グラフの装飾のための関数を使う場合は、さらにレイヤーを重ねていく
+
+
+```{r}
+# 棒グラフをつくり、gに代入する
+g <- ggplot(df, aes(x = `class`)) + # dfのデータでキャンバスを作る（`で囲っているのは関数のclass()と名前が被っているため）
+  geom_bar() # キャンバスに棒グラフgeom_bar()を重ねる
+
+g # 表示
+```
+
+
+**（参考）** ggplot2のチートシートは、[公式サイト](https://www.rstudio.com/resources/cheatsheets/)の「[Japanese Translations – 日本語翻訳](https://posit.co/resources/cheatsheets/?type=translations/#translation-7)」で見ることができる。
+
+
+## plotly
+
+`{plotly}`パッケージを使うと、簡単なインタラクティブなグラフ（カーソルを合わせると情報が表示されたり、表示情報を変更したりできるグラフ）を描くことができる。
+
+`ggplotly()`関数を使うと、`{ggplot2}`で描いたグラフをインタラクティブなものに変換できる。
+
+
+
+```{r}
+plotly::ggplotly(g)   # ggplot2のグラフをplotlyのグラフへ変換
+```
 
 
 # 1変数のグラフ
