@@ -33,11 +33,11 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F,
 # 本講義の目的
 
 - Rを用いた回帰分析の方法を学ぶ。
-- Rを用いた回帰分析結果の表示方法を学ぶ。
+- 要約統計量や回帰分析の結果の実践的な出力方法を学ぶ
 
 # パッケージの読み込み
 
-まず、{tidyverse}}や{AER}や{stargazer}など、今回用いるパッケージのインストールと読み込みを行う。新しい関数については、適宜説明していく。
+まず、{tidyverse}や{AER}や{stargazer}など、今回用いるパッケージのインストールと読み込みを行う。新しい関数については、適宜説明していく。
 
 ```{r}
 pacman::p_load(readxl, 
@@ -51,31 +51,17 @@ pacman::p_load(readxl,
 ```
 
 
-# ディレクトリの設定
+<!-- # ディレクトリの設定 -->
 
-作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
+<!-- 作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。 -->
 
-```{r, eval = FALSE}
-setwd(自分のディレクトリ) # ディレクトリの設定
-getwd() # ディレクトリの確認
-```
-
-
-# 回帰分析の基礎
-
-**回帰分析**（regression analysis）は、ある変数$Y$（被説明変数）を、別の変数$X$（説明変数）で説明することで両変数の関係を分析する手法である。
-
-最も基本的な回帰モデルは次のような線形で説明変数が１つの回帰モデルである。
-
-$$
-Y_i = \beta_0 + \beta_1 X_i + u_i
-$$
+<!-- ```{r, eval = FALSE} -->
+<!-- setwd(自分のディレクトリ) # ディレクトリの設定 -->
+<!-- getwd() # ディレクトリの確認 -->
+<!-- ``` -->
 
 
-
-こうした線形の回帰モデルは**線形回帰**（linear regression）と呼ばれ、また説明変数$X_i$が１つの回帰モデルは**単回帰モデル**（simple regression model）と呼ばれる。
-
-## データの用意
+# データの用意
 
 以下ではRで回帰分析を行っていくが、今回は{AER}パッケージ（Applied Econometrics with Rパッケージ）に収録されているCPS1985というデータセットを例に使用する。
 
@@ -89,7 +75,8 @@ data("CPS1985")
 head(CPS1985)
 ```
 
-## 記述統計の表示
+
+# 記述統計の表示
 
 回帰分析を行う前に、ほとんどの場合、分析に用いる統計の要約統計量（summary statistics)を載せる。
 
@@ -129,6 +116,21 @@ stargazer(tibble::tibble(CPS1985), type = "text")
 ```
 
 
+# 回帰分析の基礎
+
+**回帰分析**（regression analysis）は、ある変数$Y$（被説明変数）を、別の変数$X$（説明変数）で説明することで両変数の関係を分析する手法である。
+
+最も基本的な回帰モデルは次のような線形で説明変数が１つの回帰モデルである。
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + u_i
+$$
+
+
+こうした線形の回帰モデルは**線形回帰**（linear regression）と呼ばれ、また説明変数$X_i$が１つの回帰モデルは**単回帰モデル**（simple regression model）と呼ばれる。
+
+
+
 ## 最小二乗法
 
 線形回帰のパラメータ$\beta_0, \beta_1$はデータ$X_i,Y_i$から推定する。最も有名で強力な推定方法は**最小二乗法**（ordinary least squares method, OLS method）である。この方法では、実測値$Y_i$と予測値$\hat{Y}_i$との残差二乗和$\sum_{i=1}^n (Y_i - \hat{Y}_i)^2$を最小化するように推定量$\hat{\beta}_0, \hat{\beta}_1$を求める。
@@ -165,7 +167,6 @@ summary(reg)
 `stargazer()`に`lm()`関数のオブジェクトを入れ、`type`引数に`"text"`を指定することで以下のように表示される
 
 ```{r}
-
 stargazer(reg, 
           type = "text")
 ```
@@ -240,6 +241,7 @@ stargazer(reg,
 # 重回帰モデル
 
 ## 重回帰モデルとは
+
 複数の説明変数を使用した回帰モデルを**重回帰モデル**（multiple regression model）という。
 
 $$
@@ -333,19 +335,11 @@ stargazer(reg_logwage,
 
 ## lm_robust
 
-ロバスト標準誤差は、`lm()``の代わりにestimatr`パッケージの`lm_robust()`を用いて計算し、分析結果表に組み込むことができる。
-
-まず、`estimatr`パッケージを読み込む。
-```{r, eval=F}
-install.packages("estimatr")
-```
+ロバスト標準誤差は、`lm()`の代わりに`{estimatr}`パッケージの`lm_robust()`を用いて計算し、分析結果表に組み込むことができる。
 
 パッケージを読み込み、`lm`と同じような形で`lm_robust`を用いる、ロバスト標準誤差にはいくつかの種類があるが、ここでは `HC1`と指定する。
 
 ```{r}
-# パッケージの読み込み
-library("estimatr")
-
 # ロバスト標準誤差を用いたOLS推定
 reg_logwage_r <- 
   lm_robust(formula = log(wage) ~ education, 
@@ -371,21 +365,21 @@ summary(reg_multiple_r)
 summary(reg_mincer_r)
 ```
 
-論文などで使用するための分析結果表については、`lm_robust`と`stargazer`の相性はよくないため、そのまま`stargazer`を使えない。それでも両者を使う方法は参考文献のリンク先に記されているが、ここでは分析結果表のための別のパッケージである`texreg`を使う。
+論文などで使用するための分析結果表については、`lm_robust`と`stargazer`の相性はよくないため、そのまま`stargazer`を使うことができない。それでも両者を使う方法は参考文献のリンク先に記されているが、ここでは分析結果表のための別のパッケージである`{texreg}`を使う。
 
 ```{r}
-#結果表の出力
-screenreg(list(reg_logwage_r, 
-               reg_multiple_r, 
-               reg_mincer_r), 
-          include.ci = FALSE, 
+# 結果の出力
+screenreg(list(reg_logwage_r,
+               reg_multiple_r,
+               reg_mincer_r),
+          include.ci = FALSE,
           digits = 3)
 ```
 
 htmlもしくはWordで出力する場合は、次のようにする。
 
 ```{r, results = 'asis'}
-#html
+# html
 htmlreg(list(reg_logwage_r, 
              reg_multiple_r, 
              reg_mincer_r), 
@@ -393,30 +387,27 @@ htmlreg(list(reg_logwage_r,
         include.ci = FALSE, 
         digits = 3)
 
-#word
+# word
 htmlreg(list(reg_logwage_r, 
              reg_multiple_r, 
              reg_mincer_r), 
-        file = "04reg_table_r.doc", 
+        file = "04reg_table_r.doc",
         include.ci = FALSE, 
         digits = 3)
 ```
 
-# 参考：不均一分散への対応 (lm_robustを使わない方法)
+# （参考）不均一分散への対応 (lm_robustを使わない方法)
 
 `lm_robust()`登場前のRでのロバスト標準誤差の計算および分析結果表への組み込みの仕方を紹介する。
 
 ## vcovHC
-{sandwich} パッケージの`vcovHC`関数を用いる。なおsandwichという名称は、ロバスト標準誤差の推定量の式の形状から来ている。
 
-まず{sandwich}パッケージをインストールして読み込む。
+`{sandwich}`パッケージの`vcovHC`関数を用いる。なおsandwichという名称は、ロバスト標準誤差の推定量の式の形状から来ている。
 
-```{r, eval=F}
-install.packages("sandwich")
-```
+まず`{sandwich}`パッケージをインストールして読み込む。
 
 ```{r}
-library(sandwich)
+pacman::p_load(sandwich)
 ```
 
 上記の3種類の重回帰モデルの推定結果の標準誤差を、ロバスト標準誤差に置き換える。
@@ -519,7 +510,6 @@ F値が均一分散を仮定したものとは異なっていることが確認�
 # 参考文献
 
 回帰分析や均一分散/不均一分散については、「[計量経済学１](https://sites.google.com/site/michihito7ando/lectures/econome2018)」の講義資料などを参照すること。
-
 
 `lm_robst`を利用した分析については、以下のサイトを参考にした。
 
