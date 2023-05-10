@@ -33,15 +33,58 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 - 差の検定と回帰分析とマッチング法の基礎を学ぶ。
 - データを自分で生成する方法を学ぶ。
 
-# パッケージの読み込み
 
-```{r}
-pacman::p_load(tidyverse, DiagrammeR, stargazer, Matching)
-```
+# 平均処置効果
+
+今回から、データの背後に潜む因果関係を推定する手法について学んでいく。
+
+計量経済学においてよく用いられる考え方は潜在的結果の枠組み（potential outcome framework）である。
+今回からこの枠組みに関する用語が登場するため、ここで軽く触れておく。
+
+潜在的結果の枠組みのもとでは、因果関係の強さは「同じ個体が、処置を受けた時と処置を受けなかったときの結果の差」として考える。
+
+<center><img src="05_Test_OLS_Matching.assets/05_causal_effect.png" width=70%></center>
+
+## 潜在的結果
+
+個体$i$が「処置を受けた場合（$X_i=1$）」と「処置を受けなかった場合（$X_i=0$）」の結果$Y_i$を、実際に処置があったかどうかに関わらず議論するために定めたものを**潜在的結果**（potential outcome）といい、それぞれ$Y_i(1), Y_i(0)$と書く。
+
+実際の観察結果は$Y_i$とする
+
+$$
+Y_i = \left\{
+\begin{array}{l}
+Y_i(0) \ \text{if } X_i = 0 \\
+Y_i(1) \ \text{if } X_i=1
+\end{array}
+\right.
+$$
+
+## 処置効果
+
+個体$i$が処置を受けた時と受けなかったときの結果の差を**個体処置効果** （individual treatment effect: ITE）という。
+
+$$
+\tau_i = Y_i(1)-Y_i(0)
+$$
+
+処置を受けたときの結果と処置を受けなかったときの結果の両方を同時に観測することはできないため、ITE $\tau_i$は観測することはできない。
+
+
+そこで、処置を受けた群とそうでない群における結果の平均の差を用いて処置効果を推定することを考える。
+
+$$
+\tau = E[Y(1) - Y(0)] = E[Y(1)] - E[Y(0)]
+$$
+
+これを**平均処置効果**（average treatment effect: ATE）という。
+
+以下の節では、データを分析しながらATEの推定方法について学んでいく。
+
 
 # データの用意
 
-今回から、データの背後に潜む因果関係を推定する手法について学んでいく。
+<!-- 今回から、データの背後に潜む因果関係を推定する手法について学んでいく。 -->
 
 データから因果関係を推定するということは、データ生成過程（Data generating process: DGP）を理解しようという試みでもある。そこで今回は、データ生成過程があらかじめ分かっている架空のデータを自分で生成し、それを分析していく。
 
@@ -60,6 +103,8 @@ $$
   
 
 ```{r, echo=F}
+pacman::p_load(DiagrammeR)
+
 grViz("digraph dot{
 graph[rankdir = LR]
 
@@ -89,16 +134,16 @@ edge[fontname = 'Yu Gothic', fontsize = 10]
 
 まず、上記のDGPに従うデータを生成する。なお、データ生成は、これまでの学習した内容と比較してやや高度なので、とりあえずは、ただコピペしてデータ生成するだけでも構わない。
 
+
 ```{r}
 # 事前準備 --------------------
+# パッケージの読み込み
+pacman::p_load(tidyverse, stargazer, Matching)
 
-
-# 乱数の種を固定　=>　毎回同じように乱数を発生させるようにする。0を他の数値に変えると異なる乱数となる。
+# 乱数の種を固定（同じ種からは常に同じ乱数が生成される。0を他の数値に変えると異なる乱数となる。）
 set.seed(0)
 
-
 # データの生成 ----------------
-
 # n:サンプルサイズ
 n <- 10000
 
@@ -108,7 +153,6 @@ ability <- runif(n, min = 0, max = 100)
 # IDとabilityをデータフレームに格納する。
 # 以下の"tibble()"はtidyverseにおけるデータフレームを作成する関数。
 # 代わりに"data.frame()"を用いても構わない。
-
 df <- tibble(ID = 1:n, ability)
 
 # 大卒ダミーの作成
@@ -139,8 +183,7 @@ df <- bind_rows(university_df, no_university_df) %>%  # 両者を結合
       arrange(ID) # ID順に並べる
 
 # 所得変数（income)の作成：上記のDGP(母集団回帰モデル）に基づいて生成
-
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, mean = 0, sd = 50)) # 誤差項は平均=0、SD=50
+df <- df %>% mutate(income = 200 + 10*ability + 500*university + rnorm(n, mean = 0, sd = 50)) # 誤差項は平均=0、標準偏差=50
 
 # 最初の6行
 head(df)
@@ -149,16 +192,12 @@ head(df)
 生成したデータを用いて、能力(`ability`)と所得(`income`)との関係をプロットすると次のようになる。
 
 ```{r}
-# 塗り分けプロット
-
-# plot
-
-## 大卒か否かのラベルをデータフレームに加える
+# 大卒か否かのラベルをデータフレームに加える
 df <- df %>% mutate(edu_label =
                       case_when(university == 1 ~ "Grad.", 
                                 university == 0 ~ "Not grad."))
 
-## 散布図を描く with 大卒ラベル
+# 散布図を描く with 大卒ラベル
 ggplot(df, aes(x = ability, y = income, color = edu_label)) + 
          geom_point(alpha = 0.5)+ 
          labs(title = "Ability and Income")
@@ -173,7 +212,6 @@ ggplot(df, aes(x = ability, y = income, color = edu_label)) +
 まず、学歴と所得分布の関係を箱ひげ図で表示すると、以下のようになる。
 
 ```{r}
-
 # plot（箱ひげ図）
 ggplot(df, aes(x = edu_label, y = income)) +
   geom_boxplot(alpha = 0.7) +
@@ -194,17 +232,94 @@ t.test(x = grad_df$income, y = not_grad_df$income)
 
 大卒の平均所得が約`r round(mean(grad_df$income),0)`万円、非大卒の平均所得が約`r round(mean(not_grad_df$income),0)`万円であり、1%有意水準でも有意な差があることがわかった。
 
-ただし、ここで「大卒になることで、所得が`r round(mean(grad_df$income),0)` - `r round(mean(not_grad_df$income),0)` = `r round(mean(grad_df$income) - mean(not_grad_df$income), 0)`万円上昇する」と結論付けることはできない。例えば、学歴と所得の両方に影響を与える交絡要因がある場合、大卒と非大卒の所得差には、このような交絡要因の影響が反映されてしまう。
+ただし、ここで「大卒になることで、所得が`r round(mean(grad_df$income),0)` - `r round(mean(not_grad_df$income),0)` = `r round(mean(grad_df$income),0) - round(mean(not_grad_df$income), 0)`万円上昇する」と結論付けることはできない。例えば、学歴と所得の両方に影響を与える交絡要因がある場合、大卒と非大卒の所得差には、このような交絡要因の影響が反映されてしまう。
 
 ここで、自分がこのデータの「真のデータ生成過程」を知っていることを思い起こそう。本データにおいては、所得$Y$が上がる要因には学歴$X$以外にも能力$A$という要因があった。そして、能力$A$は所得$Y$だけでなく、学歴$X$にも影響を与えていた。したがって、`r round(mean(grad_df$income) - mean(not_grad_df$income), 0)`万円という所得差は、学歴（大卒）による所得上昇効果だけでなく、能力による所得上昇効果も混在している。
 
-それでは、能力による所得上昇効果を含まない、学歴だけによる所得上昇効果を推定することはできるだろうか？
+<!-- それでは、能力による所得上昇効果を含まない、学歴だけによる所得上昇効果を推定することはできるだろうか？ -->
+
+
+# （参考）交絡要因の統制による推定のロジック
+
+## セレクション・バイアス
+
+前節で行った方法が潜在的結果の枠組みにおいてどう表されるか示す。
+前節の方法は、観測できた各群の結果の平均の差
+
+$$
+E[Y(1)|X = 1] - E[Y(0)|X = 0]
+$$
+
+によってATEを推定する方法である。
+
+これは$E[Y(0)|X = 1]$を足して引いて整理すると、次のようになる
+
+$$
+\begin{align}
+E[Y(1)|X = 1] - E[Y(0)|X = 0]
+&= E[Y(1)|X = 1] - E[Y(0)|X = 1] + E[Y(0)|X = 1] - E[Y(0)|X = 0]\\
+&= \underbrace{E[Y(1) - Y(0)|X = 1]}_{\text{ATT}}
+  + \underbrace{E[Y(0)|X = 1] - E[Y(0)|X = 0]}_{\text{Selection Bias}}\\
+\end{align}
+$$
+
+$\text{ATT}$は**処置群における平均処置効果**（average treatment effect on the treated）という。話を単純化するために処置効果が処置群と対照群で平均的に等しい（$\text{ATT}=\text{ATE}$）と仮定すると、上記の単純な差による推定量は$\text{ATE} + \text{Selection Bias}$であり、セレクション・バイアスの分だけATEから乖離する推定量であることがわかる。
+
+
+## ランダム化比較試験による推定
+
+もし処置の割当$X$が無作為（ランダム）であれば潜在的結果$Y(0), Y(1)$とは独立
+
+$$
+\newcommand{\indep}{\mathop{\hspace{0.1em} \perp\!\!\!\perp \hspace{0.1em}}}
+(Y(0), Y(1)) \indep X
+$$
+
+となる。その場合、
+
+$$
+E[Y(0)| X = 0] = E[Y(0)]\\
+E[Y(1)| X = 1] = E[Y(1)]
+$$
+
+になるため、各群の平均の差$E[Y(1)|X = 1] - E[Y(0)|X = 0]$でATEを推定することができる。
+
+そのため、もしも分析対象のデータが処置をランダムに割り振った実験によって得られたデータである場合、両群の平均値の差をATEの推定値に使うことは妥当であると考えられる。
+しかし、経済学においては実験によって得られたデータを扱うことは稀であり、基本的にこの方法を利用することはできない。
+
+
+## 交絡要因の統制による推定
+
+**交絡要因**（confounder）$A$を条件付けた下で、処置の割当$X$と結果$Y(0), Y(1)$が独立
+
+$$
+\newcommand{\indep}{\mathop{\hspace{0.1em} \perp\!\!\!\perp \hspace{0.1em}}}
+(Y(0), Y(1)) \indep X | A
+$$
+
+であるという条件を、**無交絡性**（unconfoundedness）という。無交絡性が成立するとき、平均での独立性
+
+$$
+E[Y|X=0, A] = E[Y(0)|X, A] = E[Y(0)|A]\\
+E[Y|X=1, A] = E[Y(1)|X, A] = E[Y(1)|A]
+$$
+
+が成立する。
+
+そこから共変量について期待値をとればATEが推定できる。
+
+$$
+E_{A}( E[Y(1) - Y(0)|A] ) = E[Y(1) - Y(0)]
+$$
+
+条件付き期待値を推定する方法は次節以降で学んでいく。
+
 
 # 回帰分析
 
 ## 回帰分析と条件付き平均値
 
-前節の平均値の差の検定では、条件付き期待値$E(変数|条件)$の記法を使って表現すると、大卒者の所得の期待値$E(Y|X=1)$と非大卒者の所得の期待値$E(Y|X=0)$の差
+平均値の差の検定では、条件付き期待値$E(変数|条件)$の記法を使って表現すると、大卒者の所得の期待値$E(Y|X=1)$と非大卒者の所得の期待値$E(Y|X=0)$の差
 
 $$
 E(Y|X=1) - E(Y|X=0)
@@ -221,12 +336,11 @@ $$
 - 能力$A=82$の人の中で...
 - 能力$A=83$の人の中で...
 
-
 といったように、新たに条件を追加して能力$A$の値を一定にした下で大卒と非大卒の所得を比較していけばよいと考えられる。
 
 回帰分析の予測値$\hat{Y}$は、説明変数を$X,A$とすると、これらの説明変数の条件付き期待値$E(Y|X,A)$の推定値である。そのため、$E(Y|X = x,A = a)$のように、複数の説明変数で条件付けた下での期待値を推定することができる。これを利用して学歴$X$が所得$Y$に与える効果を推定することができる。
 
-<center><img src="05_Test_OLS_Matching.assets/05_fig1.png" width=40%></center>
+<center><img src="05_Test_OLS_Matching.assets/05_fig1.png" width=50%></center>
 
 
 ```{r,eval=F,echo=F}
@@ -272,11 +386,7 @@ stargazer(OLS_true_model, type = "text")
 ここで、上述したような、「能力$A=a$の人の中で、大卒($X=1$)の所得の条件付き期待値$E(Y|X = 1,A = a)$と非大卒($X=0$)の所得の条件付き期待値$E(Y|X = 0,A = a)$を比べる」というのは、下図の二つの回帰直線の「縦の差を測る」ことに相当する。一定の条件の下で、ここでの「縦の差」は、学歴が所得に与えた「**平均処置効果**」の推定値とみなすことができる。
 
 ```{r}
-# 塗り分けプロット
-
-# plot
-
-## 散布図と回帰直線を描く with 大卒ラベル
+# 散布図と回帰直線を描く with 大卒ラベル
 ggplot(df, aes(x = ability, y = income, 
                color = edu_label, 
                group = edu_label)) + # groupごと
