@@ -36,16 +36,17 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 # パッケージの読み込み
 
-今回の分析で使うパッケージを読み込む。ただし、{DiagrammeR}は因果ダイアグラムを書くために使うものであり、講義中には使わない。
+今回の分析で使うパッケージを読み込む。
+
 ```{r}
 pacman::p_load(tidyverse, 
                stargazer, 
                Hmisc, 
                AER, 
                estimatr, 
-               texreg, 
-               DiagrammeR)
+               texreg)
 ```
+
 
 # データの用意
 
@@ -66,7 +67,7 @@ $$
 
 
 ```{r, echo=F}
-#install.packages("Diagrammes")
+pacman::p_load(DiagrammeR)
 
 grViz("digraph dot{
 graph[rankdir = LR]
@@ -86,7 +87,8 @@ edge[fontname = 'Yu Gothic', fontsize = 10]
 
 
 ```{r, echo=F}
-#install.packages("Diagrammes")
+pacman::p_load(DiagrammeR)
+
 grViz("digraph dot{
 graph[rankdir = LR]
 
@@ -102,13 +104,10 @@ edge[fontname = 'Yu Gothic', fontsize = 10]
 }")
 ```
 
-データ生成過程は、以下のように設定できる。（難しく感じる人は、コピペでかまわな）
+データ生成過程は、以下のように設定できる。（難しく感じる人は、コピペでかまわない）
 
 ```{r}
 # 事前準備 --------------------
-
-# パッケージの読み込み
-library(tidyverse)
 
 # 乱数の種を固定　=>　毎回同じように乱数を発生させるようにする。0を他の数値に変えると異なる乱数となる。
 set.seed(0)
@@ -192,25 +191,23 @@ head(df)
 生成したデータの記述統計を`Hmisc::describe`で表示し、どのくらいが学費免除および大卒になったかチェックしてみる。
 
 ```{r}
-library()
 describe(df)
 ```
+
+
 
 こうして生成したデータの所得と能力・学歴・テストの点数の関係をプロットすると次のようになる。前回と異なり、`ability`が80を下回っても、学費補助によって大学を卒業し、所得が上昇している人々がいることが分かる。
 
 ```{r}
-# 塗り分けプロット
-
-# plot
-
-## 大卒か否かのラベルをデータフレームに加える
+# 大卒か否かのラベルをデータフレームに加える
 df <- df %>% mutate(edu_label =
-                      case_when(university == 1 ~ "Grad.", university == 0 ~ "Not grad."))
+                      case_when(university == 1 ~ "Grad.",
+                                university == 0 ~ "Not grad."))
 
-## 散布図を描く with 大卒ラベル
+# 散布図を描く with 大卒ラベル
 ggplot(df, aes(x = ability, y = income, color = edu_label)) + 
-         geom_point(alpha = 0.5)+ 
-         labs(title = "Ability and Income")
+  geom_point(alpha = 0.5) +
+  labs(title = "Ability and Income")
 ```
 
 
@@ -319,8 +316,10 @@ reduced_form$coefficients[2] / first_stage$coefficients[2]
 `{AER}`パッケージに操作変数法による回帰を行う`ivreg()`という関数がある。これを実行すれば操作変数法で推定し、標準誤差を出すことができる。
 
 ```{r}
-iv_reg = AER::ivreg(formula = income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数　と指定
-           data = df)
+iv_reg = AER::ivreg(
+  formula = income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数　と指定
+  data = df
+)
 
 summary(iv_reg)
 
@@ -336,19 +335,21 @@ TSLS推定値は、約`r round(iv_reg$coefficients[2],0)`であり、先に求�
 
 ```{r}
 
-iv_reg_robust <- estimatr::iv_robust(income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数
-                            data = df, 
-                            se_type ="HC1") 
+iv_reg_robust <- estimatr::iv_robust(
+  income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数
+  data = df, 
+  se_type ="HC1"
+)
 
 # summary
 summary(iv_reg_robust)
 
 #結果表の出力: コンソールに出力
-texreg::screenreg(list(iv_reg, iv_reg_robust), 
-          include.ci = FALSE, digits = 3)
+texreg::screenreg(list(iv_reg, iv_reg_robust),
+                  include.ci = FALSE, digits = 3)
 ```
 
-`university`の係数推定値については、ロバスト標準誤差のほうが若干大きくなっているが、ほとんど変わらない。
+<!-- `university`の係数推定値については、ロバスト標準誤差のほうが若干大きくなっているが、ほとんど変わらない。 -->
 
 htmlで出力するには、{textreg}パッケージの`htmlreg()`を使う。
 
