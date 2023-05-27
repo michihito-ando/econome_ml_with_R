@@ -34,24 +34,16 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 # パッケージの読み込み
 
-今回の分析で使うパッケージを読み込む。ただし、{DiagrammeR}は因果ダイアグラムを書くために使うものであり、講義中には使わない。
+今回の分析で使うパッケージを読み込む。
+
 ```{r}
 pacman::p_load(tidyverse, 
                stargazer, 
                Hmisc, 
                estimatr, 
-               texreg, 
-               DiagrammeR)
+               texreg)
 ```
 
-# ディレクトリの設定
-
-作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
-
-```{r, eval = FALSE}
-setwd(自分のディレクトリ) # ディレクトリの設定
-getwd() # ディレクトリの確認
-```
 
 # データ
 
@@ -74,18 +66,19 @@ $$
 
 
 ```{r, echo=F}
+pacman::p_load(DiagrammeR)
+
 grViz("digraph dot{
-graph[rankdir = LR]
+  graph[rankdir = LR]
+  node[shape = circle, fontname = 'Yu Gothic']
+  edge[fontname = 'Yu Gothic']
 
-node[shape = circle, fontname = 'Yu Gothic']
+  能力A -> 所得Y [label='10']
+  能力A -> テストの点 [label='能力を部分的に反映']
+  テストの点 -> 学歴X [label='180点以上かどうか']
+  学歴X -> 所得Y [label='500']
 
-edge[fontname = 'Yu Gothic']
-能力A -> 所得Y [label='10']
-能力A -> テストの点 [label='能力を部分的に反映']
-テストの点 -> 学歴X [label='180点以上かどうか']
-学歴X -> 所得Y [label='500']
-
-{rank = same; 能力A; テストの点; 学歴X}
+  {rank = same; 能力A; テストの点; 学歴X}
 }")
 ```
 
@@ -110,17 +103,17 @@ df <- tibble(ID = 1:n, ability)
 ## abilityとscoreの関係は非線形なものとする
 ## 今回はmutate()とcase_when()を使用して作成
 
-#学力テストの点数 score
-df <- df %>% mutate(score = 30*log10(ability) + 
-                            rnorm(n, mean = 115, sd = 10))
-#大卒ダミー university (score 180点以上=1)
+# 学力テストの点数 score
+df <- df %>% mutate(score = 30 * log10(ability) + 
+                      rnorm(n, mean = 115, sd = 10))
+# 大卒ダミー university (score 180点以上=1)
 df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
                                            TRUE ~ 0))
-#所得 income
+# 所得 income
 df <- df %>% mutate(income = 200 + 10*ability + 500*university +
-                             rnorm(n, sd = 50))
+                      rnorm(n, sd = 50))
 
-##dplyrを使わないやり方だと、以下の通り。
+## dplyrを使わないやり方だと、以下の通り。
 #df["score"] = 30*log10(ability) + rnorm(n, mean = 115, sd = 10)
 #df["university"] = 1*(df["score"] >= 180)
 #df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, sd = 50)
@@ -128,6 +121,45 @@ df <- df %>% mutate(income = 200 + 10*ability + 500*university +
 # 最初の6行
 head(df)
 ```
+
+
+今回はデータを生成する処理を繰り返すことになるので、データの生成処理を関数にまとめる
+
+```{r}
+generate_data <- function(n = 10000) {
+  # 能力は0から100まで均等に分布
+  ability <- runif(n, min = 0, max = 100)
+  
+  # IDとabilityをデータフレームに格納する
+  df <- tibble(ID = 1:n, ability)
+  
+  # 大卒フラグ
+  ## 条件：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる
+  ## 10%くらいが該当するように恣意的に設定
+  ## abilityとscoreの関係は非線形なものとする
+  ## 今回はmutate()とcase_when()を使用して作成
+  df <- df %>% mutate(
+    # 学力テストの点数 score
+    score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10),
+    # 大卒ダミー university (score 180点以上=1)
+    university = case_when(score >= 180 ~ 1, TRUE ~ 0),
+    # 所得 income
+    income = 200 + 10*ability + 500*university + rnorm(n, sd = 50),
+  )
+  return(df)
+}
+```
+
+seedを指定してからデータを生成すれば同じデータが得られる
+
+```{r}
+set.seed(0)
+df2 <- generate_data()
+
+all(df == df2)  # すべて同じ値であることを確認
+```
+
+
 
 ## グラフと記述統計
 
@@ -179,7 +211,7 @@ stargazer(reg1, reg2,
 
 ## モンテカルロ・シミュレーションとは
 
-`score`を含めた重回帰分析(`reg2`)における約`r round(reg2$coefficients[2], 0)`（万円）という係数推定値は、500（万円）に比較的近いが、これは、学力テストの点数(`score')をコント―ルすることによって欠落変数バイアスが完全に除去できた結果なのだろうか？
+`score`を含めた重回帰分析(`reg2`)における約`r round(reg2$coefficients[2], 0)`（万円）という係数推定値は、500（万円）に比較的近いが、これは、学力テストの点数(`score`)をコント―ルすることによって欠落変数バイアスが完全に除去できた結果なのだろうか？
 
 このことを、理論的にではなく、基本的なシミュレーションにより検証してみよう。
 
@@ -191,41 +223,29 @@ stargazer(reg1, reg2,
 
 下記では、上記のデータ生成と回帰分析(`reg2`)をループによって1000回繰り返し、その結果を保存する。
 
+
 ```{R results = "hide"}
-#タネの設定
-set.seed(0) 
+# 再現性の確保のため、乱数の種を固定
+set.seed(0)
 
 # シミュレーション結果を入れる「箱」の作成
-coef <- rep(NA,1000)
+coef <- rep(NA, 1000)
 
 # 同じ回帰分析(上のreg2)を1000回繰りかえす。
 
 for(i in 1:1000){ # forによるループ。1000回繰り返す
-
-# データ生成
-n <- 10000
-
-ability <- runif(n, min = 0, max = 100) # 能力は0から100まで均等に分布
-
-df <- tibble(ID = 1:n, ability) # IDとabilityをデータフレームに格納する
-
-df <- df %>% mutate(score = 30*log10(ability) + 
-                            rnorm(n, mean = 115, sd = 10))
-
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
-                                           TRUE ~ 0))
-
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
-                             rnorm(n, sd = 50))
-
-# 回帰
-reg2 <- lm(income ~ university + score, 
-           data = df)
-
-# 回帰係数推定値の保存
-coef[i] = reg2$coefficients[2] 
+  # データの生成
+  df <- generate_data()
+  
+  # 回帰
+  reg2 <- lm(income ~ university + score, data = df)
+  
+  # 回帰係数推定値の保存
+  coef[i] = reg2$coefficients[2] 
 }
 ```
+
+
 
 シミュレーション結果（`university`の係数推定値の平均、標準偏差、ヒストグラム）は以下のようになる。
 
@@ -252,21 +272,8 @@ hist(coef)
 ```{r}
 # データ生成
 set.seed(0)
-
-n <- 10000
-
-ability <- runif(n, min = 0, max = 100)
-
-df <- tibble(ID = 1:n, ability)
-
-df <- df %>% mutate(score = 30*log10(ability) + 
-                            rnorm(n, mean = 115, sd = 10))
-
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
-                                           TRUE ~ 0))
-
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
-                             rnorm(n, sd = 50))
+df <- generate_data()
+head(df)
 ```
 
 X軸を学力テストの点数(`score`)、Y軸を所得(`income`)として散布図を描くと、下記のようになる。
@@ -293,6 +300,7 @@ ggplot(df, aes(x = score,
 
 - スコアが180点になる閾値で大卒になれるかどうかという「不連続な変化」を決めるというのは人為的な制度であり、その背景にある個々人の所得の決定要因（ここでは能力$A$のみだが、一般的にはあらゆる決定要因）は「連続的」に分布しているはず。
 - したがって、この閾値において所得に明確なジャンプ（不連続性）がある理由は、この閾値で同じく不連続に変化している「大卒」という要因以外には考えられない
+
 
 ## RDデザインによる推定
 
@@ -407,7 +415,7 @@ stargazer(linear_RD,
 この考え方に従って、閾値前後のバンド幅(bandwidth)を設定し、そのバンド幅の内部のサンプルだけを使って線形RDを行う。
 
 ```{r}
-# バンド幅=50
+# バンド幅=30
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
 band30_RD <- lm(income ~ university + score_gap + score_gap:university, 
                 data = band30_df) 
@@ -441,31 +449,18 @@ stargazer(band30_RD,
 
 一般的に、RD推定は、閾値前後のサンプルサイズが十分に大きくないと推定結果は不安定になりがちである。一方で、サンプルサイズを確保するために閾値を大きくするとバイアスが生じる可能性が高くなり、閾値を大きくすることによるバイアスを高次多項式によってコントロールしようとすると多項式により推定結果は不安定になる。
 
-ためしに以下では、サンプルサイズを100倍すなわちn=1000,000にして局所線形RDを推定してみる。
+ためしに以下では、サンプルサイズを100倍すなわちn=1,000,000にして局所線形RDを推定してみる。
 
 
 ```{r}
 # データ生成
 set.seed(0)
-n <- 1000000
-
-ability <- runif(n, min = 0, max = 100)
-
-df <- tibble(ID = 1:n, ability)
-
-df <- df %>% mutate(score = 30*log10(ability) + 
-                            rnorm(n, mean = 115, sd = 10))
-
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
-                                           TRUE ~ 0))
-
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
-                              rnorm(n, sd = 50))
+df <- generate_data(n = 1000000)
 
 #割当変数score_gapの作成
 df <- df %>% mutate(score_gap = score - 180)
 
-# バンド幅=50
+# バンド幅=30
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
 band30_RD <- lm(income ~ university + score_gap + score_gap:university, 
                 data = band30_df) 
@@ -494,7 +489,7 @@ stargazer(band30_RD,
           df = FALSE)
 ```
 
-バンド幅50だと少し下方バイアスがあるように見えるが、バンド幅を10以下にすると、ほぼ500になる。
+バンド幅30だと少し下方バイアスがあるように見えるが、バンド幅を10以下にすると、ほぼ500になる。
 
 
 ## 局所多項式RD
@@ -504,25 +499,12 @@ stargazer(band30_RD,
 ```{r}
 # データ生成
 set.seed(0)
-n <- 10000
-
-ability <- runif(n, min = 0, max = 100)
-
-df <- tibble(ID = 1:n, ability)
-
-df <- df %>% mutate(score = 30*log10(ability) + 
-                            rnorm(n, mean = 115, sd = 10))
-
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
-                                           TRUE ~ 0))
-
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
-                             rnorm(n, sd = 50))
+df <- generate_data(n = 10000)
 
 #割当変数score_gapの作成
 df <- df %>% mutate(score_gap = score - 180)
 
-# バンド幅=50
+# バンド幅=30
 band30_df <- df %>% filter(-30 <= score_gap & score_gap < 30) 
 band30_RD <- lm(income ~  university + score_gap + I(score_gap^2) +  
               score_gap:university + I(score_gap^2):university, 
@@ -562,21 +544,7 @@ stargazer(band30_RD,
 ```{r}
 # データ生成
 set.seed(0)
-
-n <- 1000000
-
-ability <- runif(n, min = 0, max = 100)
-
-df <- tibble(ID = 1:n, ability)
-
-df <- df %>% mutate(score = 30*log10(ability) + 
-                            rnorm(n, mean = 115, sd = 10))
-
-df <- df %>% mutate(university = case_when(score >= 180 ~ 1, 
-                                           TRUE ~ 0))
-
-df <- df %>% mutate(income = 200 + 10*ability + 500*university + 
-                             rnorm(n, sd = 50))
+df <- generate_data(n = 1000000)
 
 #割当変数score_gapの作成
 df <- df %>% mutate(score_gap = score - 180)
