@@ -43,9 +43,11 @@ pacman::p_load(tidyverse,
                estimatr, # lm_robustによるパネルデータ分析(メイン)
                stargazer, # lmやplmのときの結果表
                texreg, # lmやplmやlm_robustのときの結果表
-               plm, # plmによるパネルデータ分析(参考)
-               lmtest) # lmやplmでロバスト標準誤差に修正（参考)
+               plm) # plmによるパネルデータ分析(参考)
 ```
+
+<!-- pacman::p_load(lmtest) # lmやplmでロバスト標準誤差に修正（参考) -->
+
 
 # データの生成
 
