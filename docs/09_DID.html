@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-01-14" />
+<meta name="date" content="2023-06-05" />
 
 <title>Rで学ぶ計量経済学と機械学習 9    計量経済学5：差分の差分(DID)法</title>
 
@@ -1557,7 +1557,7 @@ border-radius: 0px;
 計量経済学5：差分の差分(DID)法</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-01-14</h4>
+<h4 class="date">2023-06-05</h4>
 
 </div>
 
@@ -1569,88 +1569,81 @@ technologies)</h4>
 <li>データの前処理やグラフ作成の復習や練習をする。</li>
 </ul>
 </div>
-<div id="ディレクトリの設定" class="section level1" number="2">
-<h1><span class="header-section-number">2</span> ディレクトリの設定</h1>
-<p>作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">&quot;自分のディレクトリ&quot;</span>) <span class="co"># ディレクトリの設定。 &quot;自分のディレクトリ&quot;には、自分のパソコンの作業フォルダの場所を指定する。</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">getwd</span>() <span class="co"># ディレクトリの確認</span></span></code></pre></div>
-</div>
-<div id="パッケージの読み込み" class="section level1" number="3">
-<h1><span class="header-section-number">3</span>
+<div id="パッケージの読み込み" class="section level1" number="2">
+<h1><span class="header-section-number">2</span>
 パッケージの読み込み</h1>
 <p>今回の分析で使うパッケージを読み込む。</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(tidyverse, </span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>               estimatr, <span class="co"># lm_robustによるパネルデータ分析(メイン)</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>               stargazer, <span class="co"># lmやplmのときの結果表</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>               texreg, <span class="co"># lmやplmやlm_robustのときの結果表</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>               plm, <span class="co"># plmによるパネルデータ分析(参考)</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>               lmtest) <span class="co"># lmやplmでロバスト標準誤差に修正（参考)</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(tidyverse, </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>               estimatr, <span class="co"># lm_robustによるパネルデータ分析(メイン)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>               stargazer, <span class="co"># lmやplmのときの結果表</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>               texreg, <span class="co"># lmやplmやlm_robustのときの結果表</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>               plm, <span class="co"># plmによるパネルデータ分析(参考)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>               lmtest) <span class="co"># lmやplmでロバスト標準誤差に修正（参考)</span></span></code></pre></div>
 </div>
-<div id="データの生成" class="section level1" number="4">
-<h1><span class="header-section-number">4</span> データの生成</h1>
-<p>パネルデータ分析の応用として、<strong>差分の差分法(difference in
-differences:DID)法</strong>がある。</p>
+<div id="データの生成" class="section level1" number="3">
+<h1><span class="header-section-number">3</span> データの生成</h1>
+<p>パネルデータ分析の応用として、<strong>差分の差分法（difference in
+differences: DID）法</strong>がある。</p>
 <p>詳しい解説は参考文献などに譲るが、ここではもっとも単純なDID（二群・二期間DID)の推定を行う。</p>
 <p>これまでの事例と同樣、能力が均等に分布した個体の所得をアウトカム変数とした分析を行う。処置変数として、職業訓練(<code>training</code>)を想定する。</p>
 <p>まず、能力が1~100まで均等に分布した個体を1万人生成させる。</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 事前準備 --------------------</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 乱数の種を固定</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">0</span>)</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># データの生成 ----------------</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 能力は0から100まで均等に分布</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>ability <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> <span class="dv">100</span>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># IDとabilityをデータフレームに格納する</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">ID =</span> <span class="dv">1</span><span class="sc">:</span>n, ability)</span></code></pre></div>
-<p>二期間DIDなので、１年目と２年目のデータ生成過程(DGP:Data Generating
-Process)をそれぞれ作成する。</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 事前準備 --------------------</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 乱数の種を固定</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">0</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># データの生成 ----------------</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 能力は0から100まで均等に分布</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>ability <span class="ot">&lt;-</span> <span class="fu">runif</span>(n, <span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> <span class="dv">100</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="co"># IDとabilityをデータフレームに格納する</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">ID =</span> <span class="dv">1</span><span class="sc">:</span>n, ability)</span></code></pre></div>
+<p>二期間DIDなので、１年目と２年目のデータ生成過程（DGP: Data Generating
+Process）をそれぞれ作成する。</p>
 <p>1年目は、誰も職業訓練を受けず、所得は、定数項、能力、誤差項のみによって決まるものとする。</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1年目</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="do">## year = 0を加える</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>df0 <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">0</span>) </span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="do">##　職業訓練フラグ</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="do">##　一年目は誰も職業訓練をうけない</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>df0 <span class="ot">&lt;-</span> df0 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">training =</span> <span class="dv">0</span>)</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co">#所得 incomeを加える</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>df0 <span class="ot">&lt;-</span> df0 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">income =</span> <span class="dv">200</span> <span class="sc">+</span> <span class="dv">10</span><span class="sc">*</span>ability <span class="sc">+</span> </span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">50</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1年目</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="do">## year = 0を加える</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>df0 <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">0</span>) </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="do">##　職業訓練フラグ</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="do">##　一年目は誰も職業訓練をうけない</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>df0 <span class="ot">&lt;-</span> df0 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">training =</span> <span class="dv">0</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="co">#所得 incomeを加える</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>df0 <span class="ot">&lt;-</span> df0 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">income =</span> <span class="dv">200</span> <span class="sc">+</span> <span class="dv">10</span><span class="sc">*</span>ability <span class="sc">+</span> </span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">50</span>))</span></code></pre></div>
 <p>2年目は、能力を部分的に反映した適正試験が 180
 点以上であれば職業訓練(<code>training</code>)を受けられるとし、職業訓練を受けた個体は500万円、所得が上乗せされるものとする。ここで、職業訓練を受けた個体が処置群、受けなかった個体が対照群となる。</p>
-<p>また年ショックとして、<code>n(mean=100、sd=25)</code>をすべての個体に加える。</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2年目</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="do">## year = 1　を加える</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">1</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="do">## 職業訓練フラグ</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="do">## 条件：能力を部分的に反映した適正試験が 180 点以上であれば職業訓練を受けられる</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="do">## 10%くらいが該当するように恣意的に設定</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="do">## abilityとscoreの関係は非線形なものとする</span></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="do">## 今回もmutate()とcase_when()を使用して作成</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="co">#適正試験の点数 score</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> df1 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">score =</span> <span class="dv">30</span> <span class="sc">*</span> <span class="fu">log10</span>(ability) <span class="sc">+</span> </span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">115</span>, <span class="at">sd =</span> <span class="dv">10</span>))</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="co">#職業訓練ダミー training (score 180点以上=1)</span></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> df1 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">training =</span> </span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">case_when</span>(score <span class="sc">&gt;=</span> <span class="dv">180</span> <span class="sc">~</span> <span class="dv">1</span>, </span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>                                 <span class="cn">TRUE</span> <span class="sc">~</span> <span class="dv">0</span>))</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="co">#所得 income: 年ショックとしてn(100,25)も追加</span></span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> df1 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">income =</span> <span class="dv">200</span> <span class="sc">+</span> <span class="dv">10</span><span class="sc">*</span>ability <span class="sc">+</span> <span class="dv">500</span><span class="sc">*</span>training <span class="sc">+</span> </span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">100</span>, <span class="at">sd =</span> <span class="dv">25</span>) <span class="sc">+</span> </span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">50</span>))</span></code></pre></div>
+<p>また年ショックとして、平均100、標準偏差25の正規分布<span class="math inline">\(N(\mu=100、\sigma=25)\)</span>に従う確率変数をすべての個体に加える。</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2年目</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="do">## year = 1　を加える</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">year =</span> <span class="dv">1</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="do">## 職業訓練フラグ</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="do">## 条件：能力を部分的に反映した適正試験が 180 点以上であれば職業訓練を受けられる</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="do">## 10%くらいが該当するように恣意的に設定</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="do">## abilityとscoreの関係は非線形なものとする</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="do">## 今回もmutate()とcase_when()を使用して作成</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 適正試験の点数 score</span></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> df1 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">score =</span> <span class="dv">30</span> <span class="sc">*</span> <span class="fu">log10</span>(ability) <span class="sc">+</span> </span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">115</span>, <span class="at">sd =</span> <span class="dv">10</span>))</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a><span class="co"># 職業訓練ダミー training (score 180点以上=1)</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> df1 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">training =</span> <span class="fu">case_when</span>(score <span class="sc">&gt;=</span> <span class="dv">180</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                                           <span class="cn">TRUE</span> <span class="sc">~</span> <span class="dv">0</span>))</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a><span class="co">#所得 income: 年ショックとしてn(100,25)も追加</span></span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> df1 <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">income =</span> <span class="dv">200</span> <span class="sc">+</span> <span class="dv">10</span><span class="sc">*</span>ability <span class="sc">+</span> <span class="dv">500</span><span class="sc">*</span>training <span class="sc">+</span> </span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">100</span>, <span class="at">sd =</span> <span class="dv">25</span>) <span class="sc">+</span> </span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>                        <span class="fu">rnorm</span>(n, <span class="at">mean =</span> <span class="dv">0</span>, <span class="at">sd =</span> <span class="dv">50</span>))</span></code></pre></div>
 <p>最後に、1年目と2年目のデータを結合し、パネルデータとして認識させる。</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1年目と2年目をくっつける。</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>df_binded <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(df0, df1)</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_binded)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1年目と2年目をくっつける。</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>df_binded <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(df0, df1)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(df_binded)</span></code></pre></div>
 <pre><code>## # A tibble: 6 × 6
 ##      ID ability  year training income score
 ##   &lt;int&gt;   &lt;dbl&gt; &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;
@@ -1661,63 +1654,63 @@ Process)をそれぞれ作成する。</p>
 ## 5     5    90.8     0        0  1158.    NA
 ## 6     6    20.2     0        0   310.    NA</code></pre>
 </div>
-<div id="差分の差分法did推定" class="section level1" number="5">
-<h1><span class="header-section-number">5</span>
+<div id="差分の差分法did推定" class="section level1" number="4">
+<h1><span class="header-section-number">4</span>
 差分の差分法(DID)推定</h1>
-<div id="グラフを用いた説明" class="section level2" number="5.1">
-<h2><span class="header-section-number">5.1</span>
+<div id="グラフを用いた説明" class="section level2" number="4.1">
+<h2><span class="header-section-number">4.1</span>
 グラフを用いた説明</h2>
 <p>上記のデータを用いてDID推定を実際に行う前に、グラフを使ってDID推定を説明しよう。</p>
 <p>まず、処置前と処置後、処置群と対照群について、アウトカム変数(<code>income</code>)の４つの平均値を作成する。</p>
 <p>今回の場合、処置前と処置後を区別する時間ダミー変数(<code>year</code>)はすでにあるが、処置群と対照群を区別する処置群ダミー変数はないため、作成する必要がある。</p>
 <p>なお、<code>training</code>は処置群ダミーではなく処置ダミーであり、<span class="math inline">\(t=0\)</span>のときには全員<code>training</code><span class="math inline">\(=0\)</span>であることに注意。</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#処置群ダミーの作成</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="do">##　処置群の抽出</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>df_treated <span class="ot">&lt;-</span> df_binded <span class="sc">%&gt;%</span> <span class="fu">filter</span>(training <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(ID)</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="do">##　処置群ダミーの作成</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>df_treated <span class="ot">&lt;-</span> df_treated <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">treated =</span> <span class="dv">1</span>)</span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="do">## df_panelにdf_treatedを結合: dplyr::left_join(a, b, by = &quot;x1&quot;) bをaに対応付け、結合する(aが全て残る)</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> <span class="fu">left_join</span>(df_binded, df_treated, <span class="at">by =</span><span class="st">&quot;ID&quot;</span>)</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># treated(処置群ダミー）のNAを0をreplace関数を使って置き換える</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> df_panel <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">treated =</span> <span class="fu">replace</span>(treated, <span class="fu">which</span>(<span class="fu">is.na</span>(treated)), <span class="dv">0</span>))</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co">#以下のような方法など、他の置き換える方法がある。</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="co"># df_panel &lt;- df_panel  %&gt;% mutate_at(vars(treated), funs(ifelse(is.na(.),0,.)))</span></span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># df_panel$treated[is.na(df_panel$treated)] &lt;- 0</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co">#処置群ダミーの作成</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="do">##　処置群の抽出</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>df_treated <span class="ot">&lt;-</span> df_binded <span class="sc">%&gt;%</span> <span class="fu">filter</span>(training <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="fu">select</span>(ID)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="do">##　処置群ダミーの作成</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>df_treated <span class="ot">&lt;-</span> df_treated <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">treated =</span> <span class="dv">1</span>)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="do">## df_panelにdf_treatedを結合: dplyr::left_join(a, b, by = &quot;x1&quot;) bをaに対応付け、結合する(aが全て残る)</span></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> <span class="fu">left_join</span>(df_binded, df_treated, <span class="at">by =</span><span class="st">&quot;ID&quot;</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="co"># treated(処置群ダミー）のNAを0をreplace関数を使って置き換える</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> df_panel <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">treated =</span> <span class="fu">replace</span>(treated, <span class="fu">which</span>(<span class="fu">is.na</span>(treated)), <span class="dv">0</span>))</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="co">#以下のような方法など、他の置き換える方法がある。</span></span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a><span class="co"># df_panel &lt;- df_panel  %&gt;% mutate_at(vars(treated), funs(ifelse(is.na(.),0,.)))</span></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="co"># df_panel$treated[is.na(df_panel$treated)] &lt;- 0</span></span></code></pre></div>
 <p>次に、<code>treated</code>と<code>year</code>のグループごとに、アウトカム変数(<code>income</code>)の４つの平均値を作成する。</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># group_byでグループ分けし、summarise_eachですべての列（変数）でグループごとに平均値を計算</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>df_panel_mean <span class="ot">&lt;-</span> df_panel <span class="sc">%&gt;%</span> </span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(treated, year) <span class="sc">%&gt;%</span> <span class="co">#グループわけ</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise_each</span>(<span class="fu">list</span>(mean)) <span class="sc">%&gt;%</span>  <span class="co"># すべての列（変数）でグループごとに平均値を計算</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="co"># グループ分けを解除</span></span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># group_byでグループ分けし、summarise_eachですべての列（変数）でグループごとに平均値を計算</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>df_panel_mean <span class="ot">&lt;-</span> df_panel <span class="sc">%&gt;%</span> </span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(treated, year) <span class="sc">%&gt;%</span> <span class="co">#グループわけ</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise_each</span>(<span class="fu">list</span>(mean)) <span class="sc">%&gt;%</span>  <span class="co"># すべての列（変数）でグループごとに平均値を計算</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="co"># グループ分けを解除</span></span></code></pre></div>
 <p>この４つの平均値を図示すると、以下のようになる。</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 処置群と対照群のラベルづけ</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>df_panel_mean <span class="ot">&lt;-</span> df_panel_mean <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">treated_label =</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">case_when</span>(treated <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">&quot;Treated&quot;</span>, </span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                                treated <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;Control&quot;</span>))</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># A, B, C, Dのラベルづけ（図に挿入）</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>df_panel_mean <span class="ot">&lt;-</span> df_panel_mean <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">point_label =</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">case_when</span>(treated <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> year <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">&quot;A&quot;</span>, </span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                                treated <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> year <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;B&quot;</span>, </span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>                                treated <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> year <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">&quot;C&quot;</span>,</span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>                                treated <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> year <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;D&quot;</span>))</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 図の作成</span></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>g <span class="ot">&lt;-</span> df_panel_mean <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, </span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">y =</span> income, </span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">color =</span> treated_label)) <span class="sc">+</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="co"># 散布図</span></span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span>  <span class="co"># 直線</span></span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Income by year and group&quot;</span>) <span class="sc">+</span> <span class="co">#タイトル</span></span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>)) <span class="sc">+</span>　<span class="co"># X軸は0と1のみ</span></span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> point_label), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.45</span>) <span class="co">#A,B,C,Dの文字を点の0.45上に表示。</span></span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="co"># 図の表示  </span></span>
-<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 処置群と対照群のラベルづけ</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>df_panel_mean <span class="ot">&lt;-</span> df_panel_mean <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">treated_label =</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">case_when</span>(treated <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">&quot;Treated&quot;</span>, </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                                treated <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;Control&quot;</span>))</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co"># A, B, C, Dのラベルづけ（図に挿入）</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>df_panel_mean <span class="ot">&lt;-</span> df_panel_mean <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">point_label =</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>                      <span class="fu">case_when</span>(treated <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> year <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">&quot;A&quot;</span>, </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>                                treated <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> year <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;B&quot;</span>, </span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>                                treated <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> year <span class="sc">==</span> <span class="dv">1</span> <span class="sc">~</span> <span class="st">&quot;C&quot;</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>                                treated <span class="sc">==</span> <span class="dv">0</span> <span class="sc">&amp;</span> year <span class="sc">==</span> <span class="dv">0</span> <span class="sc">~</span> <span class="st">&quot;D&quot;</span>))</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 図の作成</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>g <span class="ot">&lt;-</span> df_panel_mean <span class="sc">%&gt;%</span> <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> year, </span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">y =</span> income, </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">color =</span> treated_label)) <span class="sc">+</span></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="co"># 散布図</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span>  <span class="co"># 直線</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">&quot;Income by year and group&quot;</span>) <span class="sc">+</span> <span class="co">#タイトル</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>)) <span class="sc">+</span>　<span class="co"># X軸は0と1のみ</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_text</span>(<span class="fu">aes</span>(<span class="at">label =</span> point_label), <span class="at">vjust =</span> <span class="sc">-</span><span class="fl">0.45</span>) <span class="co">#A,B,C,Dの文字を点の0.45上に表示。</span></span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="co"># 図の表示  </span></span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>g</span></code></pre></div>
 <p><img src="data:image/png;base64,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HXrnqRMTIex8dGc3nBnvcLNKzz33XNXOvffee/V734LH7n4QQgj3987c2it5uSwFxZ/88hunTkx2/NjlYt/ZLP0x9+J0lw8IdEu+kA9AU/zpgJb1bwCjNZmf/mz7p2Hy0S4eojR9iV4AANC4oQ5gDc4abK9ZrZGuvb29qq+34ycPGmj00725797r0lrMFc96he6cJhCZsbExv8VAU4rr30T0p8NQG8NnqANYtemEXW8WgerrgO19//69P/7kh5d//CCEB5c//uHvlrRpn8e9AACgfUMdwEbMM48cnz/x+fDgo8v3Q7h/74/vP96RQTDRCwAAOqV/y9A3YPzE06EwNbBCvqDh0yfGO9+szz38u489HEII4cG/bWjCYj3qywMAQGcNdADLlycMH92pXKGroqBhZ5v1uWce/nz7OxG9AACgGwY7gI0//8JECDtr17fKXt66vrYTwsQLz493o1mf+/6DX7SzuegFAADdM9gBrJCZwsZS8upWfuBqd+tGcmkjlCemzjbra/f+4G5+5uHDf6cwF7FRohcAAHTboBfhGD/3zcU7l5Y2djaWLm2UvD6zuHJuvFvN+tT379/7g49/sJb/4ZHjv9twBQ5lNgAAIBqDHsBCGD/zyrXFE9e/tbaxk39hYubCN185lJc626y37u+duVW6+MYHh5tceKKhGvSiFwAARCmWy+V63Yfh1I0FCr9954O//+MjWz184clf+/0nj5h/KHoBwULMQPMsxAxtGvwRMIp+85GH/+pjj//eY8efqTv5UPQCAIBeEcAGye+c+MonJypfbPwfokQvAADoLQFsVFRUOOxhTwAAYGQJYMNP9AIAgD4hgA22J259sF8F8XC4MucQAAD6igA2wCry1RO3PtiPWKIXAAD0IQFsUFVErFovil4AANA/BLCBVDV9VRC9AACg3whgQ0j0AgCA/nSs1x0AAAAYFQIYAABARASwgVRnkqH5hwAA0LcEsEFVNWhJXwAA0M8EsAFWEbekLwAA6HOqIA62T05/ZWxsLISwt7fX674AAABHMAIGAAAQEQEMAAAgIgIYAABARAQwAACAiAhgAAAAERHAAAAAIiKAAQAAREQAAwAAiIgABgAAEBEBDAAAICICGAAAQEQEMAAAgIgIYAAAABERwAAAACIigAEAAEREAAMAAIiIAAYAABARAQwAACAiAhgAAEBEBDAA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" width="576" style="display: block; margin: auto;" /></p>
 <p>ここで、職業訓練(<code>training</code>)の平均効果は、</p>
 <p><span class="math display">\[
@@ -1725,53 +1718,54 @@ Process)をそれぞれ作成する。</p>
 \]</span></p>
 <p>と推定できる。つまり、処置群(<code>Treated</code>)における<code>income</code>の平均値の伸び（=職業訓練効果+年ショック）から、対照群(<code>Control</code>)における<code>income</code>の平均値の伸び（=年ショック）を引いたものが、職業訓練の平均効果と推定される。</p>
 </div>
-<div id="回帰モデルを用いたdid推定" class="section level2" number="5.2">
-<h2><span class="header-section-number">5.2</span>
+<div id="回帰モデルを用いたdid推定" class="section level2" number="4.2">
+<h2><span class="header-section-number">4.2</span>
 回帰モデルを用いたDID推定</h2>
-<div id="回帰モデル" class="section level3" number="5.2.1">
-<h3><span class="header-section-number">5.2.1</span> 回帰モデル</h3>
+<div id="回帰モデル" class="section level3" number="4.2.1">
+<h3><span class="header-section-number">4.2.1</span> 回帰モデル</h3>
 <p>上記のような二群(処置群と対照群）・二期間(<span class="math inline">\(t=0,1\)</span>)のDID推定は、以下の回帰式を用いて推定できる。</p>
 <p><span class="math display">\[
-Y_{it} = \mu + \theta D_i + \pi T_t + \beta D_iT_t + \varepsilon_{it} \
-\ \ \ \  (1)
+Y_{it} = \mu + \theta D_i + \pi T_t + \beta D_iT_t + \varepsilon_{it}
+\tag{1}
 \]</span> ここで、<span class="math inline">\(D_i\)</span>は処置群ダミー、<span class="math inline">\(T_t\)</span>は時間ダミー(<span class="math inline">\(t=0\)</span>だと0、<span class="math inline">\(t=1\)</span>だと1)であり、DIDパラメータ（処置群に対する平均処置効果:ATET)は<span class="math inline">\(\beta\)</span>である。</p>
 <p>また、この式の二年間の差分（一階の階差）をとると、以下のように表すこともできる。</p>
 <p><span class="math display">\[
-\Delta Y_i =  \pi + \beta D_i + \Delta \varepsilon_{it}  \ \ \ \ \ (2)
+\Delta Y_i =  \pi + \beta D_i + \Delta \varepsilon_{it}
+\tag{2}
 \]</span></p>
 <p>(2)式の<span class="math inline">\(\Delta
 Y_i\)</span>は<code>income</code>の一階の階差変数であり、以下のように作成できる。</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># incomeのラグ変数および一階の階差変数の作成</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># dplyr::lagとplm::lagの二つがあるためか、dplyr::をつけないとうまくいかなない</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> df_panel <span class="sc">%&gt;%</span> </span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ID) <span class="sc">%&gt;%</span> <span class="co"># IDでグループ分け</span></span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lag_income =</span> dplyr<span class="sc">::</span><span class="fu">lag</span>(income, </span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">order_by =</span> year)) <span class="sc">%&gt;%</span> <span class="co"># lag変数の作成</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff_income =</span> income <span class="sc">-</span> lag_income) <span class="sc">%&gt;%</span>  <span class="co"># 一階の階差変数の作成</span></span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="co"># グループ分けの解除</span></span></code></pre></div>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># incomeのラグ変数および一階の階差変数の作成</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># dplyr::lagとplm::lagの二つがあるためか、dplyr::をつけないとうまくいかなない</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> df_panel <span class="sc">%&gt;%</span> </span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ID) <span class="sc">%&gt;%</span> <span class="co"># IDでグループ分け</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lag_income =</span> dplyr<span class="sc">::</span><span class="fu">lag</span>(income, </span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">order_by =</span> year)) <span class="sc">%&gt;%</span> <span class="co"># lag変数の作成</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff_income =</span> income <span class="sc">-</span> lag_income) <span class="sc">%&gt;%</span>  <span class="co"># 一階の階差変数の作成</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="co"># グループ分けの解除</span></span></code></pre></div>
 </div>
-<div id="lmを用いた推定" class="section level3" number="5.2.2">
-<h3><span class="header-section-number">5.2.2</span> lmを用いた推定</h3>
+<div id="lmを用いた推定" class="section level3" number="4.2.2">
+<h3><span class="header-section-number">4.2.2</span> lmを用いた推定</h3>
 <p><code>lm</code>を用いて、(1)式および(2)式に基づいてDID推定を行う。ただし標準誤差は均一分散を仮定して算出されている点に注意する。</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># DID regression</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># pooled OLS:(1)式</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>DID_pooled <span class="ot">&lt;-</span> <span class="fu">lm</span>(income <span class="sc">~</span> treated <span class="sc">+</span> year <span class="sc">+</span> treated<span class="sc">:</span>year, </span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">data =</span> df_panel)</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># first-differenced (一階の階差) OLS: (2)式</span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>DID_FD <span class="ot">&lt;-</span> <span class="fu">lm</span>(diff_income <span class="sc">~</span> treated, </span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> df_panel)</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="co"># stargazer</span></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(DID_pooled, </span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>          DID_FD, </span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>, </span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>, </span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">df =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>          <span class="at">column.labels =</span> <span class="fu">c</span>(<span class="st">&quot;DID (Pooled data)&quot;</span>,<span class="st">&quot;DID (FD data)&quot;</span>),</span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>          <span class="at">model.names =</span> F, </span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>          <span class="at">model.numbers =</span> F)</span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># DID regression</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># pooled OLS:(1)式</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>DID_pooled <span class="ot">&lt;-</span> <span class="fu">lm</span>(income <span class="sc">~</span> treated <span class="sc">+</span> year <span class="sc">+</span> treated<span class="sc">:</span>year, </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">data =</span> df_panel)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="co"># first-differenced (一階の階差) OLS: (2)式</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>DID_FD <span class="ot">&lt;-</span> <span class="fu">lm</span>(diff_income <span class="sc">~</span> treated, </span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>             <span class="at">data =</span> df_panel)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a><span class="co"># stargazer</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(DID_pooled, </span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>          DID_FD, </span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>, </span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>, </span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">df =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>          <span class="at">column.labels =</span> <span class="fu">c</span>(<span class="st">&quot;DID (Pooled data)&quot;</span>,<span class="st">&quot;DID (FD data)&quot;</span>),</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>          <span class="at">model.names =</span> F, </span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>          <span class="at">model.numbers =</span> F)</span></code></pre></div>
 <pre><code>## 
 ## ===================================================
 ##                           Dependent variable:      
@@ -1801,42 +1795,41 @@ Y_i\)</span>は<code>income</code>の一階の階差変数であり、以下の�
 ## Note:                   *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
 <p>DID推定値は概ね500近傍となってり、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果<span class="math inline">\(\theta\)</span>を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果<span class="math inline">\(\theta_i\)</span>を除去しているためである。</p>
 </div>
-<div id="lm_robustを用いた推定メイン" class="section level3" number="5.2.3">
-<h3><span class="header-section-number">5.2.3</span>
+<div id="lm_robustを用いた推定メイン" class="section level3" number="4.2.3">
+<h3><span class="header-section-number">4.2.3</span>
 lm_robustを用いた推定（メイン）</h3>
 <p>パネルデータであれば、(1)式の処置群ダミー<span class="math inline">\(\theta
 D_i\)</span>の代わりに、個体ダミーを用いてもよい。（ただし、繰り返しクロスセクションデータを用いたDID推定では個体ダミーは用いることはできない点は留意が必要である。）</p>
-<p>この場合、個体ダミーをn-1個用いて推定してもよいが、<code>lm_robust</code>関数で個体固定効果モデルを推定してもいい。</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with a two-by-two DID model (オーソドックスなDIDモデル)</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>DID_robust1 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(income <span class="sc">~</span> treated <span class="sc">+</span> year <span class="sc">+</span> treated<span class="sc">:</span>year, </span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>                            <span class="at">data =</span> df_panel, </span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>                            <span class="at">clusters =</span> ID,</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>                            <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>)</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with two-way FE model (年ダミー変数は活用し、個体固定効果はlm_robustで指定） </span></span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>DID_robust2 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(income <span class="sc">~</span> treated<span class="sc">:</span>year <span class="sc">+</span> year, </span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>                            <span class="at">fixed_effects =</span> <span class="sc">~</span> ID, <span class="co">#個体固定効果</span></span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>                            <span class="at">data =</span> df_panel, </span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>                            <span class="at">clusters =</span> ID,</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>                            <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>)</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with two-way FE model（個体固定効果と年固定効果をlm_robustで指定）</span></span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>DID_robust3 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(income <span class="sc">~</span> treated<span class="sc">:</span>year, </span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>                            <span class="at">fixed_effects =</span> <span class="sc">~</span> ID <span class="sc">+</span> year, <span class="co">#個体固定効果と年固定効果</span></span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>                            <span class="at">data =</span> df_panel, </span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>                            <span class="at">clusters =</span> ID,</span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>                            <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>)</span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a><span class="co">#結果表の出力</span></span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(DID_robust1, </span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>               DID_robust2, </span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>               DID_robust3), </span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>          <span class="at">custom.model.names =</span> <span class="fu">c</span>(<span class="st">&quot;Pooled&quot;</span>, </span>
-<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">&quot;Oneway&quot;</span>, </span>
-<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">&quot;Twoway&quot;</span>),</span>
-<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>          <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
-<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<p>この場合、個体ダミーを<span class="math inline">\(n-1\)</span>個用いて推定してもよいが、<code>lm_robust</code>関数で個体固定効果モデルを推定してもいい。</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with a two-by-two DID model (オーソドックスなDIDモデル)</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>DID_robust1 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(income <span class="sc">~</span> treated <span class="sc">+</span> year <span class="sc">+</span> treated<span class="sc">:</span>year,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                         <span class="at">data =</span> df_panel,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>                         <span class="at">clusters =</span> ID,</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>                         <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>)</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with two-way FE model (年ダミー変数は活用し、個体固定効果はlm_robustで指定） </span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>DID_robust2 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(income <span class="sc">~</span> treated<span class="sc">:</span>year <span class="sc">+</span> year,</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed_effects =</span> <span class="sc">~</span> ID, <span class="co">#個体固定効果</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                         <span class="at">data =</span> df_panel,</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>                         <span class="at">clusters =</span> ID,</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>                         <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>)</span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with two-way FE model（個体固定効果と年固定効果をlm_robustで指定）</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>DID_robust3 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(income <span class="sc">~</span> treated<span class="sc">:</span>year,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>                         <span class="at">fixed_effects =</span> <span class="sc">~</span> ID <span class="sc">+</span> year, <span class="co">#個体固定効果と年固定効果</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>                         <span class="at">data =</span> df_panel,</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>                         <span class="at">clusters =</span> ID,</span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>                         <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>)</span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="co">#結果表の出力</span></span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(DID_robust1, </span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a>               DID_robust2, </span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a>               DID_robust3), </span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a>          <span class="at">custom.model.names =</span> <span class="fu">c</span>(<span class="st">&quot;Pooled&quot;</span>, </span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">&quot;Oneway&quot;</span>, </span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a>                                 <span class="st">&quot;Twoway&quot;</span>),</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a>          <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>## 
 ## =========================================================
 ##               Pooled         Oneway         Twoway       
@@ -1858,36 +1851,36 @@ D_i\)</span>の代わりに、個体ダミーを用いてもよい。（ただ�
 ## =========================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
 </div>
-<div id="plmを用いた推定参考" class="section level3" number="5.2.4">
-<h3><span class="header-section-number">5.2.4</span>
+<div id="plmを用いた推定参考" class="section level3" number="4.2.4">
+<h3><span class="header-section-number">4.2.4</span>
 plmを用いた推定(参考)</h3>
 <p><code>plm</code>関数で個体固定効果モデルを推定してもよいが、標準誤差は均一分散を仮定したものである点は注意が必要。</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df_panelのデータをpanelとして認識</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> <span class="fu">pdata.frame</span>(df_panel, </span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">index =</span> <span class="fu">c</span>(<span class="st">&quot;ID&quot;</span>, <span class="st">&quot;year&quot;</span>)) <span class="co"># 個体=firm、時間=yearと認識させたdf</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># DID regression</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with two-way FE model (年ダミーは活用） </span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>DID_plm1 <span class="ot">&lt;-</span> <span class="fu">plm</span>(income <span class="sc">~</span> treated<span class="sc">:</span>year <span class="sc">+</span> year, </span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> df_panel, </span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">model =</span> <span class="st">&quot;within&quot;</span>)</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with two-way FE model（年ダミーも入れない）</span></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>DID_plm2 <span class="ot">&lt;-</span> <span class="fu">plm</span>(income <span class="sc">~</span> treated<span class="sc">:</span>year, </span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> df_panel, </span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">model =</span> <span class="st">&quot;within&quot;</span>, </span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>                <span class="at">effect =</span> <span class="st">&quot;twoways&quot;</span>)</span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co"># stargazer</span></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(DID_plm1, </span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>          DID_plm2, </span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>, </span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>, </span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>          <span class="at">df =</span> <span class="cn">FALSE</span>,</span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>          <span class="at">column.labels =</span> <span class="fu">c</span>(<span class="st">&quot;DID (onewayFE)&quot;</span>,<span class="st">&quot;DID (twowayFE)&quot;</span>),</span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>          <span class="at">model.names =</span> F, </span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>          <span class="at">model.numbers =</span> F)</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># df_panelのデータをpanelとして認識</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> <span class="fu">pdata.frame</span>(df_panel, </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                        <span class="at">index =</span> <span class="fu">c</span>(<span class="st">&quot;ID&quot;</span>, <span class="st">&quot;year&quot;</span>)) <span class="co"># 個体=firm、時間=yearと認識させたdf</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="co"># DID regression</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with two-way FE model (年ダミーは活用） </span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>DID_plm1 <span class="ot">&lt;-</span> <span class="fu">plm</span>(income <span class="sc">~</span> treated<span class="sc">:</span>year <span class="sc">+</span> year, </span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> df_panel, </span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">model =</span> <span class="st">&quot;within&quot;</span>)</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a><span class="co"># DID with two-way FE model（年ダミーも入れない）</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>DID_plm2 <span class="ot">&lt;-</span> <span class="fu">plm</span>(income <span class="sc">~</span> treated<span class="sc">:</span>year, </span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> df_panel, </span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>                <span class="at">model =</span> <span class="st">&quot;within&quot;</span>, </span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>                <span class="at">effect =</span> <span class="st">&quot;twoways&quot;</span>)</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a><span class="co"># stargazer</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a><span class="fu">stargazer</span>(DID_plm1, </span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>          DID_plm2, </span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>          <span class="at">type =</span> <span class="st">&quot;text&quot;</span>, </span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>, </span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>          <span class="at">df =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb15-24"><a href="#cb15-24" aria-hidden="true" tabindex="-1"></a>          <span class="at">column.labels =</span> <span class="fu">c</span>(<span class="st">&quot;DID (onewayFE)&quot;</span>,<span class="st">&quot;DID (twowayFE)&quot;</span>),</span>
+<span id="cb15-25"><a href="#cb15-25" aria-hidden="true" tabindex="-1"></a>          <span class="at">model.names =</span> F, </span>
+<span id="cb15-26"><a href="#cb15-26" aria-hidden="true" tabindex="-1"></a>          <span class="at">model.numbers =</span> F)</span></code></pre></div>
 <pre><code>## 
 ## ===========================================
 ##                    Dependent variable:     
@@ -1911,8 +1904,8 @@ plmを用いた推定(参考)</h3>
 </div>
 </div>
 </div>
-<div id="参考文献" class="section level1" number="6">
-<h1><span class="header-section-number">6</span> 参考文献</h1>
+<div id="参考文献" class="section level1" number="5">
+<h1><span class="header-section-number">5</span> 参考文献</h1>
 <ul>
 <li><p>安藤道人「計量経済学２」あるいは「計量経済特論２」の「差分の差分法（差の差法）」の<a href="https://sites.google.com/site/michihito7ando/lectures">講義資料</a></p></li>
 <li><p><a href="https://yukiyanai.github.io/jp/classes/econometrics2/contents/R/difference-in-differences.html">計量経済学応用

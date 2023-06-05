@@ -33,17 +33,11 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 - `lm_robust()`を用いた差分の差分法(Difference-in-Differences)の推定の基礎を学ぶ。
 - データの前処理やグラフ作成の復習や練習をする。
 
-# ディレクトリの設定
-
-作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
-
-```{r, eval = FALSE}
-setwd("自分のディレクトリ") # ディレクトリの設定。 "自分のディレクトリ"には、自分のパソコンの作業フォルダの場所を指定する。
-getwd() # ディレクトリの確認
-```
 
 # パッケージの読み込み
+
 今回の分析で使うパッケージを読み込む。
+
 ```{r}
 pacman::p_load(tidyverse, 
                estimatr, # lm_robustによるパネルデータ分析(メイン)
@@ -55,7 +49,7 @@ pacman::p_load(tidyverse,
 
 # データの生成
 
-パネルデータ分析の応用として、**差分の差分法(difference in differences:DID)法**がある。
+パネルデータ分析の応用として、**差分の差分法（difference in differences: DID）法**がある。
 
 詳しい解説は参考文献などに譲るが、ここではもっとも単純なDID（二群・二期間DID)の推定を行う。
 
@@ -78,7 +72,7 @@ ability <- runif(n, min = 0, max = 100)
 df <- tibble(ID = 1:n, ability)
 ```
 
-二期間DIDなので、１年目と２年目のデータ生成過程(DGP:Data Generating Process)をそれぞれ作成する。
+二期間DIDなので、１年目と２年目のデータ生成過程（DGP: Data Generating Process）をそれぞれ作成する。
 
 1年目は、誰も職業訓練を受けず、所得は、定数項、能力、誤差項のみによって決まるものとする。
 
@@ -99,7 +93,7 @@ df0 <- df0 %>% mutate(income = 200 + 10*ability +
 
 2年目は、能力を部分的に反映した適正試験が 180 点以上であれば職業訓練(`training`)を受けられるとし、職業訓練を受けた個体は500万円、所得が上乗せされるものとする。ここで、職業訓練を受けた個体が処置群、受けなかった個体が対照群となる。
 
-また年ショックとして、`n(mean=100、sd=25)`をすべての個体に加える。
+また年ショックとして、平均100、標準偏差25の正規分布$N(\mu=100、\sigma=25)$に従う確率変数をすべての個体に加える。
 
 ```{r}
 # 2年目
@@ -113,14 +107,13 @@ df1 <- df %>% mutate(year = 1)
 ## abilityとscoreの関係は非線形なものとする
 ## 今回もmutate()とcase_when()を使用して作成
 
-#適正試験の点数 score
+# 適正試験の点数 score
 df1 <- df1 %>% mutate(score = 30 * log10(ability) + 
                         rnorm(n, mean = 115, sd = 10))
 
-#職業訓練ダミー training (score 180点以上=1)
-df1 <- df1 %>% mutate(training = 
-                        case_when(score >= 180 ~ 1, 
-                                 TRUE ~ 0))
+# 職業訓練ダミー training (score 180点以上=1)
+df1 <- df1 %>% mutate(training = case_when(score >= 180 ~ 1,
+                                           TRUE ~ 0))
 
 #所得 income: 年ショックとしてn(100,25)も追加
 df1 <- df1 %>% mutate(income = 200 + 10*ability + 500*training + 
@@ -135,6 +128,7 @@ df1 <- df1 %>% mutate(income = 200 + 10*ability + 500*training +
 df_binded <- bind_rows(df0, df1)
 head(df_binded)
 ```
+
 
 # 差分の差分法(DID)推定
 
@@ -183,7 +177,6 @@ df_panel_mean <- df_panel %>%
 この４つの平均値を図示すると、以下のようになる。
 
 ```{r}
-
 # 処置群と対照群のラベルづけ
 df_panel_mean <- df_panel_mean %>% mutate(treated_label =
                       case_when(treated == 1 ~ "Treated", 
@@ -217,6 +210,7 @@ $$
 
 と推定できる。つまり、処置群(`Treated`)における`income`の平均値の伸び（=職業訓練効果+年ショック）から、対照群(`Control`)における`income`の平均値の伸び（=年ショック）を引いたものが、職業訓練の平均効果と推定される。
 
+
 ## 回帰モデルを用いたDID推定
 
 ### 回帰モデル
@@ -224,14 +218,16 @@ $$
 上記のような二群(処置群と対照群）・二期間($t=0,1$)のDID推定は、以下の回帰式を用いて推定できる。
 
 $$
-Y_{it} = \mu + \theta D_i + \pi T_t + \beta D_iT_t + \varepsilon_{it} \ \ \ \ \  (1)
+Y_{it} = \mu + \theta D_i + \pi T_t + \beta D_iT_t + \varepsilon_{it}
+\tag{1}
 $$
 ここで、$D_i$は処置群ダミー、$T_t$は時間ダミー($t=0$だと0、$t=1$だと1)であり、DIDパラメータ（処置群に対する平均処置効果:ATET)は$\beta$である。
 
 また、この式の二年間の差分（一階の階差）をとると、以下のように表すこともできる。
 
 $$
-\Delta Y_i =  \pi + \beta D_i + \Delta \varepsilon_{it}  \ \ \ \ \ (2)
+\Delta Y_i =  \pi + \beta D_i + \Delta \varepsilon_{it}
+\tag{2}
 $$
 
 
@@ -277,33 +273,34 @@ stargazer(DID_pooled,
 
 DID推定値は概ね500近傍となってり、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果$\theta$を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果$\theta_i$を除去しているためである。
 
+
 ### lm_robustを用いた推定（メイン）
+
 パネルデータであれば、(1)式の処置群ダミー$\theta D_i$の代わりに、個体ダミーを用いてもよい。（ただし、繰り返しクロスセクションデータを用いたDID推定では個体ダミーは用いることはできない点は留意が必要である。）
 
-この場合、個体ダミーをn-1個用いて推定してもよいが、`lm_robust`関数で個体固定効果モデルを推定してもいい。
+この場合、個体ダミーを$n-1$個用いて推定してもよいが、`lm_robust`関数で個体固定効果モデルを推定してもいい。
 
 
 ```{r}
 # DID with a two-by-two DID model (オーソドックスなDIDモデル)
-DID_robust1 <- lm_robust(income ~ treated + year + treated:year, 
-                            data = df_panel, 
-                            clusters = ID,
-                            se_type = "stata")
+DID_robust1 <- lm_robust(income ~ treated + year + treated:year,
+                         data = df_panel,
+                         clusters = ID,
+                         se_type = "stata")
 
 # DID with two-way FE model (年ダミー変数は活用し、個体固定効果はlm_robustで指定） 
-DID_robust2 <- lm_robust(income ~ treated:year + year, 
-                            fixed_effects = ~ ID, #個体固定効果
-                            data = df_panel, 
-                            clusters = ID,
-                            se_type = "stata")
+DID_robust2 <- lm_robust(income ~ treated:year + year,
+                         fixed_effects = ~ ID, #個体固定効果
+                         data = df_panel,
+                         clusters = ID,
+                         se_type = "stata")
 
 # DID with two-way FE model（個体固定効果と年固定効果をlm_robustで指定）
-DID_robust3 <- lm_robust(income ~ treated:year, 
-                            fixed_effects = ~ ID + year, #個体固定効果と年固定効果
-                            data = df_panel, 
-                            clusters = ID,
-                            se_type = "stata")
-
+DID_robust3 <- lm_robust(income ~ treated:year,
+                         fixed_effects = ~ ID + year, #個体固定効果と年固定効果
+                         data = df_panel,
+                         clusters = ID,
+                         se_type = "stata")
 
 #結果表の出力
 screenreg(list(DID_robust1, 

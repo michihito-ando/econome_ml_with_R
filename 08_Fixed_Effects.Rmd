@@ -32,17 +32,11 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 - 固定効果モデルの推定の基礎を学ぶ。
 
-# ディレクトリの設定
-
-作業ディレクトリを設定する。プロジェクト機能を活用できるのであれば、そちらを活用する。
-
-```{r, eval = FALSE}
-setwd("自分のディレクトリ") # ディレクトリの設定。 "自分のディレクトリ"には、自分のパソコンの作業フォルダの場所を指定する。
-getwd() # ディレクトリの確認
-```
 
 # パッケージの読み込み
+
 今回の分析で使うパッケージを読み込む。
+
 ```{r}
 pacman::p_load(tidyverse, 
                estimatr, # lm_robustによるパネルデータ分析(メイン)
@@ -52,6 +46,7 @@ pacman::p_load(tidyverse,
                lmtest) # lmやplmでロバスト標準誤差に修正（参考)
 ```
 
+
 # パネルデータ
 
 **パネルデータ(panel data)**とは、複数の個体を複数の期間にわたって観察したデータである。
@@ -60,9 +55,15 @@ pacman::p_load(tidyverse,
 例えば以下のような形式のもの。
 
 ```{r}
-data(Grunfeld) #plmパッケージにもともと入っているデータ
-Grunfeld %>% rename(`企業ID`=firm, `年度`=year, `投資額`=inv, `企業価値`=value, `資本ストック`=capital) %>%
-  filter(1951 <= `年度` & `年度` <= 1953) %>% head() %>% knitr::kable()
+data(Grunfeld) # plmパッケージに入っているデータの読み込み
+
+Grunfeld %>% rename(`企業ID`=firm,
+                    `年度`=year,
+                    `投資額`=inv,
+                    `企業価値`=value,
+                    `資本ストック`=capital) %>%
+  filter(1951 <= `年度` & `年度` <= 1953) %>% 
+  head() %>% knitr::kable()
 ```
 
 $k$個の説明変数$X$と被説明変数$Y$の個体$i$・時点$t$のパネルデータは、次のように表記される。
