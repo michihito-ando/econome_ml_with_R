@@ -206,40 +206,40 @@ head(Grunfeld)
 
 ```{r}
 # 投資総額(Y)
-Grunfeld %>% ggplot(aes(x = year, 
-                        y = inv, 
+Grunfeld %>% ggplot(aes(x = year,
+                        y = inv,
                         colour = as.factor(firm))) +
-　　　　　　geom_line()
+  geom_line()
 
 # 企業価値(X1)
 Grunfeld %>% ggplot(aes(x = year, 
                         y = value, 
                         colour = as.factor(firm))) + 
-            geom_line()
+  geom_line()
 
 # 資本ストック(X2)
 Grunfeld %>% ggplot(aes(x = year, 
                         y = capital, 
                         colour = as.factor(firm))) + 
-            geom_line()
+  geom_line()
 
 # 企業価値(X1)と投資総額(Y)
 Grunfeld %>% ggplot(aes(x = value, 
                         y = inv, 
                         colour = as.factor(firm))) + 
-              geom_point()
+  geom_point()
 
 # 資本ストック(X2)と投資総額(Y)
 Grunfeld %>% ggplot(aes(x = capital, 
                         y = inv, 
                         colour = as.factor(firm))) + 
-              geom_point()
+  geom_point()
 
 # 企業価値(X1)と 資本ストック(X2)
 Grunfeld %>% ggplot(aes(x = value, 
                         y = capital, 
                         colour = as.factor(firm))) + 
-              geom_point()
+  geom_point()
 ```
 
 # lm_robustによる推定
