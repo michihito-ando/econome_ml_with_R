@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-05-11" />
+<meta name="date" content="2023-05-21" />
 
 <title>Rで学ぶ計量経済学と機械学習 5    計量経済学１：差の検定/回帰分析/マッチング</title>
 
@@ -2771,7 +2771,7 @@ border-radius: 0px;
 計量経済学１：差の検定/回帰分析/マッチング</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-05-11</h4>
+<h4 class="date">2023-05-21</h4>
 
 </div>
 
@@ -2845,8 +2845,8 @@ Y = 200 + 10A + 500X+ \varepsilon
 <li>大卒だと所得が500万円上昇する</li>
 <li>切片は200万円（能力=0、非大卒の平均給与）</li>
 </ul>
-<div class="grViz html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-b1f28c3fcd6af703597d" style="width:480px;height:336px;"></div>
-<script type="application/json" data-for="htmlwidget-b1f28c3fcd6af703597d">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div class="grViz html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-5a967fbc075cfdb3b81c" style="width:480px;height:336px;"></div>
+<script type="application/json" data-for="htmlwidget-5a967fbc075cfdb3b81c">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 <p>ここで、学歴<span class="math inline">\(X\)</span>が所得<span class="math inline">\(Y\)</span>に与える効果に興味があるとき、<span class="math inline">\(X\)</span>を<strong>処置変数</strong>、<span class="math inline">\(Y\)</span>を<strong>アウトカム変数</strong>と呼ぶ。また、<span class="math inline">\(X\)</span>と<span class="math inline">\(Y\)</span>に影響を及ぼすことが想定される能力<span class="math inline">\(A\)</span>のような変数を<strong>共変量/交絡要因/コントロール変数</strong>と呼ぶ（分野によって呼び方やニュアンスが若干異なるが、ほぼ同じ意味で用いて問題ない）。</p>
 <p>まず、上記のDGPに従うデータを生成する。なお、データ生成は、これまでの学習した内容と比較してやや高度なので、とりあえずは、ただコピペしてデータ生成するだけでも構わない。</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 事前準備 --------------------</span></span>
@@ -2952,7 +2952,7 @@ Y = 200 + 10A + 500X+ \varepsilon
 <p>大卒の平均所得が約1600万円、非大卒の平均所得が約655万円であり、1%有意水準でも有意な差があることがわかった。</p>
 <p>ただし、ここで「大卒になることで、所得が1600 - 655 =
 945万円上昇する」と結論付けることはできない。例えば、学歴と所得の両方に影響を与える交絡要因がある場合、大卒と非大卒の所得差には、このような交絡要因の影響が反映されてしまう。</p>
-<p>ここで、自分がこのデータの「真のデータ生成過程」を知っていることを思い起こそう。本データにおいては、所得<span class="math inline">\(Y\)</span>が上がる要因には学歴<span class="math inline">\(X\)</span>以外にも能力<span class="math inline">\(A\)</span>という要因があった。そして、能力<span class="math inline">\(A\)</span>は所得<span class="math inline">\(Y\)</span>だけでなく、学歴<span class="math inline">\(X\)</span>にも影響を与えていた。したがって、946万円という所得差は、学歴（大卒）による所得上昇効果だけでなく、能力による所得上昇効果も混在している。</p>
+<p>ここで、自分がこのデータの「真のデータ生成過程」を知っていることを思い起こそう。本データにおいては、所得<span class="math inline">\(Y\)</span>が上がる要因には学歴<span class="math inline">\(X\)</span>以外にも能力<span class="math inline">\(A\)</span>という要因があった。そして、能力<span class="math inline">\(A\)</span>は所得<span class="math inline">\(Y\)</span>だけでなく、学歴<span class="math inline">\(X\)</span>にも影響を与えていた。したがって、945万円という所得差は、学歴（大卒）による所得上昇効果だけでなく、能力による所得上昇効果も混在している。</p>
 <!-- それでは、能力による所得上昇効果を含まない、学歴だけによる所得上昇効果を推定することはできるだろうか？ -->
 </div>
 <div id="参考セレクションバイアスと処置割り当ての独立性" class="section level1" number="5">

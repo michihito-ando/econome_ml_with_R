@@ -55,7 +55,7 @@ pacman::p_load(tidyverse,
 
 詳しい解説は参考文献などに譲るが、ここではもっとも単純なDID（二群・二期間DID)の推定を行う。
 
-これまでの事例と同樣、能力が均等に分布した個体の所得をアウトカム変数とした分析を行う。処置変数として、職業訓練(`training`)を想定する。
+これまでの事例と同様、能力が均等に分布した個体の所得をアウトカム変数とした分析を行う。処置変数として、職業訓練(`training`)を想定する。
 
 まず、能力が1~100まで均等に分布した個体を1万人生成させる。
 
@@ -240,9 +240,10 @@ $$
 # dplyr::lagとplm::lagの二つがあるためか、dplyr::をつけないとうまくいかなない
 df_panel <- df_panel %>% 
   group_by(ID) %>% # IDでグループ分け
-  mutate(lag_income = dplyr::lag(income, 
-                                 order_by = year)) %>% # lag変数の作成
-  mutate(diff_income = income - lag_income) %>%  # 一階の階差変数の作成
+  mutate(
+    lag_income = dplyr::lag(income, order_by = year), # lag変数の作成
+    diff_income = income - lag_income # 一階の階差変数の作成
+  ) %>% 
   ungroup() # グループ分けの解除
 ```
 
@@ -273,7 +274,7 @@ stargazer(DID_pooled,
 
 ```
 
-DID推定値は概ね500近傍となってり、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果$\theta$を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果$\theta_i$を除去しているためである。
+DID推定値は概ね500近傍となっており、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果$\theta$を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果$\theta_i$を除去しているためである。
 
 
 ### lm_robustを用いた推定（メイン）
@@ -314,6 +315,16 @@ screenreg(list(DID_robust1,
           include.ci = FALSE, 
           digits = 3)
 ```
+
+
+<!-- 
+ID=1万の個体固定効果なので、やや重い処理。
+RStudio cloudがどうしても止まってしまうならサブサンプリングでなんとかする方法がある
+
+df_temp <- tibble(ID = sample(1:n, size=1000))
+df_selected = inner_join(df_panel, df_temp, by = "ID")
+-->
+
 
 ### plmを用いた推定(参考)
 

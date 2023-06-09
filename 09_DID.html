@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-06-05" />
+<meta name="date" content="2023-06-09" />
 
 <title>Rで学ぶ計量経済学と機械学習 9    計量経済学5：差分の差分(DID)法</title>
 
@@ -1557,7 +1557,7 @@ border-radius: 0px;
 計量経済学5：差分の差分(DID)法</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-06-05</h4>
+<h4 class="date">2023-06-09</h4>
 
 </div>
 
@@ -1585,7 +1585,7 @@ technologies)</h4>
 <p>パネルデータ分析の応用として、<strong>差分の差分法（difference in
 differences: DID）法</strong>がある。</p>
 <p>詳しい解説は参考文献などに譲るが、ここではもっとも単純なDID（二群・二期間DID)の推定を行う。</p>
-<p>これまでの事例と同樣、能力が均等に分布した個体の所得をアウトカム変数とした分析を行う。処置変数として、職業訓練(<code>training</code>)を想定する。</p>
+<p>これまでの事例と同様、能力が均等に分布した個体の所得をアウトカム変数とした分析を行う。処置変数として、職業訓練(<code>training</code>)を想定する。</p>
 <p>まず、能力が1~100まで均等に分布した個体を1万人生成させる。</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 事前準備 --------------------</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1739,10 +1739,11 @@ Y_i\)</span>は<code>income</code>の一階の階差変数であり、以下の�
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="co"># dplyr::lagとplm::lagの二つがあるためか、dplyr::をつけないとうまくいかなない</span></span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>df_panel <span class="ot">&lt;-</span> df_panel <span class="sc">%&gt;%</span> </span>
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(ID) <span class="sc">%&gt;%</span> <span class="co"># IDでグループ分け</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">lag_income =</span> dplyr<span class="sc">::</span><span class="fu">lag</span>(income, </span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                                 <span class="at">order_by =</span> year)) <span class="sc">%&gt;%</span> <span class="co"># lag変数の作成</span></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">diff_income =</span> income <span class="sc">-</span> lag_income) <span class="sc">%&gt;%</span>  <span class="co"># 一階の階差変数の作成</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="co"># グループ分けの解除</span></span></code></pre></div>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">lag_income =</span> dplyr<span class="sc">::</span><span class="fu">lag</span>(income, <span class="at">order_by =</span> year), <span class="co"># lag変数の作成</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">diff_income =</span> income <span class="sc">-</span> lag_income <span class="co"># 一階の階差変数の作成</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>() <span class="co"># グループ分けの解除</span></span></code></pre></div>
 </div>
 <div id="lmを用いた推定" class="section level3" number="4.2.2">
 <h3><span class="header-section-number">4.2.2</span> lmを用いた推定</h3>
@@ -1793,7 +1794,7 @@ Y_i\)</span>は<code>income</code>の一階の階差変数であり、以下の�
 ## F Statistic           3,500.464***    43,247.750***
 ## ===================================================
 ## Note:                   *p&lt;0.1; **p&lt;0.05; ***p&lt;0.01</code></pre>
-<p>DID推定値は概ね500近傍となってり、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果<span class="math inline">\(\theta\)</span>を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果<span class="math inline">\(\theta_i\)</span>を除去しているためである。</p>
+<p>DID推定値は概ね500近傍となっており、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果<span class="math inline">\(\theta\)</span>を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果<span class="math inline">\(\theta_i\)</span>を除去しているためである。</p>
 </div>
 <div id="lm_robustを用いた推定メイン" class="section level3" number="4.2.3">
 <h3><span class="header-section-number">4.2.3</span>
@@ -1850,6 +1851,13 @@ D_i\)</span>の代わりに、個体ダミーを用いてもよい。（ただ�
 ## N Clusters    10000          10000          10000        
 ## =========================================================
 ## *** p &lt; 0.001; ** p &lt; 0.01; * p &lt; 0.05</code></pre>
+<!-- 
+ID=1万の個体固定効果なので、やや重い処理。
+RStudio cloudがどうしても止まってしまうならサブサンプリングでなんとかする方法がある
+
+df_temp <- tibble(ID = sample(1:n, size=1000))
+df_selected = inner_join(df_panel, df_temp, by = "ID")
+-->
 </div>
 <div id="plmを用いた推定参考" class="section level3" number="4.2.4">
 <h3><span class="header-section-number">4.2.4</span>
