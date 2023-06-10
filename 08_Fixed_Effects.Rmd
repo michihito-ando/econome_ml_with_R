@@ -288,10 +288,11 @@ oneway_fe1 <- lm_robust(inv ~ value + capital + factor(firm),
                         se_type = "stata") #クラスタSE: Stataと同一のものを使う
 
 #lm_robustの"fixed_effects"オプションを利用
-oneway_fe2 <- lm_robust(inv ~ value + capital, data = Grunfeld, 
-                              fixed_effects = ~ firm, #個体固定効果の指定
-                              clusters = firm, #クラスタのレベルを指定
-                              se_type = "stata") # クラスタロバストはStataと同様の方法で計算
+oneway_fe2 <- lm_robust(inv ~ value + capital,
+                        data = Grunfeld, 
+                        fixed_effects = ~ firm, #個体固定効果の指定
+                        clusters = firm, #クラスタのレベルを指定
+                        se_type = "stata") # クラスタロバストはStataと同様の方法で計算
 
 #結果表の出力
 screenreg(list(pooled_robust, oneway_fe1, oneway_fe2), 
@@ -315,7 +316,8 @@ twoway_fe1 <- lm_robust(inv ~ value + capital + factor(firm) + factor(year) ,
                         se_type = "stata") # クラスタロバストはStataと同様の方法で計算
 
 #lm_robustの"fixed_effects"オプションを利用
-twoway_fe2 <- lm_robust(inv ~ value + capital, data = Grunfeld, 
+twoway_fe2 <- lm_robust(inv ~ value + capital,
+                        data = Grunfeld, 
                         fixed_effects = ~ firm + year, #個体固定効果、時間固定効果の指定
                         clusters = firm, #クラスタのレベルを指定
                         se_type = "stata") # クラスタロバストはStataと同様の方法で計算
@@ -329,7 +331,9 @@ screenreg(list(pooled_robust, oneway_fe1, oneway_fe2, twoway_fe1, twoway_fe2),
 
 ここでも、どちらの方法を用いても係数推定値および標準誤差は全く同じとなる。しかし、個体ダミー（`factor(firm)`)および時間ダミー(`factor(year)`)を用いた推定の場合、定数項や個々の個体ダミーや年ダミーの推定結果が表示される。
 
-# 参考： `plm`による推定 
+
+
+# （参考）`plm`による推定
 
 ここでは、`plm`を用いて固定効果モデルを推定する方法を紹介する。ただし、標準誤差はロバスト標準誤差やクラスタロバスト標準誤差ではない点に注意が必要である。そのため、`plm`を用いた場合の標準誤差の修正方法も紹介する。
 
