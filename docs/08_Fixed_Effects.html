@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-06-09" />
+<meta name="date" content="2023-06-10" />
 
 <title>Rで学ぶ計量経済学と機械学習 8    計量経済学４：固定効果モデル</title>
 
@@ -1557,7 +1557,7 @@ border-radius: 0px;
 計量経済学４：固定効果モデル</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-06-09</h4>
+<h4 class="date">2023-06-10</h4>
 
 </div>
 
@@ -1916,16 +1916,17 @@ fixed-effect model)
 <span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>) <span class="co">#クラスタSE: Stataと同一のものを使う</span></span>
 <span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">#lm_robustの&quot;fixed_effects&quot;オプションを利用</span></span>
-<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>oneway_fe2 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(inv <span class="sc">~</span> value <span class="sc">+</span> capital, <span class="at">data =</span> Grunfeld, </span>
-<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                              <span class="at">fixed_effects =</span> <span class="sc">~</span> firm, <span class="co">#個体固定効果の指定</span></span>
-<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                              <span class="at">clusters =</span> firm, <span class="co">#クラスタのレベルを指定</span></span>
-<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>                              <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>) <span class="co"># クラスタロバストはStataと同様の方法で計算</span></span>
-<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="co">#結果表の出力</span></span>
-<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(pooled_robust, oneway_fe1, oneway_fe2), </span>
-<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>          <span class="at">custom.model.names =</span> <span class="fu">c</span>(<span class="st">&quot;Pooled&quot;</span>, <span class="st">&quot;Oneway 1&quot;</span>, <span class="st">&quot;Oneway 2&quot;</span>),</span>
-<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
-<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>oneway_fe2 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(inv <span class="sc">~</span> value <span class="sc">+</span> capital,</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data =</span> Grunfeld, </span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">fixed_effects =</span> <span class="sc">~</span> firm, <span class="co">#個体固定効果の指定</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>                        <span class="at">clusters =</span> firm, <span class="co">#クラスタのレベルを指定</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>                        <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>) <span class="co"># クラスタロバストはStataと同様の方法で計算</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a><span class="co">#結果表の出力</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(pooled_robust, oneway_fe1, oneway_fe2), </span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">custom.model.names =</span> <span class="fu">c</span>(<span class="st">&quot;Pooled&quot;</span>, <span class="st">&quot;Oneway 1&quot;</span>, <span class="st">&quot;Oneway 2&quot;</span>),</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>          <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>## 
 ## ======================================================
 ##                 Pooled       Oneway 1      Oneway 2   
@@ -1976,16 +1977,17 @@ fixed-effect model)を推定する。</p>
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                        <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>) <span class="co"># クラスタロバストはStataと同様の方法で計算</span></span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co">#lm_robustの&quot;fixed_effects&quot;オプションを利用</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>twoway_fe2 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(inv <span class="sc">~</span> value <span class="sc">+</span> capital, <span class="at">data =</span> Grunfeld, </span>
-<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">fixed_effects =</span> <span class="sc">~</span> firm <span class="sc">+</span> year, <span class="co">#個体固定効果、時間固定効果の指定</span></span>
-<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">clusters =</span> firm, <span class="co">#クラスタのレベルを指定</span></span>
-<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>                        <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>) <span class="co"># クラスタロバストはStataと同様の方法で計算</span></span>
-<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="co">#結果表の出力</span></span>
-<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(pooled_robust, oneway_fe1, oneway_fe2, twoway_fe1, twoway_fe2), </span>
-<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>          <span class="at">custom.model.names =</span> <span class="fu">c</span>(<span class="st">&quot;Pooled&quot;</span>, <span class="st">&quot;Oneway 1&quot;</span>, <span class="st">&quot;Oneway 2&quot;</span>, <span class="st">&quot;Twoway 1&quot;</span>, <span class="st">&quot;Twoway 2&quot;</span>),</span>
-<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
-<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>twoway_fe2 <span class="ot">&lt;-</span> <span class="fu">lm_robust</span>(inv <span class="sc">~</span> value <span class="sc">+</span> capital,</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>                        <span class="at">data =</span> Grunfeld, </span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">fixed_effects =</span> <span class="sc">~</span> firm <span class="sc">+</span> year, <span class="co">#個体固定効果、時間固定効果の指定</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>                        <span class="at">clusters =</span> firm, <span class="co">#クラスタのレベルを指定</span></span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>                        <span class="at">se_type =</span> <span class="st">&quot;stata&quot;</span>) <span class="co"># クラスタロバストはStataと同様の方法で計算</span></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a><span class="co">#結果表の出力</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a><span class="fu">screenreg</span>(<span class="fu">list</span>(pooled_robust, oneway_fe1, oneway_fe2, twoway_fe1, twoway_fe2), </span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>          <span class="at">custom.model.names =</span> <span class="fu">c</span>(<span class="st">&quot;Pooled&quot;</span>, <span class="st">&quot;Oneway 1&quot;</span>, <span class="st">&quot;Oneway 2&quot;</span>, <span class="st">&quot;Twoway 1&quot;</span>, <span class="st">&quot;Twoway 2&quot;</span>),</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>          <span class="at">include.ci =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>          <span class="at">digits =</span> <span class="dv">3</span>)</span></code></pre></div>
 <pre><code>## 
 ## ===================================================================================
 ##                   Pooled       Oneway 1      Oneway 2     Twoway 1      Twoway 2   
@@ -2063,9 +2065,9 @@ fixed-effect model)を推定する。</p>
 <p>ここでも、どちらの方法を用いても係数推定値および標準誤差は全く同じとなる。しかし、個体ダミー（<code>factor(firm)</code>)および時間ダミー(<code>factor(year)</code>)を用いた推定の場合、定数項や個々の個体ダミーや年ダミーの推定結果が表示される。</p>
 </div>
 </div>
-<div id="参考-plmによる推定" class="section level1" number="7">
-<h1><span class="header-section-number">7</span> 参考：
-<code>plm</code>による推定</h1>
+<div id="参考plmによる推定" class="section level1" number="7">
+<h1><span class="header-section-number">7</span>
+（参考）<code>plm</code>による推定</h1>
 <p>ここでは、<code>plm</code>を用いて固定効果モデルを推定する方法を紹介する。ただし、標準誤差はロバスト標準誤差やクラスタロバスト標準誤差ではない点に注意が必要である。そのため、<code>plm</code>を用いた場合の標準誤差の修正方法も紹介する。</p>
 <div id="パネルデータフレームへの転換" class="section level2" number="7.1">
 <h2><span class="header-section-number">7.1</span>

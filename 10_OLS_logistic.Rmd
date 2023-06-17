@@ -67,7 +67,7 @@ set.seed(0)
 3. **強化学習**（reinforcement learning）：予測の正解データは無いが、利得関数という間接的な正解データがあるもの
      - 囲碁や将棋のAIなどで使われる
 
-本講義では**教師あり学習**に関して述べていく。
+本講義では主に**教師あり学習**に関して述べていく。
 
 
 
@@ -91,7 +91,7 @@ y = 2 * x + rnorm(n, sd = 4)
 
 # plot
 library(tidyverse)
-ggplot(data_frame(y, x),
+ggplot(tibble(y, x),
        aes(x = x, y = y))+
   geom_point(color = "Orange")+
   geom_smooth(method = "lm", se = F, color = "SteelBlue")+
@@ -116,26 +116,28 @@ $$
 
 ### 二乗誤差の最小化
 
-線形回帰でパラメータ$\boldsymbol{\beta}=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_m\end{pmatrix}^\top$を推定するために多く使われる方法は**最小二乗法**（OLS: ordinary least squares method）というもので、これは実測値$y_i$と予測値$\hat{y}_i$の二乗誤差$(y_i - \hat{y}_i)^2$の和による誤差関数$L(\boldsymbol{\beta})$
+教師あり学習では予測の悪さの指標として**誤差関数**（error function）あるいは**損失関数**（loss function）と呼ばれる関数$L(\boldsymbol{\theta})$を定義し、誤差を最小化することを主な基準としてパラメータを推定していく。
+
+線形回帰のパラメータ$\boldsymbol{\beta}=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_m\end{pmatrix}^\top$の推定では、実測値$y_i$と予測値$\hat{y}_i$の二乗誤差$(y_i - \hat{y}_i)^2$の和
 
 $$
 L(\boldsymbol{\beta})
 = \sum_{i=1}^n (y_i - \hat{y}_i)^2
 $$
 
-を最小にするパラメータ
+を誤差関数に用いて、誤差$L(\boldsymbol{\beta})$を最小にするパラメータ
 
 $$
 % 定義
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
-\hat{\boldsymbol{\beta}}^{OLS} = \argmin_{\boldsymbol{\beta}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
+\hat{\boldsymbol{\beta}}^{OLS} = \argmin_{\boldsymbol{\beta}} L(\boldsymbol{\beta})
 $$
 
-を採用するというものである（なお、$\argmin$という記号は「関数の最小値を与える引数」という意味である）。
+採用する（なお、$\argmin$という記号は「関数の最小値を与える引数」という意味である）。
 
 二乗和誤差$L(\boldsymbol{\beta})$は（パラメータが1つの場合）U字型のカーブを描く関数になる。
 
-最小値が１つであり微分可能なので、推定量$\hat{\boldsymbol{\beta}}^{OLS}$を得るための計算が容易であるという便利な特性をもっている。
+最小値が１つであり微分可能なので、推定値$\hat{\boldsymbol{\beta}}^{OLS}$を得るための計算が容易であるという便利な特性をもっている。
 
 ```{r, echo=F}
 # data 
@@ -157,7 +159,7 @@ for(i in 1:length(w)){
 }
 
 # plot
-ggplot(data_frame(weight = w, loss = cost_vec),
+ggplot(tibble(weight = w, loss = cost_vec),
        aes(x = weight, y = loss))+
   geom_line(color = "SteelBlue")+
   labs(y = "L(β)", x = "β")+
@@ -188,7 +190,7 @@ $$
 
 
 ```{r, echo=F}
-sse <- data_frame(weight = w, loss = cost_vec)
+sse <- tibble(weight = w, loss = cost_vec)
 
 # plot
 ggplot(sse,
@@ -265,16 +267,17 @@ head(HousePrices)
 - `prefer`：都市の近くに立地しているか
 
 機械学習の目的は未知のデータに対する予測性能を高めることである。
-したがって、データを、学習（パラメータの推定）に使う「**学習用データ**」と、学習に使わず予測性能の試験に使う「**テスト用データ**」に分割しておく。
+したがって、データをモデルの学習（パラメータの推定）に使う「**訓練用データ**」と、学習に使わず予測性能の試験に使う「**テスト用データ**」に分割しておく。
 
 ```{r}
 # ID列を追加
 df = HousePrices %>% rownames_to_column("ID")
 
-# 80%を学習用データに
+# 80%を訓練用データに
+set.seed(0)
 train <- df %>% sample_frac(size = 0.8)
 
-# 学習用データに使っていないIDの行をテスト用データに
+# 訓練用データに使っていないIDの行をテスト用データに
 test <- anti_join(df, train, by = "ID")
 ```
 
@@ -301,16 +304,16 @@ stargazer(reg, type = "text")
 
 ### 予測精度の評価
 
-lmオブジェクトから予測値を出すには`predict()`関数にlmオブジェクトとデータフレームを入れて実行すればよい。
+lmオブジェクトから予測値を計算させるには`predict()`関数にlmオブジェクトとデータフレームを入れて実行すればよい。
 
 ```{r}
 # 既知のデータ（train）に対する予測値
-y_train_pred = predict(reg, train)
+y_train_pred = predict(reg, train) %>% exp()  # 学習時に対数変換していたため予測値を指数変換して戻す
 # 実測値
 y_train_true = train$price
 ```
 
-予測精度の評価を行うには、何らかの指標を使う必要がある。例えば**平均二乗誤差**（Mean of Squared Error: MSE）のような誤差関数で評価を行う。
+予測精度の評価は、例えば**平均二乗誤差**（Mean of Squared Error: MSE）のような関数で評価を行う。
 
 $$
 MSE = \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2
@@ -338,24 +341,62 @@ $$
 RMSE(y_train_true, y_train_pred)
 ```
 
-学習用データのpriceの予測に際して約7万の誤差があることを示している。
+訓練用データのpriceの予測に際して約`r round(RMSE(y_train_true, y_train_pred)/10000, 1)`万の誤差があることを示している。
 
+#### テスト用データに対する予測誤差{-}
 
 回帰モデルにとって未知のデータである`test`データセットに対する予測値をみてみよう。
 
 ```{r}
 # 未知のデータ（test）に対する予測値
-y_test_pred <- predict(reg, test)
+y_pred <- predict(reg, test) %>% exp()
 # 実測値
-y_test_true = test$price
+y_test = test$price
 ```
 
 ```{r}
 # 平方根平均二乗誤差（RMSE）による予測精度の評価
-RMSE(y_test_true, y_test_pred)
+RMSE(y_test, y_pred)
 ```
 
-このように、一般に学習用データに対する予測誤差よりもテスト用データに対する予測誤差のほうが大きくなる。
+
+データを訓練用とテスト用に任意の割合で分割してテスト用データに対する予測誤差を測る方法を**ホールドアウト（hold out）法**といい、その誤差の推定量を**ホールドアウト誤差（hold-out error）**という。
+
+一方で最初に行ったような訓練用データに対する予測誤差を**訓練誤差（training error）**という。訓練誤差は一般に真の誤差（真の分布で誤差関数の期待値をとった誤差）以下になる指標であることが知られているため、機械学習の分野ではあまり重視されない。
+
+一方でホールドアウト誤差はデータを分割しなければならないためサンプル数が小さい状況と相性が悪い。この点を改善する方法として**交差検証（cross validation）**という方法がある。詳細は次回に述べる。
+
+
+#### （参考）その他の評価指標{-}
+
+##### 平均絶対誤差（mean absolute error: MAE）{-}
+
+$$
+MAE = \frac{1}{n} \sum_{i=1}^n |y_i - \hat{y}_i|
+$$
+
+```{r}
+MAE(y_test, y_pred)
+```
+
+
+絶対誤差は二乗誤差に比べると外れ値の影響を受けにくい特徴を持つため、予測を大きく外した個体の評価への影響を抑えたい状況ではMAEのほうが使いやすい場合がある。
+
+また、二乗して平方根をとっているRMSEに比べると直感的で多くの人にとって比較的わかりやすい指標でもある。
+
+
+##### 決定係数（coefficient of determination）{-}
+
+回帰分析の当てはまりの指標として習う決定係数$R^2$も回帰モデルの予測性能の指標として使うことができる。
+
+$$
+R^2 = 1 - \frac{ \sum^n_{i=1} (y_i - \hat{y})^2 }{ \sum^n_{i=1} (y_i - \bar{y})^2 }
+= 1 - \frac{ 残差の変動 }{ データの変動 }
+$$
+
+```{r}
+R2_Score(y_test, y_pred)
+```
 
 
 # ロジスティック回帰
@@ -395,7 +436,7 @@ x = -100:100 * 0.1
 y = sigmoid(x)
 
 # plot
-ggplot(data_frame(x, y),
+ggplot(tibble(x, y),
        aes(x = x, y = y))+
   geom_line(color = "dodgerblue")+
   labs(y = expression(sigma(x)), x = expression(x), title = "Sigmoid function")
@@ -408,58 +449,111 @@ ggplot(data_frame(x, y),
 
 最尤法は「得られたデータはデータが従う確率分布でもっとも出現確率が高い値が生じたもの」という仮定の下で、その確率分布のパラメータとして最も尤もらしい（最も確率が高くなる）パラメータを推定する。
 
-例えば、あるコインを4回投げて表が1回出たとする。表が出る回数が二項分布に従うと仮定すると、このデータをもたらす確率が最も高い二項分布は、表が出る確率が「4分の1」の二項分布になる。そのため、このコインが表を出す確率の推定値として「4分の1」を採用する、というのが最尤法の考え方である。
-
-より具体的には、コイン投げの結果が、コインの表が出る回数$k$が、表が出る確率$p$、試行回数$n$の二項分布
+$n$個のサンプル$x_1, x_2, \dots, x_n$が同一の分布から独立に得られたと仮定する。データが従うと想定する確率分布の確率関数$P(x|\theta)$（$\theta$は確率分布のパラメータ）の同時確率関数
 
 $$
-Bin(k|n,p) = {}_n\mathrm{C}_kp^k(1-p)^{n-k}
+P(x_1|\theta) \times P(x_2|\theta) \times \cdots \times P(x_n|\theta)
+= \prod_{i=1}^n P(x_i|\theta)
 $$
 
-に従うと仮定し、4回投げて表が1回という結果（データ）を踏まえて、**尤度関数**（likelihood function）$L(p)$を
+を尤もらしさの指標として用いる。これを**尤度関数**（likelihood function）といい、$L(\theta)$と表す。
+
+
+
+### 例：コイン投げ
+
+例えば、あるコインを4回投げて表が1回出たとする。これを$p$の確率で表（$x=1$）が、$1-p$の確率で裏（$x=0$）が出る試行（ベルヌーイ試行）と捉えて、コインの表が出るかどうかは確率関数
+
 
 $$
-L(p) = {}_4\mathrm{C}_1p^1(1-p)^3
+P(X = x | p) =
+\begin{cases}
+  p & x = 1 \text{のとき}\\
+  1 - p & x = 0 \text{のとき}
+\end{cases}
 $$
 
-とする。このとき、尤度関数$L(p)$を最大化するパラメータ$p$を推定するのが最尤法である。
+のベルヌーイ分布に従うと仮定する（モデリングする）。
+
+4回投げて表が1回、裏が3回という結果（データ）を踏まえると、尤度関数$L(p)$は
+
+$$
+L(p) = p^1(1-p)^3
+$$
+
+となる。
 
 実際に尤度関数を定義して描画してみると、尤度$L(p)$が最大になっている点でパラメータが$p = 0.25 = \frac{1}{4}$になっていることがわかる。
 
 ```{r, echo=F}
 # 尤度関数
-likelihood <- function(p, n = 4, k = 1){
-  choose(n, k) * p^k * (1 - p)^(n-k) # nCk p^k (1-p)^{n-k}
-}
+L <- function(p, n = 4, k = 1)  p^k * (1 - p)^(n-k)
 
 # 描画用データ
 p <- 1:100 * 0.01
-L <- likelihood(p)
-df <- tibble(p, L)
+df <- tibble(p, L(p))
 
 # plot
-ggplot(df, aes(x = p, y = L))+
+ggplot(df, aes(x = p, y = `L(p)`))+
   geom_line(color = "dodgerblue")+
-  labs(y = "L(p)", title = "Likelihood function L(p)")
+  labs(title = "Likelihood function L(p)")
 ```
 
 
-最尤法では一般に解析的に解が求まらないため、ロジスティック回帰の推定では**ニュートン・ラフソン法**（Newton-Raphson method）という方法を用いて数値的に解く。これは尤度が高くなる方向へ少しずつ推定値を変える計算を何度も反復することで推定する。
+### 対数尤度と交差エントロピー誤差
 
-
-### （参考）対数尤度と交差エントロピー誤差{-}
-
-確率の積は非常に小さな値になってしまうため、実際に計算する際は対数で変換した**対数尤度**（log-likelihood）を使用する。
-
-また統計学の分野では最尤法という言葉を使うことが多いが、機械学習の分野では対数尤度の符号を反転させたもの
+確率の積は非常に小さな値になってしまうため、実際に計算する際は対数で変換した**対数尤度**（log-likelihood）
 
 $$
-\mathcal{L}(p)
-= - \ln L(p)
-= \sum^N_{i=1} \{ y_i \ln p + (1 - y_i) \ln (1 - p)\}
+\mathcal{L}(p) = \ln L(\theta) = \sum_{i=1}^n \ln P(x_i|\theta)
 $$
 
-を**交差エントロピー誤差**（cross entropy error）と呼ぶ。
+を使用する。
+
+
+```{r, echo=F}
+log_likelihood <- function(p, n = 4, k = 1) k * log(p) + (n - k) * log(1 - p)
+  
+# 描画用データ
+p <- 1:100 * 0.01
+df <- tibble(p, log_likelihood(p))
+
+# plot
+ggplot(df, aes(x = p, y = `log_likelihood(p)`))+
+  geom_line(color = "dodgerblue")+
+  labs(title = "Log-likelihood function")
+```
+
+また統計学の分野では尤度という言葉を使うが、機械学習の分野ではベルヌーイ分布の対数尤度の符号を反転させたものを**交差エントロピー誤差**（cross entropy error）と呼ぶ。
+
+
+### ニュートン法
+
+最尤法では一般に解析的に解が求まらないため、ロジスティック回帰の推定では**ニュートン法**（Newton's method）あるいは**ニュートン・ラフソン法**（Newton-Raphson method）と呼ばれるという方法を用いて数値的に解く。これは尤度が高くなる方向へ少しずつ推定値を変える計算を何度も反復することで推定する。
+
+$t$回目の反復では、現状の推定値$\hat{\theta}_t$と対数尤度の1次と2次の導関数を用いて次のように推定値を更新する。
+
+$$
+\hat{\theta}_{t+1} = \hat{\theta}_t - \frac{ \mathcal{L}'(\hat{\theta}_t) }{ \mathcal{L}''(\hat{\theta}_t) }
+$$
+
+そして、小さな正の数$\varepsilon$について$|\hat{\theta}_{t+1} - \hat{\theta}_{t}| < \varepsilon$を満たすなら（更新してもあまり変化しなくなったら）反復を終了して$\hat{\theta}_{t+1}$を最終的な解とする。
+
+
+<!--
+
+```{r}
+grad <- function(p, n = 4, k = 1) (k * (1/p)) - ( (n - k) * (1/(1-p)) )
+hess <- function(p, n = 4, k = 1) -(k* (1 / p^2) + (n - k) * (1 / (1 - p)^2))
+
+p = 0.1
+for (i in 1:10) {
+  p = p - (grad(p) / hess(p))
+  print(p)
+}
+```
+
+-->
 
 
 ## Rでの実践
@@ -503,16 +597,17 @@ head(TitanicSurvival)
 titanic <- na.omit(TitanicSurvival)
 ```
 
-そしてデータを学習用・テスト用に分割する。
+そしてデータを訓練用・テスト用に分割する。
 
 ```{r}
 # ID列を追加
 df = titanic %>% rownames_to_column("ID")
 
-# 80%を学習用データに
+# 80%を訓練用データに
+set.seed(0)
 train <- df %>% sample_frac(size = 0.8)
 
-# 学習用データに使っていないIDの行をテスト用データに
+# 訓練用データに使っていないIDの行をテスト用データに
 test <- anti_join(df, train, by = "ID")
 
 # ID列は予測に使わないため削除しておく
@@ -544,17 +639,17 @@ stargazer(clf, type = "text")
 
 ```{r}
 # 未知のデータ（test）に対する予測値（確率）
-y_test_pred <- predict(clf, test, type = "response")
+p_pred <- predict(clf, test, type = "response")
 ```
 
 `predict(type = "response")`で出力される値は確率値であり、そのままでは使いにくいので`ifelse()`関数で二値変数に変換する
 
 ```{r}
 # 予測した確率が「0.5未満ならno, それ以外はyes」となるよう変換
-y_test_pred <- ifelse(y_test_pred < 0.5, "no", "yes")
+y_pred <- ifelse(p_pred < 0.5, "no", "yes")
 
 # 実測値
-y_test_true = test$survived
+y_test = test$survived
 ```
 
 #### 混同行列{-}
@@ -575,7 +670,7 @@ Rでは`table()`関数を実行すればクロス集計表を作成できる。
 
 ```{r}
 # confusion matrix
-table(y_test_true, y_test_pred)
+table(y_test, y_pred)
 ```
 
 誤った分類をしているものもそれなりにある。
@@ -618,14 +713,136 @@ Rでは`{MLmetrics}`パッケージにそれぞれ用意されている。
 
 ```{r}
 # 正解率
-Accuracy(y_test_pred, y_test_true)
+Accuracy(y_pred, y_test)
 # 適合率
-Precision(y_test_pred, y_test_true)
+Precision(y_test, y_pred)
 # 再現率
-Recall(y_test_pred, y_test_true)
+Recall(y_test, y_pred)
 ```
 
 いずれの指標も7~8割程度には予測できている。
+
+
+#### 複数の閾値にわたって評価する指標{-}
+
+分類においては「このクラスに属すると思われる確率」を算出し、何らかの閾値を決めて確率値を分類のカテゴリの値に変換して評価を行うことになる。今回の場合、0.5を閾値としていた。
+
+この閾値の取り方によってPrecisionやRecallなどの値も変わってくる。
+
+```{r}
+# 予測確率と実際のラベル
+tibble(y_test, p_pred) %>% ggplot(aes(x = p_pred, fill = y_test)) + 
+  geom_histogram(bins = 20, alpha = .5)
+```
+
+
+```{r}
+# 閾値=0.7
+y_pred <- ifelse(p_pred < 0.7, "no", "yes")
+
+tibble(
+  precision = Precision(y_test, y_pred),
+  recall = Recall(y_test, y_pred)
+)
+```
+
+
+```{r}
+# 閾値=0.05
+y_pred <- ifelse(p_pred < 0.05, "no", "yes")
+
+tibble(
+  precision = Precision(y_test, y_pred),
+  recall = Recall(y_test, y_pred)
+)
+```
+
+
+##### Precision-Recall curve / average precision{-}
+
+閾値を様々な値に変えていった場合におけるPrecisionとRecallをプロットした曲線のことをPrecision-Recall curveという。
+
+```{r}
+# （参考） Precision-Recall curve
+# さまざまな閾値のもとでのPrecisionとRecallを計算する
+metrics <- tibble() # 空のデータフレーム
+for (threshold in seq(0, 1, 0.01)) {
+  # ある閾値（threshold）のもとでの分類結果
+  y_pred <- ifelse(p_pred < threshold, "no", "yes")
+  # 1行だけのデータフレーム
+  metric <- tibble(
+    threshold,
+    precision = Precision(y_test, y_pred),
+    recall = Recall(y_test, y_pred)
+  )
+  metrics <- bind_rows(metrics, metric) # データフレームを結合して行を追加
+}
+
+# plot
+metrics %>% filter(!is.na(precision)) %>% ggplot(aes(x = recall, y = precision)) +
+  geom_line() + 
+  labs(title="Precision-Recall curve")
+```
+
+分類モデルの性能が高いほど曲線の下側の面積（area under the curve: AUC）が大きくなる。この面積は$K$個の閾値の下でのrecall $R_k$とprecision $P_k$を用いて
+
+$$
+AP = \sum^K_{k=1} (R_k - R_{k-1}) P_k
+$$
+
+のように計算されるもので、この指標はaverage precision (AP)やarea under the precision-recall curve (AUC-PR; PR-AUC)と呼ばれる。
+
+```{r}
+# Area Under the Precision-Recall Curve
+MLmetrics::PRAUC(p_pred, y_test)
+```
+
+
+##### ROC-AUC{-}
+
+true positive rate$TPR$（recallの別名、陽性者を正しく陽性だと当てる率、sensitivityとも）とfalse positive rate$FPR$（陰性者のうち偽陽性になる率）
+
+$$
+TPR = \frac{TP}{P} = \frac{TP}{TP + FN} = \frac{Positiveを当てたもの}{Positiveのもの}\\
+FPR = \frac{FP}{N} = \frac{FP}{FN + TN} = \frac{Positiveを外したもの}{Negativeのもの}
+$$
+
+を用いて閾値を変えながら描いた曲線をreceiver operating characteristic（**ROC**; 受信者操作特性）曲線という。
+
+```{r}
+# （参考） ROC curve
+metrics <- tibble() # 空のデータフレーム
+for (threshold in seq(0, 1, 0.01)) {
+  # ある閾値（threshold）のもとでの分類結果
+  y_pred <- ifelse(p_pred < threshold, "no", "yes")
+  # 1行だけのデータフレーム
+  metric <- tibble(
+    threshold,
+    tpr = MLmetrics::Sensitivity(y_test, y_pred),
+    fpr = 1 - MLmetrics::Specificity(y_test, y_pred) # FPR = 1 - 特異度
+  )
+  metrics <- bind_rows(metrics, metric) # データフレームを結合して行を追加
+}
+
+# plot
+metrics %>% filter(!is.na(tpr) & !is.na(fpr)) %>% ggplot(aes(x = fpr, y = tpr)) +
+  geom_line() + 
+  geom_abline(slope=1, linetype = "dashed") +
+  labs(title="ROC curve", x="False Positive Rate", y="True Positive Rate")
+```
+
+この曲線の下側の面積を**ROC-AUC**と呼ぶ（単にAUCと呼ばれることもある）。ランダムな予測（図中の点線）の下ではROC-AUCは0.5になるため、0.5との比較によって予測モデルの性能を評価できる。
+
+```{r}
+y_test_int <- ifelse(y_test == "yes", 1, 0) # {0, 1}の整数型に変換
+MLmetrics::AUC(p_pred, y_test_int) # ROC-AUC
+```
+
+```{r}
+tibble(y_test, p_pred) %>% arrange(desc(p_pred))
+```
+
+
 
 # 参考文献
 
