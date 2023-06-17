@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-06-17" />
+<meta name="date" content="2023-06-18" />
 
 <title>Rで学ぶ計量経済学と機械学習 10    機械学習１：線形回帰・ロジスティック回帰</title>
 
@@ -1557,7 +1557,7 @@ border-radius: 0px;
 機械学習１：線形回帰・ロジスティック回帰</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-06-17</h4>
+<h4 class="date">2023-06-18</h4>
 
 </div>
 
@@ -1825,7 +1825,7 @@ MSE = \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2
 \hat{y}_i\)</span>すなわち観測値と予測値の差であって、統計学や計量経済学でいうところの誤差項(<span class="math inline">\(\varepsilon\)</span>)とは異なる点に注意されたい。</p>
 <p><code>{MLmetrics}</code>パッケージにはMSEのような機械学習で用いる関数が実装されているため、このパッケージをインストールして読み込む</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 平均二乗誤差（MSE）による予測精度の評価</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">MSE</span>(y_train_true, y_train_pred)</span></code></pre></div>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">MSE</span>(y_train_pred, y_train_true)</span></code></pre></div>
 <pre><code>## [1] 229164893</code></pre>
 <p>MSEは二乗しているため、非常に値が大きくなってしまう。</p>
 <p>MSEの平方根をとることでこの点を修正したものが<span class="math inline">\(RMSE\)</span>(root mean squared error)である。</p>
@@ -1833,7 +1833,7 @@ MSE = \frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2
 RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2}
 \]</span></p>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 平方根平均二乗誤差（RMSE）による予測精度の評価</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">RMSE</span>(y_train_true, y_train_pred)</span></code></pre></div>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">RMSE</span>(y_train_pred, y_train_true)</span></code></pre></div>
 <pre><code>## [1] 15138.19</code></pre>
 <p>訓練用データのpriceの予測に際して約1.5万の誤差があることを示している。</p>
 <div id="テスト用データに対する予測誤差" class="section level4 unnumbered">
@@ -1844,13 +1844,13 @@ RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^n (y_i - \hat{y}_i)^2}
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 実測値</span></span>
 <span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>y_test <span class="ot">=</span> test<span class="sc">$</span>price</span></code></pre></div>
 <div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 平方根平均二乗誤差（RMSE）による予測精度の評価</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">RMSE</span>(y_test, y_pred)</span></code></pre></div>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">RMSE</span>(y_pred, y_test)</span></code></pre></div>
 <pre><code>## [1] 15036</code></pre>
 <p>データを訓練用とテスト用に任意の割合で分割してテスト用データに対する予測誤差を測る方法を<strong>ホールドアウト（hold
 out）法</strong>といい、その誤差の推定量を<strong>ホールドアウト誤差（hold-out
 error）</strong>という。</p>
 <p>一方で最初に行ったような訓練用データに対する予測誤差を<strong>訓練誤差（training
-error）</strong>という。訓練誤差は一般に真の誤差（真の分布で誤差関数の期待値をとった誤差）以下になる指標であることが知られているため、機械学習の分野ではあまり重視されない。</p>
+error）</strong>という。訓練誤差は一般に真の誤差（真の分布で誤差関数の期待値をとった誤差）以下になる推定量であることが知られているため、機械学習の分野ではあまり重視されない。</p>
 <p>一方でホールドアウト誤差はデータを分割しなければならないためサンプル数が小さい状況と相性が悪い。この点を改善する方法として<strong>交差検証（cross
 validation）</strong>という方法がある。詳細は次回に述べる。</p>
 </div>
