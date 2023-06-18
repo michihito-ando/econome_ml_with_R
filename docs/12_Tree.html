@@ -11,9 +11,9 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-06-17" />
+<meta name="date" content="2023-06-18" />
 
-<title>Rで学ぶ計量経済学と機械学習 12    機械学習３：決定木/ランダムフォレスト</title>
+<title>Rで学ぶ計量経済学と機械学習 12    機械学習３：決定木とアンサンブル学習</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -2768,10 +2768,10 @@ border-radius: 0px;
 
 
 <h1 class="title toc-ignore">Rで学ぶ計量経済学と機械学習 12<br> <br>
-機械学習３：決定木/ランダムフォレスト</h1>
+機械学習３：決定木とアンサンブル学習</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-06-17</h4>
+<h4 class="date">2023-06-18</h4>
 
 </div>
 
@@ -2796,6 +2796,7 @@ margin: 1em;
 <h1><span class="header-section-number">1</span> 本講義の目的</h1>
 <ul>
 <li>決定木、ランダムフォレスト、勾配ブースティングといったアルゴリズムの基礎を学ぶ</li>
+<li>アンサンブル学習について学ぶ</li>
 <li>決定木、ランダムフォレスト、勾配ブースティングを実行する方法を学ぶ</li>
 </ul>
 </div>
@@ -2861,7 +2862,7 @@ I(t) = 1 - \sum_{k=1}^2 {p_{tk}}^2 = 1 - (0.5^2 + 0.5^2)= 0.5
 I(t) = 1 - \sum_{k=1}^2 {p_{tk}}^2 = 1 - (1.0^2 + 0.0^2)= 0
 \]</span></p>
 <p>となる。</p>
-<p>目的変数が量的変数の場合、不純度<span class="math inline">\(I(t)\)</span>にはノード<span class="math inline">\(t\)</span>内の学習データでの予測値<span class="math inline">\(\hat{y}_i\)</span>と実測値<span class="math inline">\(y_i\)</span>の平均2乗誤差</p>
+<p>回帰（目的変数が量的変数）の場合、不純度<span class="math inline">\(I(t)\)</span>にはノード<span class="math inline">\(t\)</span>内の学習データでの予測値<span class="math inline">\(\hat{y}_i\)</span>と実測値<span class="math inline">\(y_i\)</span>の平均2乗誤差</p>
 <p><span class="math display">\[
 I(t) = \frac{1}{N(t)}\sum_{\boldsymbol{x}_i \in t} (y_i - \hat{y})^2
 \]</span></p>
@@ -3031,6 +3032,8 @@ forest）は上記の例のような考え方に基づき「互いの相関が�
 <li>予測を行う際は、目的変数がカテゴリカル変数なら<span class="math inline">\(B\)</span>個の決定木の予測結果の多数決をランダムフォレストの予測結果とする。目的変数が量的変数なら<span class="math inline">\(B\)</span>個の決定木の予測結果の平均をランダムフォレストの予測結果とする。</li>
 </ol>
 </div>
+<p>なお、このようにブートストラップによって多数の予測モデルを構築した後にそれらの予測結果を集約（aggregating）するアンサンブル学習の方法は<strong>バギング</strong>（bagging;
+bootstrap aggregatingの略）と呼ばれる。</p>
 <div id="rで実践-1" class="section level2" number="4.1">
 <h2><span class="header-section-number">4.1</span> Rで実践</h2>
 <p><code>{randomForest}</code>パッケージを使う。</p>
@@ -3090,9 +3093,9 @@ forest）は上記の例のような考え方に基づき「互いの相関が�
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>MLmetrics<span class="sc">::</span><span class="fu">Accuracy</span>(<span class="at">y_pred =</span> y_pred_test, </span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">y_true =</span> test<span class="sc">$</span>survived)</span></code></pre></div>
 <pre><code>## [1] 0.8086124</code></pre>
-<p>また、ランダムフォレストでは、<code>$importance</code>でジニ係数の減少に基づいて算出される<strong>変数重要度</strong>（variable
+<p>また、ランダムフォレストでは、<code>$importance</code>でジニ係数の減少に基づいて算出される<strong>特徴量重要度</strong>（feature
 importance）を確認することができる。これは分割時の不純度の減少量の観点から、予測モデルにおいて各特徴量がどの程度予測に寄与しているのかの目安を示している。</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 変数重要度（特徴量重要度）</span></span>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 特徴量重要度</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>titanic_RF<span class="sc">$</span>importance</span></code></pre></div>
 <pre><code>##                MeanDecreaseGini
 ## sex                   13.764060
