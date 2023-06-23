@@ -43,12 +43,13 @@ $$
 # パッケージの読み込み
 
 今回の分析で使うパッケージを読み込む。
+
 ```{r}
 pacman::p_load(tidyverse, 
-               MLmetrics, # 機械学習で用いる関数が実装
+               MLmetrics, # 予測精度の評価指標
                patchwork, # グラフ結合用
-               gridExtra, # グラフ結合用（今回は未使用）
-               glmnet) # lassoやリッジ用
+               gridExtra, # グラフ結合用
+               glmnet) # lassoやリッジ回帰のライブラリ
 ```
 
 
@@ -65,23 +66,23 @@ pacman::p_load(tidyverse,
 # seedを固定
 set.seed(11111)
 
-# データ生成 ----
+# データの生成
 n <- 50
-# x = rnorm(n, sd = 0.5)
 x <- 1:n * 1/n
 y <- 0.5 + 0.4*sin(2*pi*x) + rnorm(n = n, sd = 0.1)
-df <- tibble(y, 
-            x, 
-            x2 = x^2, 
-            x3 = x^3, 
-            x4 = x^4, 
-            x5 = x^5, 
-            x6 = x^6, 
-            x7 = x^7, 
-            x8 = x^8, 
-            x9 = x^9)
+df <- tibble(y,
+             x, 
+             x2 = x^2, 
+             x3 = x^3, 
+             x4 = x^4, 
+             x5 = x^5, 
+             x6 = x^6, 
+             x7 = x^7, 
+             x8 = x^8, 
+             x9 = x^9)
 
-# データを分割 ----
+
+# データの分割
 # ID列を追加
 df <- df %>% rownames_to_column("ID")
 
@@ -111,6 +112,7 @@ $$
 
 以下の図が次数をいくつか変えていった多項式回帰の回帰曲線である。
 
+<!--
 ```{r}
 # plot
 p <- 1
@@ -118,7 +120,7 @@ p1 <- ggplot(train, aes(x, y))+
   geom_point()+
   geom_smooth(method = "lm", 
               se = F, 
-              formula = y ~ poly(x, 1)) +
+              formula = y ~ poly(x, 1)) +  # poly()は変数を使えないので数字を直接入れる
   labs(title = str_c(p,"次多項式回帰"))
 
 p <- 2
@@ -161,20 +163,40 @@ p9 <- ggplot(train, aes(x, y))+
               formula = y ~ poly(x, 9)) +
   labs(title = str_c(p,"次多項式回帰"))
 
+
 # patchworkを使ってグラフ結合
 (p1 + p2 + p3) / (p5 + p7 + p9)
 
-#grid.arrange()を使ってもいい
-#library(gridExtra) # 複数のグラフをまとめるためのパッケージ
-#grid.arrange(grobs = list(p1, p2, p3, p5, p7, p9), ncol = 3)
+# gridExtra::grid.arrange()を使ってもいい
+# gridExtra::grid.arrange(grobs = list(p1, p2, p3, p5, p7, p9), ncol = 3)
+```
+-->
 
+```{r}
+# plot
+plots <- list() # グラフを格納するリストを用意
+orders <- c(1, 2, 3, 5, 7, 9)  # 試していきたい多項式回帰の次数を用意
+for (i in 1:length(orders)) {
+  # 訓練データと訓練データにfitさせた多項式回帰のグラフを描き、plotsに格納する
+  plots[[i]] <- train %>% ggplot(aes(x, y)) +
+    geom_point() +
+    geom_smooth(method = "lm", se = F, 
+                formula = as.formula(str_c("y ~ poly(x, degree = ", orders[i], ")"))) +
+    labs(title = str_c(orders[i], "次多項式回帰"))
+}
+
+# gridExtraを使って複数のグラフをまとめる
+gridExtra::grid.arrange(grobs = plots, ncol = 3)
+
+# patchworkを使って複数のグラフをまとめる場合
+# (plots[[1]] + plots[[2]] + plots[[3]]) / (plots[[4]] + plots[[5]] + plots[[6]])
 ```
 
 次数の高いモデルのほうがデータの分布をよく近似する曲線を描いている。
 
 では次数が最も高い多項式回帰が最も良い汎化性能を持つのかというと、そうとは限らない。
 
-以下の図は、25個の学習用データでの誤差と、25個のテストデータでの誤差をモデルごとに示したものである。
+次数の異なる多項式回帰モデルごとに学習用データでの誤差とテストデータでの誤差を測ってみよう。
 
 ```{r}
 # 次数を変えながら学習・予測
@@ -251,21 +273,8 @@ $$
 
 なお、最小二乗法で得られる推定量がリッジ回帰の円の中にある場合は最小二乗推定量とリッジ回帰の推定量は同じものになる。
 
-```{r, include=F}
-# パラメータ空間
-# df_plot = expand.grid(beta_1 = -50:50 * 1/50,
-#                      beta_2 = -50:50 * 1/50) %>% 
-#   mutate(beta_L2 = beta_1^2 + beta_2^2) %>% 
-#   mutate(isR = 1*(beta_L2 <= 0.5))
-# 
-# ggplot(df_plot, aes(x = beta_1, y = beta_2, color = isR))+
-#   geom_point()+
-#   geom_hline(yintercept = 0)+
-#   geom_vline(xintercept = 0)
-```
 
-
-書き方を変えると、リッジ回帰のパラメータの推定量（のベクトル）$\hat{\boldsymbol{\beta}}^{ridge}$は
+書き方を変えると、リッジ回帰のパラメータの推定量（のベクトル）$\hat{\boldsymbol{\beta}}^{ridge}$は
 $$
 \hat{\boldsymbol{\beta}}^{ridge} = \argmin_{\boldsymbol{\beta}} \left\{\sum_{i=1}^n(y_i - \hat{y}_i)^2 + \lambda \sum_{j=1}^p \beta_j^2\right\}
 $$
@@ -278,9 +287,9 @@ $$
 
 であった。リッジ回帰は残差二乗和に$\lambda \sum_{j=1}^p \beta_j^2$の項を加えたものを誤差関数とし、それを最小化している。
 
-$\lambda$は**正則化パラメータ**（regularization parameter）と呼ばれ、**正則化項**（regularization term）$\sum_{j=1}^p \beta_j^2$の影響の程度を調整するパラメータである。
+$\lambda$は**正則化パラメータ**（regularization parameter）と呼ばれ、**正則化項**（regularization term）$\sum_{j=1}^p \beta_j^2$の影響の程度を調整するパラメータである。
 
-$\lambda$は予測モデルによってデータから推定されるパラメータ$\beta_j$とは異なり、分析者が適切な値を指定する必要がある。こうした予測モデル外から設定する必要があるパラメータを**ハイパーパラメータ**（hyperparameter）という。
+$\lambda$は予測モデルによってデータから推定されるパラメータ$\beta_j$とは異なり、分析者が適切な値を指定する必要がある。こうした予測モデル外から設定する必要があるパラメータを**ハイパーパラメータ**（hyperparameter）という。
 
 ## データの標準化
 
@@ -299,11 +308,12 @@ $$
 適当に乱数を生成して比較したものが次のグラフである。標準化することによって分布の中心が原点$(0,0)$になる。これを**中心化**という。
 
 ```{r, echo=F, fig.height=3.5}
+pacman::p_load(patchwork)
+
 # data
 x1 <- rnorm(n = 100, mean = 5, sd = 3)
 e <- rnorm(n = 100, mean = 5, sd = 6)
-X <- tibble(x1, 
-                x2 = 2*x1 + e)
+X <- tibble(x1, x2 = 2*x1 + e)
 
 # plot
 g1 <- ggplot(X, aes(x = x1, y = x2)) +
@@ -319,11 +329,8 @@ g2 <- ggplot(scale(X) %>% data.frame(), aes(x = x1, y = x2)) +
   labs(title = "標準化後のデータ")
 
 
-#patchworkを使ってグラフ結合
+# patchworkを使ってグラフ結合
 g1 + g2
-
-#grid.arrange(g1,g2, ncol = 2)でもよい
-
 ```
 
 <!-- 標準化によって各変数の長さ（$L_2$ノルム$||\boldsymbol{x}||_2=\sqrt{x_1^2+x_2^2+\cdots+x_p^2}$）も統一される。 -->
@@ -337,7 +344,7 @@ g1 + g2
 <!-- } -->
 
 <!-- # norm -->
-<!-- bind_cls(data = c("元のノルム", "標準化後のノルム"), -->
+<!-- bind_cols(data = c("元のノルム", "標準化後のノルム"), -->
 <!--           rbind(X %>% apply(2, L2norm), -->
 <!--                 X %>% scale() %>% apply(2, L2norm)) %>%  -->
 <!--             as_data_frame()) %>%  -->
@@ -368,7 +375,7 @@ y_test <- test$y
 
 ### glmnet関数
 
-{`glmnet`}パッケージの`glmnet()`関数で正則化回帰を行うことができる。
+`{glmnet}`パッケージの`glmnet()`関数で正則化回帰を行うことができる。
 
 `glmnet()`関数は以下のように書く。
 
@@ -387,7 +394,7 @@ glmnet(x = X, y = y, lambda = 1, alpha = 0)
 
 ```{r}
 # 9次多項式でリッジ回帰
-reg_ridge <- glmnet(x = X_train, # 説明変数
+reg_ridge <- glmnet(x = X_train, # 特徴量
                     y = y_train, # 目的変数
                     lambda = 0.1, # λ：任意の値
                     alpha = 0) # alpha = 0でリッジ回帰
@@ -401,7 +408,7 @@ str_c("train_error: ", round(train_error, 3)) %>% print() # 結果を表示
 y_test_pred <- predict(reg_ridge, X_test) # 予測
 test_error <- RMSE(y_test_pred, y_test) # 誤差
 
-# 結果を表示(str_c:複数のstringsを1つにまとめる)
+# 結果を表示 (str_cは複数のstringsを1つにまとめる関数)
 str_c("test_error: ", round(test_error, 3)) %>% print() 
 ```
 
@@ -435,9 +442,9 @@ str_c("test_error: ", round(test_error, 3)) %>% print()
 # ラムダを変えながら交差検証で誤差を評価
 ridge_cv <- cv.glmnet(x = X_train, # 説明変数
                       y = y_train, # 目的変数
-                      lambda = 1:100 * 0.00001, # 探索する範囲を指定（任意）
+                      lambda = seq(0.00001, 0.001, 0.00001), # 探索する範囲を指定（任意）
                       alpha = 0) # alpha = 0でリッジ回帰
-                      
+
 # ラムダと交差検証誤差のグラフ
 plot(ridge_cv)
 ```
@@ -532,7 +539,6 @@ data_for_plot %>% ggplot(aes(x = x,
 
 ## 特徴量選択
 
-
 本資料の序盤で述べた多項式回帰の例のように、無駄な説明変数が多く過度に複雑なモデルは過学習を起こしやすい。
 
 
@@ -601,7 +607,7 @@ lassoの制約条件を満たす推定量はパラメータ空間の原点を中
 
 ```{r}
 # ラムダを変えながら交差検証で誤差を評価
-lasso_cv <- cv.glmnet(x = X_train, # 説明変数
+lasso_cv <- cv.glmnet(x = X_train, # 特徴量
                       y = y_train, # 目的変数
                       alpha = 1) # alpha = 1でlasso
 
@@ -619,9 +625,8 @@ coef(lasso_cv, s = "lambda.min") %>% round(3)
 いくつかのパラメータはぴったり0と推定されたため説明変数として採用されなかったことが`.`で示されている。
 
 ```{r}
-# (参考)MSE+1SEの中で最大のラムダを採用したときの係数推定値
+# (参考) MSE + 1SEの中で最大のラムダを採用したときの係数推定値
 coef(lasso_cv, s = "lambda.1se") %>% round(3)
-
 ```
 
 
@@ -671,7 +676,6 @@ lassoは残差二乗和に$\lambda \sum_{j=1}^p |\beta_j|$を加えた誤差関�
 $$
 \hat{\boldsymbol{\beta}}^{lasso} = \argmin_{\boldsymbol{\beta}} \left\{\sum_{i=1}^n(y_i - \hat{y}_i)^2 + \lambda \sum_{j=1}^p |\beta_j|\right\}
 $$
-
 
 
 ## 推定結果
