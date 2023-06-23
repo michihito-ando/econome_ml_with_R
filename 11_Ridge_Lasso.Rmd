@@ -35,9 +35,11 @@ $$
 
 # 本講義の目的
 
-- リッジ回帰とlassoの考え方を学ぶ
-- 交差検証の考え方を学ぶ
-- ハイパーパラメータについて学ぶ
+- 正則化
+- 交差検証
+- ハイパーパラメータ
+
+について学ぶ
 
 
 # パッケージの読み込み
@@ -790,16 +792,13 @@ $\alpha$はlassoとリッジ回帰のどちらに重きを置くかのウェイ�
 # Elastic Net
 
 # ラムダを変えながら交差検証で誤差を評価
-EN_cv <- cv.glmnet(x = X_train, # 説明変数
-                      y = y_train, # 目的変数
-                      alpha = 0.35) # 任意のα
+EN_cv <- cv.glmnet(x = X_train, # 特徴量
+                   y = y_train, # 目的変数
+                   alpha = 0.35) # 任意のα
 
 # testに対する予測精度
-y_test_pred <- predict(EN_cv, 
-                      X_test, 
-                      s = "lambda.min") # 予測
-test_error <- RMSE(y_test_pred, 
-                  y_test) # 誤差
+y_test_pred <- predict(EN_cv, X_test, s = "lambda.min") # 予測
+test_error <- RMSE(y_test_pred, y_test) # 誤差
 str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
 ```
 

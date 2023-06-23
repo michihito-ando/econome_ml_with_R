@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-06-23" />
+<meta name="date" content="2023-06-24" />
 
 <title>Rで学ぶ計量経済学と機械学習 11    機械学習2：リッジ回帰とlasso</title>
 
@@ -1557,7 +1557,7 @@ border-radius: 0px;
 機械学習2：リッジ回帰とlasso</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-06-23</h4>
+<h4 class="date">2023-06-24</h4>
 
 </div>
 
@@ -1569,10 +1569,11 @@ technologies)</h4>
 <div id="本講義の目的" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> 本講義の目的</h1>
 <ul>
-<li>リッジ回帰とlassoの考え方を学ぶ</li>
-<li>交差検証の考え方を学ぶ</li>
-<li>ハイパーパラメータについて学ぶ</li>
+<li>正則化</li>
+<li>交差検証</li>
+<li>ハイパーパラメータ</li>
 </ul>
+<p>について学ぶ</p>
 </div>
 <div id="パッケージの読み込み" class="section level1" number="2">
 <h1><span class="header-section-number">2</span>
@@ -2260,17 +2261,14 @@ net）というアルゴリズムも存在する。</p>
 <div class="sourceCode" id="cb32"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" tabindex="-1"></a><span class="co"># Elastic Net</span></span>
 <span id="cb32-2"><a href="#cb32-2" tabindex="-1"></a></span>
 <span id="cb32-3"><a href="#cb32-3" tabindex="-1"></a><span class="co"># ラムダを変えながら交差検証で誤差を評価</span></span>
-<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a>EN_cv <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(<span class="at">x =</span> X_train, <span class="co"># 説明変数</span></span>
-<span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a>                      <span class="at">y =</span> y_train, <span class="co"># 目的変数</span></span>
-<span id="cb32-6"><a href="#cb32-6" tabindex="-1"></a>                      <span class="at">alpha =</span> <span class="fl">0.35</span>) <span class="co"># 任意のα</span></span>
+<span id="cb32-4"><a href="#cb32-4" tabindex="-1"></a>EN_cv <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(<span class="at">x =</span> X_train, <span class="co"># 特徴量</span></span>
+<span id="cb32-5"><a href="#cb32-5" tabindex="-1"></a>                   <span class="at">y =</span> y_train, <span class="co"># 目的変数</span></span>
+<span id="cb32-6"><a href="#cb32-6" tabindex="-1"></a>                   <span class="at">alpha =</span> <span class="fl">0.35</span>) <span class="co"># 任意のα</span></span>
 <span id="cb32-7"><a href="#cb32-7" tabindex="-1"></a></span>
 <span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a><span class="co"># testに対する予測精度</span></span>
-<span id="cb32-9"><a href="#cb32-9" tabindex="-1"></a>y_test_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(EN_cv, </span>
-<span id="cb32-10"><a href="#cb32-10" tabindex="-1"></a>                      X_test, </span>
-<span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a>                      <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>) <span class="co"># 予測</span></span>
-<span id="cb32-12"><a href="#cb32-12" tabindex="-1"></a>test_error <span class="ot">&lt;-</span> <span class="fu">RMSE</span>(y_test_pred, </span>
-<span id="cb32-13"><a href="#cb32-13" tabindex="-1"></a>                  y_test) <span class="co"># 誤差</span></span>
-<span id="cb32-14"><a href="#cb32-14" tabindex="-1"></a><span class="fu">str_c</span>(<span class="st">&quot;test_error: &quot;</span>, <span class="fu">round</span>(test_error, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>() <span class="co"># 結果を表示</span></span></code></pre></div>
+<span id="cb32-9"><a href="#cb32-9" tabindex="-1"></a>y_test_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(EN_cv, X_test, <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>) <span class="co"># 予測</span></span>
+<span id="cb32-10"><a href="#cb32-10" tabindex="-1"></a>test_error <span class="ot">&lt;-</span> <span class="fu">RMSE</span>(y_test_pred, y_test) <span class="co"># 誤差</span></span>
+<span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a><span class="fu">str_c</span>(<span class="st">&quot;test_error: &quot;</span>, <span class="fu">round</span>(test_error, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>() <span class="co"># 結果を表示</span></span></code></pre></div>
 <pre><code>## [1] &quot;test_error: 0.12&quot;</code></pre>
 </div>
 <div id="参考文献" class="section level1" number="9">
