@@ -621,7 +621,7 @@ titanic_RF$importance
 ランダムフォレストとはまた別のアンサンブル学習の方法の一つに**ブースティング**（boosting）がある。
 ブースティングでは決定木を逐次的に用いて、$m$回目の反復では$m-1$回目の反復で予測誤差が多かったサンプルを重視するようなアプローチで学習していく。
 
-## 前向き段階的加法モデル
+## 前向き段階的加法モデリング
 
 複数の関数に重みをかけて足し合わせた関数
 
@@ -644,7 +644,7 @@ $$
 :::
 
 これを前向き段階的加法モデリング（forward stagewise additive
-modeling）という。
+modeling）という。ブースティングはこの方法でアンサンブル学習を行う。
 
 誤差関数が二乗誤差$L(y, f(x)) = (y - f(x))^2$の場合、
 
@@ -658,10 +658,8 @@ $$
 
 となり、$m-1$回目のモデルの残差を近似するように$m$回目のモデルを学習させていると捉えることができる。残差が大きければそれだけ訓練中に重視されるため「間違えた箇所を重点的に学習する手法」とも捉えることができる。
 
-これがブースティングの基本的な考え方である。
 
-
-## （参考）最適化の観点から説明
+## （参考）最適化の観点からの説明
 
 ### 最急降下法
 
@@ -671,64 +669,77 @@ $$
 \min_x f(x)
 $$
 
-を解く方法のひとつに**最急降下法**（steepest descent method）というものがある。これは目的変数の1次の導関数である**勾配**（gradient）を用いて
+を解く方法のひとつに**最急降下法**（steepest descent method）あるいは**勾配降下法**（gradient descent method）と呼ばれるものがある。これは目的関数の1次の導関数である**勾配**（gradient）を用いて
 
 $$
-x_{m} = x_{m-1} - \alpha \frac{\partial f(x_{m-1})}{\partial x_{m-1}}
+x_{m} = x_{m-1} - \alpha_{m-1} \frac{\partial f(x_{m-1})}{\partial x_{m-1}}
 $$
 
-という値の更新を何度も繰り返して最適化を行っていく。（$\alpha$は学習率で、値の更新量が多すぎると最適解を通り過ぎてしまうことがあるので小さめの値を乗じて更新幅を抑えるためのハイパーパラメータ）
+という値の更新を何度も繰り返して最適化を行っていく。（$\alpha$は学習率と呼ばれるパラメータで、値の更新量が多すぎると最適解を通り過ぎてしまうことがあるので小さめの値を乗じて更新幅を抑えるために用いられる）
 
 最終的に$M$回反復して得た最適解$x^*$は
 
 $$
 x^* = x_0
-- \alpha \frac{\partial f(x_{1})}{\partial x_{1}}
-- \alpha \frac{\partial f(x_{2})}{\partial x_{2}}
+- \alpha_1 \frac{\partial f(x_{1})}{\partial x_{1}}
+- \alpha_2 \frac{\partial f(x_{2})}{\partial x_{2}}
 - \cdots
-- \alpha \frac{\partial f(x_{M})}{\partial x_{M}}
+- \alpha_M \frac{\partial f(x_{M})}{\partial x_{M}}
 $$
 
-と、前向き段階的加法モデルと似た形になる。
-実は前向き段階的加法モデルは最急降下法の負の勾配$- \alpha \frac{\partial f(x)}{\partial x}$を機械学習モデル$\beta f(x_i; \theta)$に置き換えたものである。
+となり、ブースティングにより得られる予測モデル
 
-先程の例で、二乗誤差の場合は残差との誤差を最小化しているとを述べたが、これは残差（負の勾配）を近似する機械学習モデルを構築している。
+$$
+f(x) = f_0(x; \theta_0) + \beta_1 f_1(x; \theta_1) + \cdots + \beta_M f_M(x; \theta_M)
+$$
+
+と同様に重み付き和の形になる。
 
 
 ### ブースティング
 
-機械学習においては誤差関数を最小化するような予測モデル$\hat{f}(x)$を得たいため、勾配は誤差関数の予測モデル（あるいは予測モデルを形づくるパラメータ）による微分ということになる。
+ブースティングは最急降下法を機械学習で行っていると捉えることができる。
 
-例えば、二乗誤差$L(y, f(x)) = \frac{1}{2} (y - f(x))^2$の場合は負の勾配が残差になる。
+機械学習においては予測値$f(x)$と実測値$y$の誤差の最小化問題
 
 $$
-- \frac{ \partial L(y, f(x)) }{ \partial f(x) }
-= y - f(x) = \text{residual}
+\min_{f(x)} L(y, f(x))
 $$
 
+を解きたいため、勾配は誤差関数の予測モデルによる微分$\frac{ \partial L(y, f(x)) }{ \partial f(x) }$ということになる。
+
+二乗誤差$L(y, f(x)) = \frac{1}{2} (y - f(x))^2$の場合、負の勾配は残差である
+
+$$
+- \frac{ \partial L(y, f(x)) }{ \partial f(x) } = y - f(x) = \text{residual}
+$$
+
+前向き段階的加法モデルの節で「二乗誤差の場合は残差を近似するように学習している」と述べた。
+
+$$
+L(y_i, f_{m-1}(x_i) + \beta f(x_i; \theta)) = (\text{residual}_{im} - \beta f(x_i; \theta))^2
+$$
+
+これにより、学習されるモデル$\beta f(x; \theta)$は負の勾配を学習するようになり、最終的にそれらの和となるモデルは最急降下法を解いた状態を近似することになる。
 
 
 ## 勾配ブースティング決定木
 
 **勾配ブースティング決定木（gradient boosting decision tree:
-GBDT）**は上記のような加法モデルの構築を決定木を用いて行うアルゴリズムである。
+GBDT）**は上記のようなブースティングによる加法モデルの構築を決定木$T(x; \theta)$を用いて行うアルゴリズムである。
 
-二乗誤差を誤差関数とする勾配ブースティング決定木は先述の前向き段階的加法モデルにおいて関数$f(x; \theta)$を決定木$T(x; \theta)$に置き換えたもの
 
 $$
-\begin{align}
-L(y_i, f_{m-1}(x_i) + \beta T(x_i; \theta))
-&= (y_i - f_{m-1}(x_i) - \beta T(x_i; \theta))^2 \\
-&= (\text{residual}_{im} - \beta T(x_i; \theta))^2
-\end{align}
+f(x) = T_0(x; \theta_0) + \beta_1 T_1(x; \theta_1) + \cdots + \beta_M T_M(x; \theta_M)
 $$
 
-に相当する。
+勾配ブースティング決定木は表形式データ（tabular data）に対して高い性能を発揮することが多く、頻繁に利用される。
+有名な勾配ブースティング決定木のアルゴリズムにXGBoostとLightGBMがあり、Rからも利用可能なのでそれらを紹介していく。
 
 
 ## XGBoost
 
-XGBoost（Chen & Guestrin,
+[XGBoost](https://github.com/dmlc/xgboost)（Chen & Guestrin,
 2016）は勾配ブースティング決定木を拡張したアルゴリズムおよびパッケージである。
 内部のアルゴリズムは上記のような古典的な勾配ブースティングからかなり改善されているが、基本的な考え方は同じなので本講義では割愛し、Rでの使い方の解説を重視していく。
 
@@ -805,10 +816,11 @@ xgb.importance(model=xgb) %>% xgb.plot.importance()
 xgb.plot.tree(model=xgb, trees=c(1))
 ```
 
+
 ## LightGBM
 
-LightGBM (Ke et al. 2017)
-も勾配ブースティング決定木のアルゴリズムである。
+[LightGBM](https://github.com/microsoft/LightGBM) (Ke et al. 2017)
+は計算が非常に高速で大規模データとの相性が良い勾配ブースティング決定木のアルゴリズムである。
 XGBoostなど従来の勾配ブースティング決定木に比べて、
 
 1.  計算の高速化
@@ -889,38 +901,46 @@ lgb.importance(lgb) %>% lgb.plot.importance()
 # plot.tree()はR版には無い（Python版にはある）
 ```
 
+
 # 参考文献
 
-[Breiman, L. (2001). Random forests. *Machine learning*, *45*(1),
-5-32.](https://link.springer.com/content/pdf/10.1023/A:1010933404324.pdf)
+**Random Forests**
 
-[Chen, T., & Guestrin, C. (2016, August). Xgboost: A scalable tree
+- 論文：[Breiman, L. (2001). Random forests. *Machine learning*, *45*(1),
+5-32.](https://link.springer.com/content/pdf/10.1023/A:1010933404324.pdf)
+- パッケージ：[Package
+`randomForest`](https://cran.r-project.org/web/packages/randomForest/randomForest.pdf)
+
+
+**XGBoost**
+
+- 論文：[Chen, T., & Guestrin, C. (2016, August). Xgboost: A scalable tree
 boosting system. In Proceedings of the 22nd acm sigkdd international
 conference on knowledge discovery and data mining (pp.
 785-794).](https://arxiv.org/abs/1603.02754)
+- パッケージ：[XGBoost R Package --- xgboost 1.7.5
+documentation](https://xgboost.readthedocs.io/en/stable/R-package/index.html)
 
-[Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., ... & Liu, T.
+
+**LightGBM**
+
+- 論文：[Ke, G., Meng, Q., Finley, T., Wang, T., Chen, W., Ma, W., ... & Liu, T.
 Y. (2017). Lightgbm: A highly efficient gradient boosting decision tree.
 Advances in neural information processing systems,
 30.](https://proceedings.neurips.cc/paper/2017/hash/6449f44a102fde848669bdd9eb6b76fa-Abstract.html)
-
-Hastie, T., Tibshirani, R., & Friedman, J. (2014) 『統計的学習の基礎:
-データマイニング・推論・予測』, 共立出版
-
-James et al.(2018)『Rによる統計的学習入門』8章「木に基づく方法」
-
-平井有三(2012)『はじめてのパターン認識』第11章「識別器の組み合わせによる性能強化」
-
-[Package
-`randomForest`](https://cran.r-project.org/web/packages/randomForest/randomForest.pdf)
-
-[XGBoost R Package --- xgboost 1.7.5
-documentation](https://xgboost.readthedocs.io/en/stable/R-package/index.html)
-
-[Light Gradient Boosting Machine •
+- パッケージ：[Light Gradient Boosting Machine •
 lightgbm](https://lightgbm.readthedocs.io/en/v3.3.2/R/index.html)
 
-# 参考ウェブサイト & スライド
+
+**書籍**
+
+- Hastie, T., Tibshirani, R., & Friedman, J. (2014) 『統計的学習の基礎:
+データマイニング・推論・予測』, 共立出版
+- James et al. (2018)『Rによる統計的学習入門』8章「木に基づく方法」
+- 平井有三(2012)『はじめてのパターン認識』第11章「識別器の組み合わせによる性能強化」
+
+
+## 参考ウェブサイト & スライド
 
 [初心者の初心者による初心者のための決定木分析](https://qiita.com/3000manJPY/items/ef7495960f472ec14377)
 
@@ -929,49 +949,3 @@ lightgbm](https://lightgbm.readthedocs.io/en/v3.3.2/R/index.html)
 －](https://www.slideshare.net/hamadakoichi/randomforest-web)」
 
 渡部斉(2015)「[ランダムフォレスト](https://www.slideshare.net/HitoshiHabe/ss-58784421)」
-
-<!-- ```{r} -->
-
-<!-- library(caret) -->
-
-<!-- clf_RF <- train(form = survived ~ . , # survivedを目的変数に、残りのすべての列を特徴量にする -->
-
-<!--                 data = train, -->
-
-<!--                 method = "rf", # 決定木を指定 -->
-
-<!--                 trControl = trainControl(method = "cv"), -->
-
-<!--                 # tuneGrid = expand.grid(cp = 1:10 * 0.03)) -->
-
-<!--                 tuneLength = 10) -->
-
-<!-- clf_RF -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- library(caret) -->
-
-<!-- clf_tree <- train(form = survived ~ . , # survivedを目的変数に、残りのすべての列を特徴量にする -->
-
-<!--                   data = train, -->
-
-<!--                   method = "rpart", # 決定木を指定 -->
-
-<!--                   trControl = trainControl(method = "cv"), -->
-
-<!--                   # tuneGrid = expand.grid(cp = 1:10 * 0.03), -->
-
-<!--                   tuneLength = 10) -->
-
-<!-- clf_tree -->
-
-<!-- # 決定木のプロット -->
-
-<!-- library(partykit) -->
-
-<!-- plot(as.party(clf_tree$finalModel)) -->
-
-<!-- ``` -->

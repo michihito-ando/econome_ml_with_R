@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-06-24" />
+<meta name="date" content="2023-06-25" />
 
 <title>Rで学ぶ計量経済学と機械学習 11    機械学習2：リッジ回帰とlasso</title>
 
@@ -1557,7 +1557,7 @@ border-radius: 0px;
 機械学習2：リッジ回帰とlasso</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-06-24</h4>
+<h4 class="date">2023-06-25</h4>
 
 </div>
 
@@ -1859,15 +1859,13 @@ z = \frac{x - \mu}{\sigma}
 <span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="co"># trainに対する予測精度</span></span>
 <span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>y_train_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(reg_ridge, X_train) <span class="co"># 予測</span></span>
 <span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>train_error <span class="ot">&lt;-</span> <span class="fu">RMSE</span>(y_train_pred, y_train) <span class="co"># 誤差</span></span>
-<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="fu">str_c</span>(<span class="st">&quot;train_error: &quot;</span>, <span class="fu">round</span>(train_error, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>() <span class="co"># 結果を表示</span></span></code></pre></div>
-<pre><code>## [1] &quot;train_error: 0.157&quot;</code></pre>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>train_error <span class="sc">%&gt;%</span> <span class="fu">round</span>(<span class="dv">3</span>) <span class="co"># 結果を表示</span></span></code></pre></div>
+<pre><code>## [1] 0.157</code></pre>
 <div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co"># testに対する予測精度</span></span>
 <span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>y_test_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(reg_ridge, X_test) <span class="co"># 予測</span></span>
 <span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>test_error <span class="ot">&lt;-</span> <span class="fu">RMSE</span>(y_test_pred, y_test) <span class="co"># 誤差</span></span>
-<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a></span>
-<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a><span class="co"># 結果を表示 (str_cは複数のstringsを1つにまとめる関数)</span></span>
-<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a><span class="fu">str_c</span>(<span class="st">&quot;test_error: &quot;</span>, <span class="fu">round</span>(test_error, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>() </span></code></pre></div>
-<pre><code>## [1] &quot;test_error: 0.183&quot;</code></pre>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>test_error <span class="sc">%&gt;%</span> <span class="fu">round</span>(<span class="dv">3</span>) <span class="co"># 結果を表示</span></span></code></pre></div>
+<pre><code>## [1] 0.183</code></pre>
 <p>学習用データに対する予測誤差（RMSE）は0.157、テストデータに対しては0.183となった。</p>
 <p>この結果は正則化パラメータ<span class="math inline">\(\lambda\)</span>の値によって大きく変化する。次節では適切な<span class="math inline">\(\lambda\)</span>の推定方法について述べる。</p>
 </div>
@@ -1959,18 +1957,16 @@ standard error rule）と呼ばれる。）</p>
 <span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>                        <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>) <span class="co"># 予測</span></span>
 <span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a></span>
 <span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>train_error <span class="ot">&lt;-</span> <span class="fu">RMSE</span>(y_train_pred, y_train) <span class="co"># 誤差</span></span>
-<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a></span>
-<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="fu">str_c</span>(<span class="st">&quot;train_error: &quot;</span>, <span class="fu">round</span>(train_error, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>() <span class="co"># 結果を表示</span></span></code></pre></div>
-<pre><code>## [1] &quot;train_error: 0.091&quot;</code></pre>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>train_error <span class="sc">%&gt;%</span> <span class="fu">round</span>(<span class="dv">3</span>)</span></code></pre></div>
+<pre><code>## [1] 0.091</code></pre>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># testに対する予測精度</span></span>
 <span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>y_test_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(ridge_cv, </span>
 <span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>                       X_test, </span>
 <span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>                       <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>) <span class="co"># 予測</span></span>
 <span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a></span>
 <span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a>test_error <span class="ot">&lt;-</span> <span class="fu">RMSE</span>(y_test_pred, y_test) <span class="co"># 誤差</span></span>
-<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a></span>
-<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a><span class="fu">str_c</span>(<span class="st">&quot;test_error: &quot;</span>, <span class="fu">round</span>(test_error, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>() <span class="co"># 結果を表示</span></span></code></pre></div>
-<pre><code>## [1] &quot;test_error: 0.117&quot;</code></pre>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a>test_error <span class="sc">%&gt;%</span> <span class="fu">round</span>(<span class="dv">3</span>)</span></code></pre></div>
+<pre><code>## [1] 0.117</code></pre>
 <p>学習用データに対する予測誤差（RMSE）は0.091、テストデータに対しては0.117となった。</p>
 <p>リッジ回帰でなく最小二乗法で9次多項式回帰を推定した際のテストデータに対する誤差が0.596であったのと比べると、過学習が抑制されている。</p>
 <p>テスト用データに対する予測値のグラフをみても、最小二乗法（OLS）は（学習用データに対してぴったり予測するように過学習しているため）極端に外している値があるのに対し、リッジ回帰（Ridge）は9次多項式回帰であっても穏当な誤差になっている様子がみられる。</p>
@@ -2268,8 +2264,8 @@ net）というアルゴリズムも存在する。</p>
 <span id="cb32-8"><a href="#cb32-8" tabindex="-1"></a><span class="co"># testに対する予測精度</span></span>
 <span id="cb32-9"><a href="#cb32-9" tabindex="-1"></a>y_test_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(EN_cv, X_test, <span class="at">s =</span> <span class="st">&quot;lambda.min&quot;</span>) <span class="co"># 予測</span></span>
 <span id="cb32-10"><a href="#cb32-10" tabindex="-1"></a>test_error <span class="ot">&lt;-</span> <span class="fu">RMSE</span>(y_test_pred, y_test) <span class="co"># 誤差</span></span>
-<span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a><span class="fu">str_c</span>(<span class="st">&quot;test_error: &quot;</span>, <span class="fu">round</span>(test_error, <span class="dv">3</span>)) <span class="sc">%&gt;%</span> <span class="fu">print</span>() <span class="co"># 結果を表示</span></span></code></pre></div>
-<pre><code>## [1] &quot;test_error: 0.12&quot;</code></pre>
+<span id="cb32-11"><a href="#cb32-11" tabindex="-1"></a>test_error <span class="sc">%&gt;%</span> <span class="fu">round</span>(<span class="dv">3</span>)</span></code></pre></div>
+<pre><code>## [1] 0.12</code></pre>
 </div>
 <div id="参考文献" class="section level1" number="9">
 <h1><span class="header-section-number">9</span> 参考文献</h1>
