@@ -404,14 +404,12 @@ reg_ridge <- glmnet(x = X_train, # 特徴量
 # trainに対する予測精度
 y_train_pred <- predict(reg_ridge, X_train) # 予測
 train_error <- RMSE(y_train_pred, y_train) # 誤差
-str_c("train_error: ", round(train_error, 3)) %>% print() # 結果を表示
+train_error %>% round(3) # 結果を表示
 
 # testに対する予測精度
 y_test_pred <- predict(reg_ridge, X_test) # 予測
 test_error <- RMSE(y_test_pred, y_test) # 誤差
-
-# 結果を表示 (str_cは複数のstringsを1つにまとめる関数)
-str_c("test_error: ", round(test_error, 3)) %>% print() 
+test_error %>% round(3) # 結果を表示
 ```
 
 学習用データに対する予測誤差（RMSE）は`r round(train_error,3)`、テストデータに対しては`r round(test_error,3)`となった。
@@ -490,8 +488,7 @@ y_train_pred <- predict(ridge_cv,
                         s = "lambda.min") # 予測
 
 train_error <- RMSE(y_train_pred, y_train) # 誤差
-
-str_c("train_error: ", round(train_error, 3)) %>% print() # 結果を表示
+train_error %>% round(3)
 
 # testに対する予測精度
 y_test_pred <- predict(ridge_cv, 
@@ -499,8 +496,7 @@ y_test_pred <- predict(ridge_cv,
                        s = "lambda.min") # 予測
 
 test_error <- RMSE(y_test_pred, y_test) # 誤差
-
-str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
+test_error %>% round(3)
 ```
 
 ```{r, echo=F}
@@ -799,7 +795,7 @@ EN_cv <- cv.glmnet(x = X_train, # 特徴量
 # testに対する予測精度
 y_test_pred <- predict(EN_cv, X_test, s = "lambda.min") # 予測
 test_error <- RMSE(y_test_pred, y_test) # 誤差
-str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
+test_error %>% round(3)
 ```
 
 # 参考文献
