@@ -23,7 +23,6 @@ editor_options:
   chunk_output_type: console
 ---
 
-
 ```{r include = FALSE}
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 ```
@@ -33,63 +32,85 @@ $$
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
 $$
 
+# 本講義の目的
+
+# パッケージの読み込み
+
+```{r}
+# 準備
+pacman::p_load(
+  tidyverse, # dplyr, tibbleなどのパッケージ群の読み込み
+  MLmetrics, # 予測精度の評価指標
+  carData,   # TitanicSurvivalデータセットのため
+  nnet,      # 小規模なニューラルネットワークを扱うライブラリ
+  NeuralNetTools  # ニューラルネットワークの可視化
+)
+```
+
 # ニューラルネットワーク
 
-## パーセプトロン
-
-### 生体ニューロン
+## 生体ニューロン
 
 生物の脳神経には多数のニューロン（神経細胞）があり、それらが結合してネットワークを形成している。生物のニューロン（生体ニューロン）ではニューロンの樹状突起が他のニューロンのシナプスから信号（神経伝達物質を受容することで発生する電気信号）を受け取り、閾値を超える電気信号を受け取ると別のニューロンに信号を送るような仕組みになっている。
 
-シナプスと樹状突起の結合の強さ（神経伝達物質の放出量）はそれぞれ異なり、よく使う神経回路はシナプス結合が強くなり、そうすることで学習が進行する。
+シナプスと樹状突起の結合の強さ（神経伝達物質の放出量）はそれぞれ異なり、よく使う神経回路はシナプス結合が強くなり、そうすることで学習が進行すると考えられている。
 
-<center><img src="13_NeuralNetwork.assets/neuron.png" width=70%></center>
-画像出所：http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245
+<center>
+  <img src="13_NeuralNetwork.assets/neuron.png" width="70%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+      （出所：<a href="http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245">
+      http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245</a>）
+  </span>
+</center>
 
-### 人工ニューロン
 
-こうしたニューロンの仕組みを数理モデルにした人工ニューロン（ユニットと呼ばれる）を用いてネットワークを作ったものが**ニューラルネットワーク**（neural network）である。以下の図(a)は1つのユニットを、図(b)はニューラルネットワークの一例を示している。
+## 形式ニューロンとパーセプトロン
 
-![](13_NeuralNetwork.assets/1553736366556.png)
+こうしたニューロンの仕組みを数理モデルにしたものが**形式ニューロン**（formal neuron）と呼ばれるモデルである。 入力$x_1, x_2, \dots, x_m$に重み$w_1, w_2, \dots, w_m$を乗じて定数項$b$をつけた総和$u = \sum_{j = 1}^m x_j w_j + b$を**活性化関数**（activation function）と呼ばれる関数$h$に通したものを出力$z$とする。
 
-ユニットにはさまざまな入力$x_i$が異なる結合の強さ$w_i$で入ってきており、その重み付き和
 $$
-u = \sum_{i = 1}^p x_i w_i
+z = h(u) = h \left(\sum_{j = 1}^m x_j w_j + b \right)
 $$
-が総入力となる。$u$は**活性**（activation）とも呼ばれる。活性に**バイアス**（bias）と呼ばれる定数項$b$を加えて**活性化関数**（activation function）を通したものがこのユニットからの出力$z$となる。
+
+この計算を図にしたものが次の図である。
+
+<center><img src="13_NeuralNetwork.assets/formal_neuron.png" width="50%"/></center>
+
+活性化関数は生体ニューロンにおいて総入力がある閾値を超えたときに信号を出力することを再現する関数であり、伝統的には**階段関数**（step function）
+
 $$
-z = f(u + b) = f\left(\sum_{i = 1}^p x_i w_i + b \right)
-$$
-生体ニューロンにおいて総入力がある閾値を超えたときに信号を出力することを再現するのが活性化関数であり、**階段関数**（step function）
-$$
-\theta(x) = 
+h(x) = 
 \begin{cases}
-1 & (x \geq b)\\
-0 & (x < b)
+  0 & (x \leq 0)\\
+  1 & (x > 0)
 \end{cases}
 $$
+
 や**シグモイド関数**（sigmoid function）
+
 $$
-\sigma(x) = \frac{1}{1 + \exp(-x)}
+h(x) = \frac{1}{1 + \exp(-x)}
 $$
-を使用する。
 
+が用いられてきた。 近年は**ReLU（rectified linear unit）**
 
+$$
+h(x) = \max(0, x)
+$$
 
-```{r, fig.height=3, fig.width=8, echo=F}
-library(gridExtra)
-library(tidyverse)
+が用いられる事が多い。
+これらの関数を示したものが次の図である。
 
-# 階段関数
+```{r, fig.height=2, fig.width=8, echo=F}
+pacman::p_load(tidyverse, gridExtra)
+
 step = function(x, b) ifelse(x >= -b, 1, 0)
-# シグモイド関数
 sigmoid = function(x) 1 / (1 + exp(-x))
+relu = function(x) purrr::map_vec(x, function(x) { max(0, x) } )
 
+x <- seq(-5, 5, 0.01)
 
-# データ生成
-x = -100:100 * 0.1
-
-# plot
 g1 <- ggplot(tibble(x, y = step(x, 0)),
              aes(x = x, y = y))+
   geom_line(color = "dodgerblue")+
@@ -100,12 +121,74 @@ g2 <- ggplot(tibble(x, y = sigmoid(x)),
   geom_line(color = "dodgerblue")+
   labs(y = expression(y), x = expression(x), title = "シグモイド関数")
 
-grid.arrange(g1, g2, ncol = 2)
+g3 <- ggplot(tibble(x, y = relu(x)),
+             aes(x = x, y = y))+
+  geom_line(color = "dodgerblue")+
+  labs(y = expression(y), x = expression(x), title = "ReLU")
+
+grid.arrange(g1, g2, g3, ncol = 3)
 ```
 
+形式ニューロンはモデルとしての構造のみの存在であり、重みを更新する仕組みまでは存在しなかった。 後に重みの更新方法が提案され、そちらは**パーセプトロン**（perceptron）あるいは**単純パーセプトロン**と呼ばれる。
 
-重み$w_i$とバイアス$b$はデータから学習させる。その際には、まず重みの初期値としてランダムに設定し、その後は誤差を下げる方向に重みの更新を繰り返していくように学習していく。
+パーセプトロンにおいて、重み$w_i$とバイアス$b$はデータから学習させる。その際にはまず重みの初期値をランダムに設定し、その後は誤差を下げる方向に重みの更新を繰り返していくように学習していく。
 
+
+## 多層パーセプトロン
+
+パーセプトロンの出力を別のパーセプトロンの入力とすることで多層化したものを**多層パーセプトロン（multilayer perceptron: MLP）**あるいは**ニューラルネットワーク**（neural network）と呼ぶ。
+
+<center><img src="13_NeuralNetwork.assets/multilayer_perceptron.png" width="50%"/></center>
+
+
+### 線形分離可能性
+
+単純パーセプトロンは線形モデルであるため、線形分離不可能なデータをうまく分類することができない。
+しかし多層パーセプトロンは非線形モデルとなり、線形分離不可能なデータも分類することができる。
+
+次の図は典型的な線形分離不可能問題のデータに対して単純パーセプトロンと多層パーセプトロンを用いて学習させた場合の決定境界である。なお、多層パーセプトロンは中間層を1層、中間層のユニット数（形式ニューロンの数）は3個の構造にした。
+
+```{r, echo=F}
+# train data
+set.seed(0)
+n <- 1000
+s <- 0.2
+X <- rbind(
+  MASS::mvrnorm(n/4, mu=c(-1, -1), Sigma=matrix(c(s, 0, 0, s), 2, 2)),
+  MASS::mvrnorm(n/4, mu=c(1, 1), Sigma=matrix(c(s, 0, 0, s), 2, 2)),
+  MASS::mvrnorm(n/4, mu=c(1, -1), Sigma=matrix(c(s, 0, 0, s), 2, 2)),
+  MASS::mvrnorm(n/4, mu=c(-1, 1), Sigma=matrix(c(s, 0, 0, s), 2, 2))
+)
+y <- c(rep(0, n/2), rep(1, n/2)) %>% as.factor()
+colnames(X) <- c("x1", "x2")
+df <- X %>% as.data.frame() %>% tibble() %>% mutate(y=y)
+
+# data for plotting
+x_range <- seq(-3, 3, 0.02)
+df_ <- tidyr::crossing(tibble(x1 = x_range), tibble(x2 = x_range))
+
+# fit and predict
+# 中間層のユニット数が1 → 実質的に単純パーセプトロン
+clf_lm <- nnet(y ~ ., data=df, size=1, trace=F)
+acc_lm <- MLmetrics::Accuracy(y_true = df$y, y_pred = predict(clf_lm, df, type="class") %>% as.factor())
+label_lm <- str_c("単純パーセプトロン (Accuracy=", acc_lm, ")")
+df_[label_lm] <- predict(clf_lm, df_, type="class") %>% as.numeric()
+
+# 中間層のユニット数が2以上 → 中間層と出力層で2層あることを活かしている
+clf_nlm <- nnet(y ~ ., data=df, size=3, trace=F)
+acc_nlm <- MLmetrics::Accuracy(y_true = df$y, y_pred = predict(clf_nlm, df, type="class") %>% as.factor())
+label_nlm <- str_c("多層パーセプトロン (Accuracy=", acc_nlm, ")")
+df_[label_nlm] <- predict(clf_nlm, df_, type="class") %>% as.numeric()
+
+# plot
+df_ <- df_ %>% pivot_longer(cols = c(label_lm, label_nlm),
+                            names_to = "method", values_to = "predicted value")
+
+ggplot() +
+  geom_point(aes(x = x1, y = x2, color=y, group=y), data=df, alpha=0.7) +
+  geom_contour(aes(x = x1, y = x2, z = `predicted value`, color=method, group=method), data=df_, alpha=0.7) +
+  labs(title = "線形分離不可能問題")
+```
 
 ## Rで実践
 
@@ -114,22 +197,17 @@ grid.arrange(g1, g2, ncol = 2)
 `{carData}`パッケージに含まれるタイタニック号の乗客データ`TitanicSurvival`を使う。
 
 ```{r}
-# 準備
-library(tidyverse)
-set.seed(666)
-
 # データ読み込み
-library(carData)
 data("TitanicSurvival")
 head(TitanicSurvival)
 ```
 
 このデータセットは1912年のタイタニック号の沈没事故の乗客の生死に関するデータで、次の変数が含まれている
 
-- `survived`：生存したかどうか
-- `sex`：性別
-- `age`：年齢（1歳に満たない幼児は小数）。263の欠損値を含む。
-- `passengerClass`：船室の等級
+-   `survived`：生存したかどうか
+-   `sex`：性別
+-   `age`：年齢（1歳に満たない幼児は小数）。263の欠損値を含む。
+-   `passengerClass`：船室の等級
 
 このデータセットには欠損値が含まれているため、まず欠損値を除去する
 
@@ -145,6 +223,7 @@ tita <- na.omit(TitanicSurvival)
 df <- tita %>% rownames_to_column("ID")
 
 # 80%を学習用データに
+set.seed(0)
 train <- df %>% sample_frac(size = 0.8)
 
 # 学習用データに使っていないIDの行をテスト用データに
@@ -155,196 +234,78 @@ train <- train %>% select(-ID)
 test <- test %>% select(-ID)
 ```
 
-### ニューラルネット
+### ニューラルネットワークの学習
 
 中間層が1層のニューラルネットワークは`{nnet}`パッケージで実行することができる。
 
-引数に指定している`size`は中間層のユニット数、`decay`は重みを更新するときの減衰率である。
-
-<!-- nnetではBroyden, Fletcher, Goldfarb and Shanno(1970)の準ニュートン法を用いてパラメータを推定する。 -->
-
 ```{r}
-# 単一中間層
-library(nnet)
-titanic_nnet <- nnet(survived ~ . , data = train,
-                     size = 2, decay = 0.1)
+titanic_nnet <- nnet(
+  formula = survived ~ .,
+  data = train,
+  size = 2
+)
 ```
 
-`{NeuralNetTools}`パッケージを使用するとnnetのネットワーク構造を図にすることができる。Iはinput（入力層）、Bはbias（定数項）、Hはhidden（中間層、隠れ層）、Oはoutput（出力層）である。
+引数に指定している`size`は中間層のユニット数（形式ニューロンの数）である。
+なお出力層の活性化関数はデフォルトではシグモイド関数である。
+
+`{NeuralNetTools}`パッケージを使用するとnnetのネットワーク構造を図にすることができる。
 
 ```{r fig.height=6, fig.width=10}
-if(!require(NeuralNetTools)) {install.packages("NeuralNetTools")} # インストールされていなければインストールする
-library(NeuralNetTools)
-plotnet(titanic_nnet)
+NeuralNetTools::plotnet(titanic_nnet)
 ```
 
-
-
-訓練データでの正解率は以下のように計算できる。
-```{r}
-# 予測
-y_pred_train = predict(titanic_nnet, train, type = "class")
-
-# 混同行列
-table(train$survived, y_pred_train)
-
-# 正解率
-library(MLmetrics)
-Accuracy(y_pred = y_pred_train, y_true = train$survived)
-```
+`I`は入力層（input）、`B`は定数項（bias）、`H`は中間層（hidden; 隠れ層）、`O`は出力層（output）である。
+線の色は重みの正負を表しており、黒は正の値、灰色は負の値である。線の太さは重みの相対的な大きさを表している。
 
 テストデータでの正解率は以下のように計算できる。
+
 ```{r}
 # 予測
-y_pred_test = predict(titanic_nnet, test, type = "class")
+y_pred <- predict(titanic_nnet, test, type = "class")
 
 # 混同行列
-table(test$survived, y_pred_test)
+table(test$survived, y_pred)
 
 # 正解率
-library(MLmetrics)
-Accuracy(y_pred = y_pred_test, y_true = test$survived)
+Accuracy(y_pred = y_pred, y_true = test$survived)
 ```
-
-
 
 
 # ディープラーニング
 
-## 登場の経緯
+中間層が2層以上のニューラルネットワークを**DNN（deep neural network）**や**ディープラーニング（deep learning）**と呼ぶ。
+ニューラルネットワークの層をさらに重ねることでモデルの表現力がさらに向上し、より複雑なデータに対応できるようになる。
 
-ディープラーニングは多層ニューラルネットワークを用いた手法である。中間層を多層化するとニューラルネットの表現力が向上し、複雑な識別境界を描くことができる。
+DNNの研究は過学習の問題や勾配消失問題と呼ばれる予測誤差の情報が層を経て極端に小さくあるいは大きくなって消える現象に苦しむこととなった。
+しかし、
 
-しかし、1990年代~2000年代には
+- 勾配の消失が起きにくい活性化関数である**ReLU**の登場
+- 正則化手法の発展（ランダムに一部のニューロンの出力を0に固定して無効化することで過学習を回避する**ドロップアウト**など）
+- パラメータ最適化に用いる勾配法の改良手法の登場
+- 計算機の発展
 
-1. **勾配消失**：活性化関数にシグモイド関数を用いて多層にすると、浅い層のパラメータが出力に影響を与えなくなって更新されなくなり学習が困難になる
-2. **過学習**：表現力が向上する一方で過学習しやすくなる
-3. **計算コスト**：並列計算が必要で、従来のCPUはこのタスクに向かない
+などの要因により、DNNをランダムな初期値からでも学習することができるようになった。
 
-といった問題が解決できなかった。
 
-その後研究が進み、これらの問題への対処法が生み出されていった。
+## Rによる実践
 
-1. 勾配消失 → **ReLU**（rectified linear unit、活性化関数に正規化線形関数$f(x) = \max(x, 0)$を使ったユニット）などの提案
-2. 過学習 → **Dropout**（中間層のニューロンを学習のたびにいくつかランダムに無効化しつつ学習する）などの正則化の手法
-3. 計算コスト → **General Purpose GPU（GPGPU）**：並列演算用の処理装置の登場
+Rでは`{h2o}`パッケージや`{rtorch}`パッケージなどでDNNを実行することができる。
 
-そして2012年に画像認識のコンテストILSVRC2012においてディープラーニングを使用したチームが他のチームを圧倒する成績を出したことでその性能が注目されるようになり、ディープラーニングのブームが始まった。現在もディープラーニング（AI、人工知能）ブームは続いている。
-
-## Rで実践
-
-### データの用意
 
 ```{r}
 # パッケージの読み込み
-library(tidyverse)
-library(MLmetrics)
-
-# 乱数の種を固定
-set.seed(0)
-```
-
-[MNIST database](http://yann.lecun.com/exdb/mnist/)の手書き数字の画像データを使う。
-
-```{r}
-# MNISTデータのダウンロード
-if (!dir.exists('data')) { # もしdataディレクトリがないなら作成
-    dir.create('data')
-}
-if (!file.exists('data/train.csv')) { # もしdataディレクトリにtrain.csvがないならダウンロード
-    download.file(url='https://raw.githubusercontent.com/wehrley/Kaggle-Digit-Recognizer/master/train.csv',
-                  destfile='data/train.csv')
-}
-```
-
-ダウンロードしたら、まずデータを読み込む。
-
-```{r}
-# データの読み込み
-mnist <- read.csv('data/train.csv')
-```
-
-
-どんなデータか、みてみる。
-
-```{r}
-# 1レコード目の1~10列
-mnist[1, 1:10]
-
-# 1レコード目の210~220列
-mnist[1, 210:220]
-
-# 1レコード目の最後の10列
-k = ncol(mnist)
-mnist[1, (k-10):k]
-```
-
-1レコードにつき1枚の画像のデータが格納されており、`label`は画像に書かれている数字（目的変数）、`pixel0`~`pixel783`は、28 x 28=784ピクセルの手書き文字の画像データ（特徴量＝説明変数）である。
-
-```{r fig.width=4, fig.height=4.2}
-# 教師データ（目的変数）= 1列目
-y <- mnist[,1]
-
-# 特徴量（説明変数）= 残りの784列
-X <- mnist[,-1]
-
-# 0から1の値になるよう正規化し、(数値が0~255なので、255で割る)、行と列をt()で入れ替える
-X <- t(X/255)
-
-# 扱っているデータを覗く
-i = 10 # 10レコード目
-pixels = matrix(X[,i], nrow=28, byrow=TRUE)
-image(t(apply(pixels, 2, rev)) , col=gray((255:0)/255), 
-      xlab="", ylab="", main=paste("Label for this image:", y[i]))
-
-i = 1000 # 1000レコード目
-pixels = matrix(X[,i], nrow=28, byrow=TRUE)
-image(t(apply(pixels, 2, rev)) , col=gray((255:0)/255), 
-      xlab="", ylab="", main=paste("Label for this image:", y[i]))
-```
-
-
-
-次に、訓練データとテストデータに分ける。
-
-```{r}
-# testとtrainに分割
-# ID列を追加
-df = mnist %>% rownames_to_column("ID")
-
-# 80%を学習用データに
-train <- df %>% sample_frac(size = 0.8)
-
-# 学習用データに使っていないIDの行をテスト用データに
-test <- anti_join(df, train, by = "ID")
-
-# ID列は予測に使わないため削除しておく
-train <- train %>% select(-ID)
-test <- test %>% select(-ID)
-```
-
-目的変数（教師データ）は0~9のラベルで、それぞれ3000レコード程度ある
-
-```{r}
-# 教師データのラベル
-table(train[, 1])
-```
-
-### DNN (Deep Neural Network)
-
-<!-- # h2oを使う場合 -->
-
-[h2o.ai](https://www.h2o.ai/)という企業が開発・公開している`{h2o}`パッケージを使用する。
-
-
-```{r message=F}
-# ライブラリの用意
-if(!require(h2o)) {install.packages("h2o")}
-library(h2o)
+pacman::p_load(
+  tidyverse,
+  MLmetrics,
+  h2o
+)
 
 # 初期化
 h2o.init()
+```
 
+```{r message=F}
 # データをh2o用のデータ型に変換
 train <- as.h2o(train)
 test <- as.h2o(test)
@@ -352,18 +313,12 @@ test <- as.h2o(test)
 # 1列目（目的変数）をfactor型に変換
 train[,1] = h2o::as.factor(train[,1])
 test[,1] = h2o::as.factor(test[,1])
-```
 
-訓練データをさらに分ける。80%は学習に使用し、20%は学習中の未知のデータへの予測誤差を測るために使用する。
-
-```{r message=F}
 # trainデータを学習用のものと検証用のものに分ける
 splits <- h2o.splitFrame(train, ratios = 0.8, seed = 0)
 ```
 
-
 ネットワーク構造の定義と学習を行う。ここでは中間層は1層目を128ユニット、2層目を64ユニット、3層目を16ユニットとしてみる。
-
 
 ```{r message=F}
 # 学習
@@ -373,16 +328,13 @@ mnist_dl = h2o.deeplearning(
   training_frame = splits[[1]],   # 訓練データを指定
   validation_frame = splits[[2]], # 検証データを指定（学習には使わず、精度を測るためだけに使う）
   activation = c("RectifierWithDropout"), # 活性化関数を指定
-  hidden = c(128, 64, 16), # 中間層（隠れ層）のサイズ
-  epochs = 15,       # エポック数。学習データ何回分の学習を反復させて重みを更新していくか。
+  loss = c("CrossEntropy"), # 誤差関数をCrossEntropy（二項分布の負の対数尤度）へ
+  hidden = c(3, 3, 3), # 中間層（隠れ層）のサイズ
+  epochs = 1000,       # エポック数。学習データ何回分の学習を反復させて重みを更新していくか。
   hidden_dropout_ratios = c(0.5, 0.5, 0.5), # 各中間層においてdropoutするユニットの割合
-  sparse = TRUE,     # 0が多いデータ（スパースデータ）の取り扱い方を変え、メモリ使用量を抑える。
-  standardize = TRUE,# データの標準化を学習前に行う
   seed = 0
 )
 ```
-
-
 
 モデルの情報（レイヤー構造、混同行列など）
 
@@ -397,7 +349,6 @@ mnist_dl
 plot(mnist_dl)
 ```
 
-
 テストデータでの予測を行う。
 
 ```{r message=F}
@@ -405,20 +356,24 @@ plot(mnist_dl)
 pred <- h2o.predict(mnist_dl, test)
 ```
 
-予測結果は`predict`列に予測したラベルの値（0~9の数字のうちどれだと予測したか）が入っており、残りの列にはそのレコードが目的変数の各クラスに属する確率を推定したものが入っている。
+予測結果は`predict`列に予測したラベルの値が入っており、残りの列にはそのレコードが目的変数の各クラスに属する確率を推定したものが入っている。
 
 ```{r}
 # 予測結果
 pred
-
-# 予測確率
-round(pred[,2:11], 3)
 ```
 
-
 ```{r}
-y_true = as.vector(test[,1])
-y_pred = as.vector(pred[,1])
+y_true <- test$survived %>% as.vector()
+y_true <- 1 * (y_true == "yes")
+p_pred <- pred$yes %>% as.vector()
+y_pred <- 1 * (p_pred >= 0.5)
+
+# ROC-AUC
+AUC(p_pred, y_true)
+
+# 正解率
+Accuracy(y_pred, y_true)
 
 # 混同行列
 table(y_true, y_pred)
@@ -430,12 +385,220 @@ h2o.confusionMatrix(mnist_dl, test)
 ```
 
 
-```{r}
-# 正解率
-library(MLmetrics)
-Accuracy(y_pred = y_pred, y_true = y_true)
+
+# 自然言語処理入門
+
+ディープラーニングは日本語や英語などの**自然言語**（natural language）の分析や画像の分析を中心として活用されている。 今回は自然言語データの分析（**自然言語処理** natural language processing: NLP）を例にとって説明を行うことにする。
+
+この節では自然言語処理の概要や、自然言語をコンピュータで扱う（計算可能にする）ためにどのように前処理を行うのかを概説する。
+
+## 自然言語処理のタスク
+
+例えば次のようなタスクを行う
+
+- 機械翻訳：ある言語を別の言語に翻訳する
+  - 応用例：Google翻訳、DeepLなど
+- 固有表現抽出（named entity recognition: NER）：文章中の固有表現（人名、組織名、地名、日付など）を取り出す
+  - 応用例1：[ニュース配信における固有表現抽出の取り組み / Extraction of Unique Expressions in News Distribution - Speaker Deck](https://speakerdeck.com/sansandsoc/extraction-of-unique-expressions-in-news-distribution?slide=6)
+  - 応用例2：[AIによる有価証券報告書のキーワード分析　～BERTを用いた固有表現抽出の検証～ | DCS blog](https://blog.dcs.co.jp/ai/20230222-nlp.html)
+- 感情分析：文章中のネガティブな表現やポジティブな表現を抽出し、全体としてポジティブかネガティブかを評価する
+  - 応用例：[青嶋智久, & 中川慧. (2019). 日本語 BERT モデルを用いた経済テキストデータのセンチメント分析](https://www.jstage.jst.go.jp/article/pjsai/JSAI2019/0/JSAI2019_4Rin127/_article/-char/ja/)
+- 文章生成：指定された文章を生成したり、文章を要約したり、チャットボットとしての返答を生成したりなど
+  - 応用例：ChatGPT、Bing AIなど
+
+
+## トークン化
+
+自然言語のデータを計算可能な状態にしていくにあたって、まず文章をトークンという単位に分けていく。例えば文字単位や単語単位に分割していく。
+
+単語単位に分割する場合、英語のように単語と単語の間にスペースがある言語の場合はスペースを頼りに分割すればよい。
+しかし日本語のようにスペースが入らない言語の場合は形態素解析という処理を行い、どの文字からどの文字までが1つの単語を構成するのかを判定して分割していく必要がある。
+
+形態素解析器のひとつが[MeCab](https://taku910.github.io/mecab/)（めかぶ）である。MeCabを別途パソコンにインストールした状態で`{RMeCab}`パッケージを使用すると、次のようにRからMeCabを呼び出して文章を分割することができる。
+
+```{r eval=F}
+# （参考）RMeCabパッケージによる形態素解析の例
+# （注）MeCabを予めインストールしておく必要がある
+install.packages("RMeCab", repos = "http://rmecab.jp/R")
+library(RMeCab)
+res <- RMeCabC("すもももももももものうち")
+unlist(res)
 ```
 
+```
+> unlist(res)
+    名詞     助詞     名詞     助詞     名詞     助詞     名詞 
+ "すもも"     "も"   "もも"     "も"   "もも"     "の"   "うち" 
+```
+
+
+## 言語モデル
+
+自然言語処理においては、文章が生成される確率を推定するモデルを構築することを通じて自然言語処理モデルを構築することが少なくない。
+この「文章が生成される確率のモデル」を**言語モデル（language model）**という。
+
+言語モデルでは、もっともらしい（確率的にありえる）文章の確率が高く評価されるように学習したい。例えば次のような評価をしたい。
+
+$$
+P(昨日は雨が降りました) > P(昨日は飴が降りました)
+$$
+
+文章をトークンに置き換えて考えると、文章の確率ではなくトークンの同時確率として扱うことができる
+
+$$
+P(昨日, は, 雨, が, 降り, ました) 
+$$
+
+記号にすると、ある文章$S$をトークン化したのを$(w_1, w_2, \cdots, w_T)$とすると、
+
+$$
+P(S)=P(w_1, w_2, \cdots, w_T)
+$$
+
+を求めたいということになる。この同時分布$P(w_1, w_2, \cdots, w_n)$は条件付き確率の積として表すことができる。
+
+$$
+\begin{align}
+P(w_1, w_2, \cdots, w_T)
+&= P(w_1) \times P(w_2|w_1) \times P(w_3|w_1, w_2) \times \cdots \times p(w_T|w_1, \dots, w_{T-1})\\
+&= \prod_{t=1}^T p(w_t|w_1, \dots, w_{t-1})
+\end{align}
+$$
+
+$w_t$より前のトークン列$w_1,w_2,\cdots,w_{t-1}$は**文脈**（context）と呼ばれる。
+よって言語モデルの学習は「文脈（これまで出たトークン）をもとに次のトークンを予測する問題」と捉えることもできる。
+
+
+# RNNとLSTM
+
+## RNN
+
+言語モデルを学習する際、文脈$w_1,w_2,\cdots,w_{t-1}$をもとに次の単語$w_t$を予測するような問題を解くことになるわけだが、これは時点$1, 2, \dots, t-1$のデータから$t$時点のデータを予測するような時系列予測問題のような構造になっている。
+
+こうした系列性をうまく表現するようなネットワークの構造（アーキテクチャ）が**RNN（recurrent neural network）**である。
+
+<center>
+  <img src="13_NeuralNetwork.assets/rnn.png" width="50%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+      （出所：<a href="http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245">
+      http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245</a>）
+  </span>
+</center>
+
+
+<!-- TODO: 単語も書き込まれた画像いれる -->
+
+RNNは$t$期の入力だけでなく$1, 2, \dots, t-1$期の入力も用いて$t$期の出力を行うモデルである。
+ある中間層の値は、入力$x_t$と重みを
+
+$$
+z_t = h \left( \sum^m_{j=1} w_j^{(in)} x_{j, t} + \sum w^{(hid)} z_{t-1} \right)
+$$
+
+$$
+z_t = h \left( \sum^m_{j=1} w_j^{(in)} x_{j}^{(t)} + \sum w^{()} z^{(t-1)} \right)
+$$
+
+
+
+RNNの活性化関数には双曲線正接（hyperbolic tangent: **tanh**）関数
+
+$$
+\text{tanh}(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}
+$$
+
+が使われることが多い。
+
+
+```{r, fig.height=3, fig.width=6, echo=F}
+pacman::p_load(tidyverse)
+
+sigmoid = function(x) 1 / (1 + exp(-x))
+x <- seq(-5, 5, 0.01)
+
+df <- tibble(x, sigmoid(x), tanh(x))
+df <- df %>% pivot_longer(cols=colnames(df)[-1],
+                          names_to = "function", values_to = "y")
+
+df %>% ggplot(aes(x = x, y = y,
+                  group = `function`, color = `function`)) +
+  geom_line() +
+  labs(title = "シグモイド関数とtanh関数")
+```
+
+
+なお、RNNのような自己回帰性のあるニューラルネットワークと対比して、多層パーセプトロンのような自己回帰性を持たないネットワークたちは**順伝播型ニューラルネットワーク（feedforward network）**と呼ばれる。
+
+
+## LSTM
+
+RNNは時刻（トークン）数が長くなると勾配消失が起こる。
+
+LSTMは勾配消失を防ぐため、
+
+
+
+```{r}
+pacman::p_load(torch)
+
+```
+
+
+
+
+
+# Transformer
+
+## Attention
+
+Attention機構を用いた
+
+## Transformer
+
+## BERT
+
+# 大規模言語モデル
+
+基盤モデル（foundation model）
+
+scaling law
+
+GPT（Generative Pretrained Transformer）
+
+# ChatGPT
+
+HFRL
+
+## 文章生成モデルの課題
+
+### hallucination
+
+
+
+# 文章生成モデル
+
+近年、生成モデルとしての応用が進み、非技術者への普及が進んだ。概要を軽く紹介する。
+
+**生成モデル**（generative model）とは、データの分布を学習するモデルであり、$p(X, Y)$あるいは教師ラベルがなければ単に$p(X)$を学習する。
+
+一方でこれまで学んできたようなアプローチは**判別モデル**（discriminative model）と呼ばれ、条件付き分布$p(Y|X)$を学習するモデルである（例えばロジスティック回帰では$p(y=1|x) = \sigma(\beta_0 + \beta_1 x_1)$を学習していた）
+
+![](13_NeuralNetwork.assets/generative_v_discriminative.png)
+
+GPT
+
+教師あり学習では教師ラベル（予測の正解データ）が必要だったが、
+
+## 文章生成
+
+ChatGPTの背景で動く言語モデル
+
+Scaling lawの発見後、開発競争が進んだ。これらの大規模なモデルたちはLLMと言われる
+
+ChatGPTはLLMをベースに、強化学習（明確な正解がない問題について、良し悪しのフィードバックをもとに学習していく）を用いて人間がフィードバックを行って問題のないチャットAIとなるようにした（従来のチャットAIは
+
+原理としては次に出てくるもっともらしい単語を予測するモデルに過ぎないが、知性を持っていると思われるような振る舞いになり、AIの研究としても興味深いものになっている。
 
 # 参考文献
 
@@ -443,84 +606,122 @@ Accuracy(y_pred = y_pred, y_true = y_true)
 
 瀧雅人（2017）『これならわかる深層学習入門: 機械学習スタートアップシリーズ』、講談社.
 
+# 参考ウェブサイト&スライド
 
+清水遼平（2023）「[DiffusionによるText2Imageの系譜と生成画像が動き出すまで](https://speakerdeck.com/nhamanasu/diffusionniyorutext2imagenoxi-pu-tosheng-cheng-hua-xiang-gadong-kichu-sumade)」
 
+岡崎直観（2023）「[大規模言語モデルの驚異と脅威](https://speakerdeck.com/chokkan/20230327_riken_llm)」
 
+岩澤有祐（2023）「[基盤モデルの技術と展望](https://speakerdeck.com/yusuke0519/jsai2023-tutorial-ji-pan-moderunoji-shu-tozhan-wang)」
+
+-   [Posit AI Blog: State-of-the-art NLP models from R](https://blogs.rstudio.com/ai/posts/2020-07-30-state-of-the-art-nlp-models-from-r/)
 
 <!-- # mxnetを使う場合 -->
 
 <!-- ディープラーニングを行うには`{mxnet}`パッケージを使用する。インストール方法が少し面倒だが次のように書いてインストールすればよい -->
+
 <!-- （参考：[mxnetの公式サイト](http://mxnet.incubator.apache.org/versions/master/install/index.html)）。 -->
 
 <!-- **注：最新のバージョンのRでは動かないかもしれません。** -->
 
 <!-- ```{r, eval=F} -->
-<!-- # mxnetのインストール -->
-<!-- cran <- getOption("repos") -->
-<!-- cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/" -->
-<!-- options(repos = cran) -->
-<!-- install.packages("mxnet") -->
-<!-- ``` -->
 
+<!-- # mxnetのインストール -->
+
+<!-- cran <- getOption("repos") -->
+
+<!-- cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/" -->
+
+<!-- options(repos = cran) -->
+
+<!-- install.packages("mxnet") -->
+
+<!-- ``` -->
 
 <!-- まずネットワーク構造を決める。以下では多層ニューラルネットワークを使ってみる。 -->
 
 <!-- ```{r} -->
+
 <!-- library(mxnet) -->
+
 <!-- # ネットワーク構造の宣言： Deep Neural Network -->
 
 <!-- data <- mx.symbol.Variable("data") -->
+
 <!-- # 第1中間層 -->
+
 <!-- fc1 <- mx.symbol.FullyConnected(data, name="fc1", num_hidden=128) # ユニット数128 -->
+
 <!-- act1 <- mx.symbol.Activation(fc1, name="relu1", act_type="relu")  # ReLUの活性化関数 -->
+
 <!-- # 第2中間層 -->
+
 <!-- fc2 <- mx.symbol.FullyConnected(act1, name="fc2", num_hidden=64) # ユニット数64 -->
+
 <!-- act2 <- mx.symbol.Activation(fc2, name="relu2", act_type="relu") # ReLUの活性化関数 -->
+
 <!-- # 第3中間層 -->
+
 <!-- fc3 <- mx.symbol.FullyConnected(act2, name="fc3", num_hidden=10) # ユニット数10 -->
+
 <!-- softmax <- mx.symbol.SoftmaxOutput(fc3, name="sm") # softmax活性化関数（シグモイド関数の多値バージョン） -->
+
 <!-- ``` -->
 
-
 <!-- ```{r} -->
+
 <!-- # 計算に使うデバイスを宣言 -->
+
 <!-- devices <- mx.cpu() -->
+
 <!-- ``` -->
 
 <!-- ```{r} -->
+
 <!-- # ニューラルネットを訓練 -->
+
 <!-- mx.set.seed(0) -->
+
 <!-- dnn_model <- mx.model.FeedForward.create(softmax, X=train_X, y=train_y, -->
+
 <!--                                      ctx=devices, num.round=10, array.batch.size=100, -->
+
 <!--                                      learning.rate=0.07, momentum=0.9,  eval.metric=mx.metric.accuracy, -->
+
 <!--                                      initializer=mx.init.uniform(0.07), -->
+
 <!--                                         epoch.end.callback=mx.callback.log.train.metric(100)) -->
+
 <!-- ``` -->
 
 <!-- 訓練データでの予測。 -->
 
 <!-- ```{r} -->
+
 <!-- # 予測 -->
+
 <!-- pred_train <- predict(dnn_model, train_X) -->
+
 <!-- predicted_labels_train <- max.col(t(pred_train)) - 1 -->
 
 <!-- # 混同行列 -->
-<!-- table(train_y, predicted_labels_train) -->
-<!-- ``` -->
 
+<!-- table(train_y, predicted_labels_train) -->
+
+<!-- ``` -->
 
 <!-- テストデータでの予測。 -->
 
 <!-- ```{r} -->
+
 <!-- # 予測 -->
+
 <!-- pred_test <- predict(dnn_model, test_X) -->
+
 <!-- predicted_labels_test <- max.col(t(pred_test)) - 1 -->
 
 <!-- # 混同行列 -->
+
 <!-- table(test_y, predicted_labels_test) -->
+
 <!-- ``` -->
-
-
-
-
-
