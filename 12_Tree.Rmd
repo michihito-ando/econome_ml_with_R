@@ -93,11 +93,13 @@ node）と呼ぶ。各葉ノードは、右側の図の分割された各部分�
 
 線形回帰の場合、予測モデルの学習とはパラメータ$\beta$を推定することであったが、決定木では最適な分割を推定して木を分岐させていくことが学習にあたる。以下でその仕組みを概説する。
 
+
 ### 予測値の算出
 
-目的変数$y$がカテゴリカル変数である場合、決定木の予測値は葉ノード内の学習データのうち、最も割合の多いクラスを使う（上の図のように）。
+目的変数$y$がカテゴリカル変数である場合、決定木の予測値は葉ノード内の訓練データのうち、最も割合の多いクラスを使う（上の図のように）。
 
 目的変数$y$が量的変数である場合、葉ノード内の学習データの$y$の平均値を予測値とする。
+
 
 ### 不純度
 
@@ -107,22 +109,24 @@ node）と呼ぶ。各葉ノードは、右側の図の分割された各部分�
 index）
 
 $$
-I(t) = 1 - \sum_{k=1}^K p_{tk}^2, \hspace{1em} (k=1,2, ...,K)
-$$ が使われることが多い。
+I(t) = \sum_{k=1}^K p_{tk} (1 - p_{tk}),
+\hspace{1em} (k=1,2, ...,K)
+$$
 
-ここで$t$はノード、$k$は目的変数の値で、$p_{tk}$はノード$t$の領域に属する学習用データのサンプルサイズ$N(t)$のうち目的変数が$k$の値をとるデータ数$N_k(t)$の割合
+が使われることが多い。ここで$t$はノード、$k$は目的変数のクラスで、$p_{tk}$はノード$t$の領域に属する訓練データのサンプルサイズ$N(t)$のうち目的変数がクラス$k$であるデータ数$N_k(t)$の割合
 
 $$
 p_{kt} = \frac{N_k(t)}{N(t)}
-$$ である。
+$$
+
+である。
+ベルヌーイ分布の分散は$p(1-p)$であるため、ジニ係数は数式の形としては各クラスごとの出現率の分散を計算して総和をとったような形となっている。
+
+分類すべきクラスが2つ（$K=2$）である場合のジニ係数は次の図のような形になる。
 
 ```{r, echo=F, fig.height=2, fig.width=3}
-
 # 2-class Gini impurity
-gini <- function(p) {
-  p_vec = c(p, 1-p)
-  return(1 - sum(p_vec^2))
-}
+gini <- function(p) p * (1-p) + (1-p) * p
 
 gini_range = c()
 p_range = 0:100 * 0.01
@@ -131,20 +135,20 @@ for (p in p_range) {
 }
 
 # plot
-library(tidyverse)
-ggplot(data_frame(gini_range, p_range),
-       aes(x = p_range, y = gini_range))+
-  geom_line(color = "SteelBlue")+
+tibble(gini_range, p_range) %>% ggplot(aes(x = p_range, y = gini_range)) +
+  geom_line(color = "SteelBlue") +
   labs(y = "Gini index", x = expression(p[kt]), title = "2クラス分類におけるジニ係数")+
   theme_classic()
 ```
 
-上の図は分類すべきクラスが2つ（$K=2$）である場合のジニ係数の推移である。
 
 例えば$p_{tk}=0.5$のとき、すなわち2つのクラスに属するデータが半々の比率で混じり合っている場合には、その葉ノードのジニ係数は
 
 $$
-I(t) = 1 - \sum_{k=1}^2 {p_{tk}}^2 = 1 - (0.5^2 + 0.5^2)= 0.5
+\begin{align}
+I(t) &= 0.5 \times (1 - 0.5) + 0.5 \times (1 - 0.5)\\
+&= (0.25 + 0.25) = 0.5
+\end{align}
 $$
 
 となる。グラフからわかるように、これは2クラス分類の状況下での最大の不純度である。
@@ -152,15 +156,15 @@ $$
 逆に、同クラスに属するデータのみをうまく切り分けることに成功し、1つめのクラスに属するデータのみが葉ノード$t$に含まれる場合は$p(k=1|t)=1.0$であるから
 
 $$
-I(t) = 1 - \sum_{k=1}^2 {p_{tk}}^2 = 1 - (1.0^2 + 0.0^2)= 0
+I(t) = 1 \times (1 - 1) + 0 \times (1 - 0) = 0
 $$
 
 となる。
 
-回帰（目的変数が量的変数）の場合、不純度$I(t)$にはノード$t$内の学習データでの予測値$\hat{y}_i$と実測値$y_i$の平均2乗誤差
+回帰（目的変数が量的変数）の場合、不純度$I(t)$にはノード$t$内の学習データでの予測値$\hat{y}(t)$と実測値$y_i$の平均2乗誤差
 
 $$
-I(t) = \frac{1}{N(t)}\sum_{\boldsymbol{x}_i \in t} (y_i - \hat{y})^2
+I(t) = \frac{1}{N(t)} \sum_{i \in t} \big( y_i - \hat{y}(t) \big)^2
 $$
 
 を使用する。なお、予測値$\hat{y}$がそのノード$t$内での平均値であるため、これはノード内での$y$の分散である。
@@ -620,7 +624,8 @@ titanic_RF$importance
 # 勾配ブースティング決定木
 
 ランダムフォレストとはまた別のアンサンブル学習の方法の一つに**ブースティング**（boosting）がある。
-ブースティングでは決定木を逐次的に用いて、$m$回目の反復では$m-1$回目の反復で予測誤差が多かったサンプルを重視するようなアプローチで学習していく。
+ブースティングでは複数の予測モデルを用いて逐次的に学習を行い、$m$回目の学習ではその1つ前の$m-1$回目に学習した予測モデルで予測誤差が多かったサンプルを重視する、というようなアプローチで学習していく。
+
 
 ## 前向き段階的加法モデリング
 
@@ -653,11 +658,11 @@ $$
 \begin{align}
 L(y_i, f_{m-1}(x_i) + \beta f(x_i; \theta))
 &= (y_i - f_{m-1}(x_i) - \beta f(x_i; \theta))^2 \\
-&= (\text{residual}_{im} - \beta f(x_i; \theta))^2
+&= (\text{residual}_{i,m-1} - \beta f(x_i; \theta))^2
 \end{align}
 $$
 
-となり、$m-1$回目のモデルの残差を近似するように$m$回目のモデルを学習させていると捉えることができる。残差が大きければそれだけ訓練中に重視されるため「間違えた箇所を重点的に学習する手法」とも捉えることができる。
+となり、$m-1$回目のモデルの残差$\text{residual}_{i,m-1} = y_i - f_{m-1}(x_i)$を近似するように$m$回目のモデル$\beta f(x_i; \theta)$を学習させていると捉えることができる。残差が大きければそれだけ訓練中に重視されるため「間違えた箇所を重点的に学習する手法」とも捉えることができる。
 
 
 ## （参考）最適化の観点からの説明
@@ -679,6 +684,14 @@ $$
 という値の更新を何度も繰り返して最適化を行っていく。ここで$\alpha$は学習率と呼ばれるパラメータで、値の更新量が多すぎると最適解を通り過ぎてしまうことがあるので小さめの値を乗じて更新幅を抑えるために用いられる。
 
 （ちなみに名前の由来である**勾配**（gradient）とは偏微分のベクトル$\nabla f(\boldsymbol{w}) = \left( \frac{\partial f(\boldsymbol{w})}{\partial w_1}, \dots, \frac{\partial f(\boldsymbol{w})}{\partial w_n} \right)$のことである）
+
+
+<center>
+  <img src="12_Tree.assets/gradient_descent.png" width="40%"/>
+  <br/>
+  <span style="font-size: 0.8em;">図：勾配降下法のイメージ</span>
+</center>
+
 
 
 最終的に$M$回反復して得た最適解$x^*$は
@@ -721,7 +734,7 @@ $$
 前向き段階的加法モデルの節で「二乗誤差の場合は残差を近似するように学習している」と述べた。
 
 $$
-L(y_i, f_{m-1}(x_i) + \beta f(x_i; \theta)) = (\text{residual}_{im} - \beta f(x_i; \theta))^2
+L(y_i, f_{m-1}(x_i) + \beta f(x_i; \theta)) = (\text{residual}_{i,m-1} - \beta f(x_i; \theta))^2
 $$
 
 これにより、学習されるモデル$\beta f(x; \theta)$は負の勾配を学習するようになり、最終的にそれらの和となるモデルは勾配降下法を解いた状態を近似することになる。
@@ -769,7 +782,7 @@ xgb <- xgboost(
   label = y_train,               # 目的変数（教師ラベル）
   objective = "binary:logistic", # 目的関数（誤差関数） binary = 二値分類
   max.depth = 4,                 # 決定木の深さ。大きすぎると過学習を招く
-  nrounds = 300,                 # 反復回数
+  nrounds = 100,                 # 反復回数
   learning_rate = 0.1            # 学習率
 )
 ```
@@ -853,25 +866,12 @@ Treeを採用している。これはヒストグラムのように連続変数�
 
 ### Rで実践
 
-```{r, results='hide'}
-lgb <- lightgbm(
-  params = list(
-    objective = "binary",  # 目的関数
-    max.depth = 4,         # 決定木の深さ。大きすぎると過学習を招く
-    learning_rate = 0.1,   # 学習率
-    categorical_feature = c(1L, 3L)  # カテゴリカル変数のインデックス番号を指定（1Lは1番目の意味。1Lは整数integer型になる）
-  ),
-  data = as.matrix(X_train), # 訓練データの特徴量
-  label = y_train,           # 訓練データの目的変数
-  nrounds = 10               # 反復回数
-)
-```
 
 ```{r, results='hide'}
 d_train <- lgb.Dataset(
   data = as.matrix(X_train),
   label = y_train,
-  categorical_feature = c(1L, 3L)  # カテゴリカル変数のインデックス番号を指定（1Lは1番目の意味。1Lは整数integer型になる）
+  categorical_feature = c(1L, 3L)  # カテゴリカル変数のインデックス番号を指定（1Lは1番目の意味。1Lはinteger型になる）
 )
 
 
@@ -882,7 +882,7 @@ lgb <- lgb.train(
     learning_rate = 0.1    # 学習率
   ),
   data = d_train,
-  nrounds = 10,           # 反復回数
+  nrounds = 10,            # 反復回数
 )
 ```
 
@@ -944,12 +944,8 @@ lightgbm](https://lightgbm.readthedocs.io/en/v3.3.2/R/index.html)
 - 平井有三(2012)『はじめてのパターン認識』第11章「識別器の組み合わせによる性能強化」
 
 
-## 参考ウェブサイト & スライド
+**ウェブサイト & スライド**
 
-[初心者の初心者による初心者のための決定木分析](https://qiita.com/3000manJPY/items/ef7495960f472ec14377)
-
-濵田晃一(2010)「[はじめてでもわかる RandomForest
-入門－集団学習による分類・予測
-－](https://www.slideshare.net/hamadakoichi/randomforest-web)」
-
-渡部斉(2015)「[ランダムフォレスト](https://www.slideshare.net/HitoshiHabe/ss-58784421)」
+- [初心者の初心者による初心者のための決定木分析](https://qiita.com/3000manJPY/items/ef7495960f472ec14377)
+- 濵田晃一(2010)「[はじめてでもわかる RandomForest入門－集団学習による分類・予測－](https://www.slideshare.net/hamadakoichi/randomforest-web)」
+- 渡部斉(2015)「[ランダムフォレスト](https://www.slideshare.net/HitoshiHabe/ss-58784421)」
