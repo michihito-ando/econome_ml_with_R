@@ -59,8 +59,8 @@ pacman::p_load(
   <img src="13_NeuralNetwork.assets/neuron.png" width="70%"/>
   <br/>
   <span style="font-size: 0.8em;">
-      （出所：<a href="http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245">
-      http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245</a>）
+      出所：<a href="http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245">
+      http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245</a>
   </span>
 </center>
 
@@ -385,6 +385,21 @@ h2o.confusionMatrix(mnist_dl, test)
 ```
 
 
+## （参考）A Neural Network Playground {-}
+
+Tensorflow（Googleが開発したディープラーニングのライブラリ）の[A Neural Network Playground](http://playground.tensorflow.org/)というサイトでは、いくつかのサンプルデータに対するディープラーニングの挙動を簡単に確認することができる。
+
+<center>
+  <img src="13_NeuralNetwork.assets/deep-playground.png" width="80%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    出所：http://playground.tensorflow.org/
+  </span>
+</center>
+
+非公式の[日本語版サイト](https://deepinsider.github.io/playground)も存在する。
+
+
 
 # 自然言語処理入門
 
@@ -394,16 +409,16 @@ h2o.confusionMatrix(mnist_dl, test)
 
 ## 自然言語処理のタスク
 
-例えば次のようなタスクを行う
+自然言語処理の分野では、例えば次のようなタスクを行っていく。
 
-- 機械翻訳：ある言語を別の言語に翻訳する
+- **機械翻訳**（machine translation）：ある言語を別の言語に翻訳する
   - 応用例：Google翻訳、DeepLなど
-- 固有表現抽出（named entity recognition: NER）：文章中の固有表現（人名、組織名、地名、日付など）を取り出す
+- **固有表現抽出**（named entity recognition: NER）：文章中の固有表現（人名、組織名、地名、日付など）を取り出す
   - 応用例1：[ニュース配信における固有表現抽出の取り組み / Extraction of Unique Expressions in News Distribution - Speaker Deck](https://speakerdeck.com/sansandsoc/extraction-of-unique-expressions-in-news-distribution?slide=6)
   - 応用例2：[AIによる有価証券報告書のキーワード分析　～BERTを用いた固有表現抽出の検証～ | DCS blog](https://blog.dcs.co.jp/ai/20230222-nlp.html)
-- 感情分析：文章中のネガティブな表現やポジティブな表現を抽出し、全体としてポジティブかネガティブかを評価する
+- **感情分析**（sentiment analysis）：文章中のネガティブな表現やポジティブな表現を抽出し、全体としてポジティブかネガティブかを評価する
   - 応用例：[青嶋智久, & 中川慧. (2019). 日本語 BERT モデルを用いた経済テキストデータのセンチメント分析](https://www.jstage.jst.go.jp/article/pjsai/JSAI2019/0/JSAI2019_4Rin127/_article/-char/ja/)
-- 文章生成：指定された文章を生成したり、文章を要約したり、チャットボットとしての返答を生成したりなど
+- **文章生成**（text generation）：指定された文章を生成したり、文章を要約したり、チャットボットとしての返答を生成したりなど
   - 応用例：ChatGPT、Bing AIなど
 
 
@@ -490,17 +505,11 @@ $w_t$より前のトークン列$w_1,w_2,\cdots,w_{t-1}$は**文脈**（context�
 <!-- TODO: 単語も書き込まれた画像いれる -->
 
 RNNは$t$期の入力だけでなく$1, 2, \dots, t-1$期の入力も用いて$t$期の出力を行うモデルである。
-ある中間層の値は、入力$x_t$と重みを
+ある中間層の値は、入力$x_{t}$と入力層の重み$w^{(in)}$だけでなく、1期前の$t-1$期の中間層の出力$z_{t-1}$と重み$w^{(hid)}$を使って計算される。
 
 $$
-z_t = h \left( \sum^m_{j=1} w_j^{(in)} x_{j, t} + \sum w^{(hid)} z_{t-1} \right)
+z^{(t)}_j = h \left( \sum^J_{j=1} w_j^{(in)} x_{j, t} + \sum_{j=1}^J w^{(hid)}_j z_{j, t-1} + b \right)
 $$
-
-$$
-z_t = h \left( \sum^m_{j=1} w_j^{(in)} x_{j}^{(t)} + \sum w^{()} z^{(t-1)} \right)
-$$
-
-
 
 RNNの活性化関数には双曲線正接（hyperbolic tangent: **tanh**）関数
 
@@ -508,7 +517,7 @@ $$
 \text{tanh}(x) = \frac{e^x - e^{-x}}{e^x + e^{-x}}
 $$
 
-が使われることが多い。
+が使われることが多い。$tanh$はシグモイド関数と似ているが、出力値が0から1ではなく-1から1の範囲になる点が異なる
 
 
 ```{r, fig.height=3, fig.width=6, echo=F}
@@ -533,9 +542,9 @@ df %>% ggplot(aes(x = x, y = y,
 
 ## LSTM
 
-RNNは時刻（トークン）数が長くなると勾配消失が起こる。
+RNNは時刻（トークン）数が長くなると勾配消失が起こりやすく、何も工夫しなければ10時刻程度で勾配が消失するという報告もある。
 
-LSTMは勾配消失を防ぐため、
+勾配消失を防ぐための工夫がなされたものが**LSTM（long short-term memory）**である。
 
 
 
@@ -546,33 +555,153 @@ pacman::p_load(torch)
 
 
 
-
-
 # Transformer
 
 ## Attention
 
 Attention機構を用いた
 
+
+RNNやLSTMは勾配消失の問題だけでなく**並列計算**（parallel computing; 複数の処理装置で同時並行で計算することで計算を高速化すること）に向いていないためモデルやデータの規模の増加が難しいという問題も存在したが、Attentionは並列計算に向いているため、その点でも優れていた。
+
+
 ## Transformer
 
-## BERT
 
 # 大規模言語モデル
 
-基盤モデル（foundation model）
+## 基盤モデル
+
+**基盤モデル（foundation model）**という考え方
+
+
 
 scaling law
 
 GPT（Generative Pretrained Transformer）
 
+
+
+### （参考）textパッケージによる学習済みモデルの利用
+
+[{text}](https://r-text.org/index.html)パッケージを用いてGPT-2などの学習済みLLMによる言語処理を体験することができる（インストール・推論にやや時間がかかるので注意）
+
+例えば`textGeneration()`関数でGPT-2を利用して`"Hello, I'm"`に続く文章を生成させると、次のようなそれっぽい文章が生成される
+
+```{r, eval=F}
+# （注）Posit Cloud無料枠ではスペック不足で動かない
+pacman::p_load(text)
+
+# Pythonの仮想環境をセットアップ
+textrpp_install()
+textrpp_initialize(save_profile = TRUE)
+
+# 文章生成
+generated_text <- textGeneration("Hello, I'm",
+                                 model = "gpt2")
+generated_text %>% as.vector()
+```
+
+```
+$x_generated
+[1] "Hello, I'm a new employee at Drexel University! Last Friday, I was an excellent choice for a professor teaching math and math courses at the college we currently offer at Georgetown. After making the move to a local university in California, I"
+```
+
+### （参考）Hugging Face
+
+[Hugging Face](https://huggingface.co/)は大規模なAIのコミュニティであり、学習済みモデルやデータセットが公開されている。
+
+学習済みモデルはPythonの[Transformers](https://huggingface.co/docs/transformers/index)パッケージとしても公開されており、実はRの[{text}](https://r-text.org/index.html)パッケージはこのパッケージをRから読み込んでいる。
+
+Hugging Faceのウェブサイト上で学習済みモデルを動かすことができるInference APIという機能もある。
+
+例えばrinna株式会社の[rinna/japanese-gpt2-medium · Hugging Face](https://huggingface.co/rinna/japanese-gpt2-medium?text=%E7%94%9F%E5%91%BD%E3%80%81%E5%AE%87%E5%AE%99%E3%80%81%E3%81%9D%E3%81%97%E3%81%A6%E4%B8%87%E7%89%A9%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E3%81%AE%E7%A9%B6%E6%A5%B5%E3%81%AE%E7%96%91%E5%95%8F%E3%81%AE%E7%AD%94%E3%81%88%E3%81%AF)は日本語のデータを用いてGPT-2を学習したモデルである。Inference APIもあるためウェブサイト上で試すことができる。
+
+
 # ChatGPT
 
-HFRL
+## 概要
 
-## 文章生成モデルの課題
+ChatGPTはOpenAI社が開発したチャットボットサービスである。
 
-### hallucination
+バックエンドにはGPT-3やGPT-4を利用
+
+
+# 文章生成モデルの課題と対策
+
+## Hallucination
+
+文章生成をさせた際に利用者の意図と異なる文章を生成したり事実と異なる事を述べるといった不誠実なふるまいをする現象を**Hallucination**（ハルシネーション；「幻覚」の意味）という。
+
+例えば次の画像は立教大学についてChatGPTに尋ねたものであるが、随所に事実と異なる説明が混じっていることがわかる。
+
+<center>
+  <img src="13_NeuralNetwork.assets/chat-gpt-hallucination.png" width="90%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    バックエンドにGPT-3.5（May 24 ver.）を利用したChatGPTによる回答。撮影日は2023年6月26日。
+  </span>
+</center>
+
+こうしたふるまいがHallucinationである。
+（※ChatGPTは日本語に弱い。英語で質問すれば立教大学についても妥当な答えを返してくれた。）
+
+
+## Prompt Engineering
+
+大規模言語モデルは質問文（**プロンプト  prompt**）の書き方に応じて生成結果が変わる。
+
+プロンプトの書き方を工夫することによって大規模言語モデルの挙動を制御しようという試みを**プロンプト・エンジニアリング**（Prompt Engineering）という。
+
+以下では代表的なプロンプト・エンジニアリングの例を述べる。
+
+
+### Few-shot
+
+解かせたいタスクの例を先に示してあげることで生成される回答を制御する方法。
+
+<center>
+  <img src="13_NeuralNetwork.assets/few-shot-prompting.png" width="60%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    出所：[Brown, et al. (2020). Language models are few-shot learners.](https://arxiv.org/abs/2005.14165)
+  </span>
+</center>
+
+例を1つ示すことを**one-shot prompting**、複数例示することを**few-shot prompting**という。
+それらに対し、単純に質問文だけを書く方法は**zero-shot prompting**という。
+
+
+### Chain-of-Thought
+
+Few-shotの際に解答例を単に答えだけにするのではなく、思考過程も含めてよりタスクを細分化し具体化している回答にしてやることで適切な答えを返しやすくする方法を**chain of thought (CoT)**という（図中の「Few-shot-CoT」）。
+
+単に「Let's think step by step」をつけるだけで正答率が上がることを利用した**Zero-shot CoT**という派生手法も存在する。
+
+<center>
+  <img src="13_NeuralNetwork.assets/zero-shot-cot.png" width="90%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    出所：[Kojima, et al. (2022). Large language models are zero-shot reasoners.](https://arxiv.org/abs/2205.11916)
+  </span>
+</center>
+
+
+## Retrieval Augmented Generation
+
+モデル内に学習されている知識は訓練時点での情報がベースとなるため、新しい情報に関する適切な返答を行うことは難しい。
+例えば「今の日本の首相は？」と質問しても訓練時点での首相の名前が返答される。
+
+学習に必要な計算量があまり大きくない機械学習モデルであれば、定期的にモデルを学習し直すことでこうした情報更新を行うことが可能である。
+しかし、大規模言語モデルは1回の学習に要するコストが膨大であるため、モデルの再学習により情報を更新する方法は容易ではない。
+
+このような情報の不足もHallucinationを引き起こす原因となりかねない。
+
+こうした問題に対して、モデル内に学習された知識ではなくモデル外の知識を利用して回答文を生成する方法が考えられている。
+
+
+[Retrieval Augmented Generative QA - a Hugging Face Space by deepset](https://huggingface.co/spaces/deepset/retrieval-augmentation-svb)
+
 
 
 
@@ -614,114 +743,7 @@ ChatGPTはLLMをベースに、強化学習（明確な正解がない問題に�
 
 岩澤有祐（2023）「[基盤モデルの技術と展望](https://speakerdeck.com/yusuke0519/jsai2023-tutorial-ji-pan-moderunoji-shu-tozhan-wang)」
 
+[Prompt Engineering Guide](https://www.promptingguide.ai/)
+
 -   [Posit AI Blog: State-of-the-art NLP models from R](https://blogs.rstudio.com/ai/posts/2020-07-30-state-of-the-art-nlp-models-from-r/)
 
-<!-- # mxnetを使う場合 -->
-
-<!-- ディープラーニングを行うには`{mxnet}`パッケージを使用する。インストール方法が少し面倒だが次のように書いてインストールすればよい -->
-
-<!-- （参考：[mxnetの公式サイト](http://mxnet.incubator.apache.org/versions/master/install/index.html)）。 -->
-
-<!-- **注：最新のバージョンのRでは動かないかもしれません。** -->
-
-<!-- ```{r, eval=F} -->
-
-<!-- # mxnetのインストール -->
-
-<!-- cran <- getOption("repos") -->
-
-<!-- cran["dmlc"] <- "https://apache-mxnet.s3-accelerate.dualstack.amazonaws.com/R/CRAN/" -->
-
-<!-- options(repos = cran) -->
-
-<!-- install.packages("mxnet") -->
-
-<!-- ``` -->
-
-<!-- まずネットワーク構造を決める。以下では多層ニューラルネットワークを使ってみる。 -->
-
-<!-- ```{r} -->
-
-<!-- library(mxnet) -->
-
-<!-- # ネットワーク構造の宣言： Deep Neural Network -->
-
-<!-- data <- mx.symbol.Variable("data") -->
-
-<!-- # 第1中間層 -->
-
-<!-- fc1 <- mx.symbol.FullyConnected(data, name="fc1", num_hidden=128) # ユニット数128 -->
-
-<!-- act1 <- mx.symbol.Activation(fc1, name="relu1", act_type="relu")  # ReLUの活性化関数 -->
-
-<!-- # 第2中間層 -->
-
-<!-- fc2 <- mx.symbol.FullyConnected(act1, name="fc2", num_hidden=64) # ユニット数64 -->
-
-<!-- act2 <- mx.symbol.Activation(fc2, name="relu2", act_type="relu") # ReLUの活性化関数 -->
-
-<!-- # 第3中間層 -->
-
-<!-- fc3 <- mx.symbol.FullyConnected(act2, name="fc3", num_hidden=10) # ユニット数10 -->
-
-<!-- softmax <- mx.symbol.SoftmaxOutput(fc3, name="sm") # softmax活性化関数（シグモイド関数の多値バージョン） -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- # 計算に使うデバイスを宣言 -->
-
-<!-- devices <- mx.cpu() -->
-
-<!-- ``` -->
-
-<!-- ```{r} -->
-
-<!-- # ニューラルネットを訓練 -->
-
-<!-- mx.set.seed(0) -->
-
-<!-- dnn_model <- mx.model.FeedForward.create(softmax, X=train_X, y=train_y, -->
-
-<!--                                      ctx=devices, num.round=10, array.batch.size=100, -->
-
-<!--                                      learning.rate=0.07, momentum=0.9,  eval.metric=mx.metric.accuracy, -->
-
-<!--                                      initializer=mx.init.uniform(0.07), -->
-
-<!--                                         epoch.end.callback=mx.callback.log.train.metric(100)) -->
-
-<!-- ``` -->
-
-<!-- 訓練データでの予測。 -->
-
-<!-- ```{r} -->
-
-<!-- # 予測 -->
-
-<!-- pred_train <- predict(dnn_model, train_X) -->
-
-<!-- predicted_labels_train <- max.col(t(pred_train)) - 1 -->
-
-<!-- # 混同行列 -->
-
-<!-- table(train_y, predicted_labels_train) -->
-
-<!-- ``` -->
-
-<!-- テストデータでの予測。 -->
-
-<!-- ```{r} -->
-
-<!-- # 予測 -->
-
-<!-- pred_test <- predict(dnn_model, test_X) -->
-
-<!-- predicted_labels_test <- max.col(t(pred_test)) - 1 -->
-
-<!-- # 混同行列 -->
-
-<!-- table(test_y, predicted_labels_test) -->
-
-<!-- ``` -->
