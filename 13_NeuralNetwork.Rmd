@@ -32,7 +32,12 @@ $$
 \newcommand{\argmin}{\mathop{\rm arg~min}\limits}
 $$
 
+
 # 本講義の目的
+
+- ニューラルネットワークの基礎を学ぶ
+- 自然言語処理の周辺技術の概要を学ぶ
+- 文章生成AIの技術的な特性を学ぶ
 
 # パッケージの読み込み
 
@@ -138,7 +143,7 @@ grid.arrange(g1, g2, g3, ncol = 3)
 
 パーセプトロンの出力を別のパーセプトロンの入力とすることで多層化したものを**多層パーセプトロン（multilayer perceptron: MLP）**あるいは**ニューラルネットワーク**（neural network）と呼ぶ。
 
-<center><img src="13_NeuralNetwork.assets/multilayer_perceptron.png" width="50%"/></center>
+<center><img src="13_NeuralNetwork.assets/multilayer_perceptron.png" width="40%"/></center>
 
 
 ### 線形分離可能性
@@ -213,14 +218,14 @@ head(TitanicSurvival)
 
 ```{r}
 # NA（欠損値）を含む行を削除
-tita <- na.omit(TitanicSurvival)
+titanic <- na.omit(TitanicSurvival)
 ```
 
 そしてデータを学習用・テスト用に分割する。
 
 ```{r}
 # ID列を追加
-df <- tita %>% rownames_to_column("ID")
+df <- titanic %>% rownames_to_column("ID")
 
 # 80%を学習用データに
 set.seed(0)
@@ -272,7 +277,7 @@ Accuracy(y_pred = y_pred, y_true = test$survived)
 ```
 
 
-# ディープラーニング
+# DNN
 
 中間層が2層以上のニューラルネットワークを**DNN（deep neural network）**や**ディープラーニング（deep learning）**と呼ぶ。
 ニューラルネットワークの層をさらに重ねることでモデルの表現力がさらに向上し、より複雑なデータに対応できるようになる。
@@ -290,10 +295,11 @@ DNNの研究は過学習の問題や勾配消失問題と呼ばれる予測誤�
 
 ## Rによる実践
 
-Rでは`{h2o}`パッケージや`{rtorch}`パッケージなどでDNNを実行することができる。
+Rでは`{h2o}`パッケージや`{torch}`パッケージなどでDNNを実行することができる。
 
+### `{h2o}`パッケージによるDNNの実行
 
-```{r}
+```{r, results='hide'}
 # パッケージの読み込み
 pacman::p_load(
   tidyverse,
@@ -301,11 +307,11 @@ pacman::p_load(
   h2o
 )
 
-# 初期化
+# h2oの仮想環境の起動
 h2o.init()
 ```
 
-```{r message=F}
+```{r, results='hide'}
 # データをh2o用のデータ型に変換
 train <- as.h2o(train)
 test <- as.h2o(test)
@@ -320,9 +326,9 @@ splits <- h2o.splitFrame(train, ratios = 0.8, seed = 0)
 
 ネットワーク構造の定義と学習を行う。ここでは中間層は1層目を128ユニット、2層目を64ユニット、3層目を16ユニットとしてみる。
 
-```{r message=F}
+```{r results='hide'}
 # 学習
-mnist_dl = h2o.deeplearning(
+model <- h2o.deeplearning(
   x = 2:ncol(train), # 特徴量の列番号を指定
   y = 1,             # 目的変数の列番号を指定
   training_frame = splits[[1]],   # 訓練データを指定
@@ -336,24 +342,18 @@ mnist_dl = h2o.deeplearning(
 )
 ```
 
-モデルの情報（レイヤー構造、混同行列など）
-
-```{r}
-mnist_dl
-```
-
 `plot()`を使うとエポック（訓練データを何回分使って重みの更新を反復させたか）ごとの予測誤差の推移を可視化することができる。（今回はepochsを小さな値にしているが、実際のデータ分析では「epochsを十分大きな値にしておいて、エポックを増やしてもvalidationデータに対する予測誤差が改善しなくなったら学習を打ち切る」という戦略（early stopping）を取ることも多い）
 
 ```{r fig.height=4, fig.width=6}
 # 予測誤差の推移
-plot(mnist_dl)
+plot(model)
 ```
 
 テストデータでの予測を行う。
 
-```{r message=F}
+```{r, results='hide'}
 # 予測
-pred <- h2o.predict(mnist_dl, test)
+pred <- h2o.predict(model, test)
 ```
 
 予測結果は`predict`列に予測したラベルの値が入っており、残りの列にはそのレコードが目的変数の各クラスに属する確率を推定したものが入っている。
@@ -381,7 +381,13 @@ table(y_true, y_pred)
 
 ```{r message=F}
 # 混同行列（h2oパッケージの関数を使う場合）
-h2o.confusionMatrix(mnist_dl, test)
+h2o.confusionMatrix(model, test)
+```
+
+
+```{r}
+# h2oの仮想環境の終了
+h2o.shutdown(prompt = FALSE)
 ```
 
 
@@ -401,7 +407,7 @@ Tensorflow（Googleが開発したディープラーニングのライブラリ�
 
 
 
-# 自然言語処理入門
+# 自然言語処理
 
 ディープラーニングは日本語や英語などの**自然言語**（natural language）の分析や画像の分析を中心として活用されている。 今回は自然言語データの分析（**自然言語処理** natural language processing: NLP）を例にとって説明を行うことにする。
 
@@ -484,7 +490,11 @@ $w_t$より前のトークン列$w_1,w_2,\cdots,w_{t-1}$は**文脈**（context�
 よって言語モデルの学習は「文脈（これまで出たトークン）をもとに次のトークンを予測する問題」と捉えることもできる。
 
 
-# RNNとLSTM
+# RNNとTransformer
+
+自然言語処理の分野で多く使われてきたニューラルネットワークのアーキテクチャのひとつがRNNとその派生手法たちで、近年それらに代わってよく用いられるものがTransformerである。順に概説していく。
+
+<!-- 言語モデルを作成するにあたり多く使われてきたアルゴリズムがRNNとLSTMである。以下で概要を説明していく。 -->
 
 ## RNN
 
@@ -493,22 +503,32 @@ $w_t$より前のトークン列$w_1,w_2,\cdots,w_{t-1}$は**文脈**（context�
 こうした系列性をうまく表現するようなネットワークの構造（アーキテクチャ）が**RNN（recurrent neural network）**である。
 
 <center>
-  <img src="13_NeuralNetwork.assets/rnn.png" width="50%"/>
+  <img src="13_NeuralNetwork.assets/rnn.png" width="100%"/>
   <br/>
   <span style="font-size: 0.8em;">
-      （出所：<a href="http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245">
-      http://nkdkccmbr.hateblo.jp/entry/2016/10/06/222245</a>）
+      図：RNNの模式図。右の図は左の図を展開した表記で、表しているものは同じである。（出所：筆者作成）
   </span>
 </center>
 
 
-<!-- TODO: 単語も書き込まれた画像いれる -->
-
 RNNは$t$期の入力だけでなく$1, 2, \dots, t-1$期の入力も用いて$t$期の出力を行うモデルである。
-ある中間層の値は、入力$x_{t}$と入力層の重み$w^{(in)}$だけでなく、1期前の$t-1$期の中間層の出力$z_{t-1}$と重み$w^{(hid)}$を使って計算される。
+
+$t$期目の中間層の$j$番目のユニットの出力値は、入力$x^{(t)}$と入力層の重み$w^{(in)}$だけでなく、1期前の$t-1$期の中間層の出力$h^{(t-1)}$と重み$w^{(hidden)}$を使って次のように計算される（$f$は活性化関数）。
 
 $$
-z^{(t)}_j = h \left( \sum^J_{j=1} w_j^{(in)} x_{j, t} + \sum_{j=1}^J w^{(hid)}_j z_{j, t-1} + b \right)
+h^{(t)}_j = f\left(
+    \sum^{N(in)}_{i=1} w^{(in)}_{ij} x_j +
+    \sum^{N(hidden)}_{i=1} w^{(hidden)}_{ij} h_j^{(t-1)} + 
+    b_j^{(f)}
+\right)
+$$
+
+出力値は関数$g$を用いて次のように計算される
+
+$$
+y^{(t)}_j = g \left(
+    \sum^{N(out)}_{i=1} w^{(out)}_{ij} h_j^{(t)} + b^{(g)}_j
+\right)
 $$
 
 RNNの活性化関数には双曲線正接（hyperbolic tangent: **tanh**）関数
@@ -519,7 +539,6 @@ $$
 
 が使われることが多い。$tanh$はシグモイド関数と似ているが、出力値が0から1ではなく-1から1の範囲になる点が異なる
 
-
 ```{r, fig.height=3, fig.width=6, echo=F}
 pacman::p_load(tidyverse)
 
@@ -527,40 +546,46 @@ sigmoid = function(x) 1 / (1 + exp(-x))
 x <- seq(-5, 5, 0.01)
 
 df <- tibble(x, sigmoid(x), tanh(x))
-df <- df %>% pivot_longer(cols=colnames(df)[-1],
-                          names_to = "function", values_to = "y")
-
-df %>% ggplot(aes(x = x, y = y,
-                  group = `function`, color = `function`)) +
+df <- df %>% pivot_longer(cols = colnames(df)[-1], names_to = "function", values_to = "y")
+df %>% ggplot(aes(x = x, y = y, group = `function`, color = `function`)) +
   geom_line() +
   labs(title = "シグモイド関数とtanh関数")
 ```
 
 
-なお、RNNのような自己回帰性のあるニューラルネットワークと対比して、多層パーセプトロンのような自己回帰性を持たないネットワークたちは**順伝播型ニューラルネットワーク（feedforward network）**と呼ばれる。
+出力層の関数$g$は目的変数に応じて異なる。例えば2クラス分類であればシグモイド関数だが、単語予測のように多クラス分類ならシグモイド関数を多クラス化した**ソフトマックス（softmax）関数**
 
+$$
+\text{softmax}(\boldsymbol{x})_i = \frac{\exp(x_i)}{\sum_{k=1}^{K} \exp (x_k)}
+$$
 
-## LSTM
-
-RNNは時刻（トークン）数が長くなると勾配消失が起こりやすく、何も工夫しなければ10時刻程度で勾配が消失するという報告もある。
-
-勾配消失を防ぐための工夫がなされたものが**LSTM（long short-term memory）**である。
-
+を用いる。これは入力値$\boldsymbol{x}=(x_1, x_2, \dots, x_K)$を0から1の値かつ全クラスの合計が1になるように（つまり「クラス$i$の確率」として）変換する関数である。
 
 
 ```{r}
-pacman::p_load(torch)
-
+x = c(-1, 3, 2)      # 生の予測値：各クラスの予測値としてのふさわしさ
+exp(x) / sum(exp(x)) # softmaxで正規化した各クラスの値
 ```
+
+
+なお、RNNのような自己回帰性のあるニューラルネットワークと対比して、多層パーセプトロンのような自己回帰性を持たないネットワークたちは**順伝播型ニューラルネットワーク（feedforward network）**と呼ばれる。
+
+### RNNの課題
+
+RNNは時刻数（文脈・トークン数）が長くなると勾配消失が起こりやすい。これは例えば長い文章を扱っているときに文脈の最初の方の単語がなんであったかを忘れてしまうようなものである。何も工夫しなければ10時刻程度で勾配が消失するという報告もあるため、極端に長い文章でなくてもこの問題は発生する。
+
+勾配消失を防ぐための工夫を施した**LSTM（long short-term memory）**や**GRU（gated recurrent unit）**といった手法も存在する。
 
 
 
 # Transformer
 
+Transformerはattentionという計算処理を用いるディープラーニングのアーキテクチャ（ネットワーク構造）である。
+GoogleのBERTやChatGPT内部で使われるGPTシリーズなど、多くの言語モデルで用いられている。
+
 ## Attention
 
-Attention機構を用いた
-
+類似度を内積で
 
 RNNやLSTMは勾配消失の問題だけでなく**並列計算**（parallel computing; 複数の処理装置で同時並行で計算することで計算を高速化すること）に向いていないためモデルやデータの規模の増加が難しいという問題も存在したが、Attentionは並列計算に向いているため、その点でも優れていた。
 
@@ -570,17 +595,161 @@ RNNやLSTMは勾配消失の問題だけでなく**並列計算**（parallel com
 
 # 大規模言語モデル
 
-## 基盤モデル
+パラメータ数が極めて多い言語モデル（「多い」に明確な基準はないが例えば「100億パラメータ以上」など）を**大規模言語モデル（large language model: LLM）**と呼ぶ。巨大テック企業を中心に各社様々なモデルを開発している。
 
-**基盤モデル（foundation model）**という考え方
+<center>
+  <img src="13_NeuralNetwork.assets/llm-timeline.png" width="80%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+      図：100億パラメータ以上の言語モデルを発表日順に並べたもの。
+      （出所：<a href="https://arxiv.org/abs/2303.18223">Zhao et al. (2023). A survey of large language models.</a>）
+  </span>
+</center>
+
+
+例えばOpenAIが開発したGPT-1からGPT-4までのモデルは次の表のような変遷を辿っており、GPT-3では1750億ものパラメータ数となっている
+
+
+| モデル | 公開年 | パラメータ数 | データサイズ |
+| ------ | ------ | ------------ | ------------ |
+| GPT-1  | 2018   | 1.2億        | 5GB          |
+| GPT-2  | 2019   | 15億         | 40GB         |
+| GPT-3  | 2020   | 1750億       | 570GB        |
+| GPT-4  | 2023   | 非公開       | 非公開       |
+
+
+ChatGPT、Bing AIなどの昨今の高精度な文章生成AIサービスは大規模言語モデルによって作られている。この章では大規模言語モデルの特徴や関連するトピックについて概観していく。
+
+
+## 自己教師あり学習
+
+大規模言語モデルが開発できた要因の1つに自己教師あり学習がある。
+
+伝統的な自然言語処理においては、教師あり学習を用いることが多かった。例えば機械翻訳のタスクにおいて、翻訳元の言語と翻訳先の言語（例えば英語とフランス語）のペアの文章を用意しておき、教師あり学習として学習させるような方法がとられていた。
+
+Transformerを使用する初期の研究であるGPT-1では、文脈から次のトークンを予測する問題を解く方法を用いて学習を行った。教師ラベルとペアとなる文章ではなく、単に通常の文章（例えばWikipediaの文章）を用意すればよいため、データの規模を飛躍的に増加させることが可能になった。
+
+このように教師ラベルがないデータの一部を教師ラベルとみなして教師あり学習を解く方法を**自己教師あり学習**（self-supervised learning）と呼ぶ。
+
+また、解きたいタスクに応じてその都度モデルを1から学習させるのではなく、事前に学習させて汎用的な知識を備えた大規模なモデル（**基盤モデル foundation model**）を用意しておき、様々なタスクに対して小規模な教師ありデータで追加学習（fine-tuning）を行うというアプローチも採用されるようになった。
+
+
+## Scaling Law
+
+Transformerを用いた言語モデルの性能は
+
+1. 訓練に利用した計算量
+2. データセットのサイズ
+3. モデルのパラメータ数
+
+に強く依存することが報告されている。
+この法則性を**scaling law**という（日本語では**スケーリング則**や**べき乗則**などと呼ばれる）。
+
+<center>
+  <img src="13_NeuralNetwork.assets/scaling-law.png" width="100%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    図：モデルの規模を拡大していったときの予測誤差の推移。なお$10^5$は10万、$10^7$は1000万、$10^9$は10億である。<br/>
+    （出所：<a href="https://arxiv.org/abs/2001.08361">Kaplan et al. (2020). Scaling laws for neural language models.</a>）
+  </span>
+</center>
+
+通常の研究開発ではその研究がうまくいくかどうかの不確実性は高く、ただ単純に大金を投じて大規模なモデルを作ればいいとは限らない。
+しかしTransformerを用いた生成モデルの研究においてはどの程度の金額を投資すればどの程度の性能のモデルを作れるのかが予想しやすくなっている。
+
+scaling lawの存在もあってか、実際にLLMの開発競争は激化していき、大胆な投資もなされるようになった。
+（開発競争の激化を避けるためにモデルの開発費は秘匿される事が多いが、例えばOpenAIのCEOサム・アルトマンは[GPT-4の開発に1億ドル以上の費用が掛かったことを述べている](https://wired.jp/article/openai-ceo-sam-altman-the-age-of-giant-ai-models-is-already-over/)）。
+
+
+## 創発
+
+言語モデルの規模を大きくしていったときに新たな能力を獲得し、それまで解くことができなかった問題を解けるようになる現象が報告されている。
+この現象は**創発（emergence）**や**創発的能力（emergent abilities）**などと呼ばれる。
+
+創発的能力のひとつは**in-context learning**という、自然言語によるその場限りの学習を行う能力である。
+
+従来の言語モデルでは、事前学習しておいたモデルに対してタスクに応じた教師あり学習による追加的な学習（fine-tuning）を行ってから使用する方法が主流であった。例えばGPT-1では文脈からトークンを予測する問題を解くことで事前学習し、その後にテキスト分類や質問応答タスクのための教師あり学習を別途行っている。
+
+一方でGPT-3では指示文（prompt）中に解きたいタスクの例を与えることで、そのタスクにおける正解率が向上する。
+これは重みの更新を伴わないため、モデルは変更されずその場限りの学習になる。
+
+<center>
+  <section style="width: 100%">
+    <img src="13_NeuralNetwork.assets/in-context-learning.png"/>
+    <br/>
+    <span style="font-size: 0.8em;">
+      図：in-context learningの例。
+      <br/>
+      （出所：[Brown, et al. (2020). Language models are few-shot learners.](https://arxiv.org/abs/2005.14165)）
+    </span>
+  </section>
+</center>
+
+
+GPT-3でもパラメータ数を縮小したものはこの能力を持たないため、この現象は規模に関係すると考えられている。
+同様の創発現象はGPT-3以外の大規模言語モデルにおいても確認されている。
+
+<center>
+  <section style="width: 90%">
+    <img src="13_NeuralNetwork.assets/emergence.png"/>
+    <br/>
+    <span style="font-size: 0.8em;">
+      図：縦軸にfew-shot learning（後述）での正解率、横軸に計算回数（浮動小数点演算数Floating-point OPerations: FLOPs）をとった図。左の図は多段階の四則演算をするタスク、中央の図は大学レベルの試験のタスク、右の図は文脈内の単語の意味を推定するタスクを表す。
+      <br/>
+      （出所：<a href="https://ai.googleblog.com/2022/11/characterizing-emergent-phenomena-in.html">Characterizing Emergent Phenomena in Large Language Models – Google Research Blog</a>）
+    </span>
+  </section>
+</center>
+
+こうした現象が起こる原因についてはいくつか仮説が提唱されているものの、解明中である。
+
+
+## ChatGPT
+
+[ChatGPT](https://chat.openai.com/)はOpenAIが提供しているチャットボットのサービスである。
+人間と遜色ない自然な文章を生成することから話題になった。
+
+GPT-3は大規模言語モデルとして登場当初から評価が高かったものの、質問に応答するというタスクに対しての精度であったり、暴力的な内容（「爆弾の作り方を教えて」など）に対する回答の回避などといったチャットボットとして要求されるふるまいは身につけていないため、チャットボットとして使うためには改良を行う必要があった。
+
+GPT-3をチャットボット向けに改良したモデルの1つがInstructGPTである。
+
+<center>
+  <section style="width: 90%">
+    <img src="13_NeuralNetwork.assets/instruct-gpt-comparison.png"/>
+    <br/>
+    <span style="font-size: 0.8em;">
+    図：GPT-3とInstructGPTの比較。「以下のコードにおけるリスト`C`の意図は？」という質問をしたとき、GPT-3では「`C[i]`の値を入れるため」といった直接的で説明として不適切な答えをしてしまうが、InstructGPTでは「二項係数の値を格納するため」などのより適切な回答を返している。
+      （出所：<a href="https://arxiv.org/abs/2203.02155">Ouyang et al. (2022)</a>）
+    </span>
+  </section>
+</center>
+
+
+### InstructGPT
+
+人間のフィードバックによる強化学習
+
+次のような流れで行う
+
+1. プロンプトに対する望ましい出力を人間が例示し、教師あり学習としてGPTをfine-tuningする
+2. プロンプトに対するモデルの複数の出力を人間がランク付けし、その順序を報酬モデルを学習させる
+3. プロンプトに対する出力結果を報酬モデルによって評価し、モデルを更新する（強化学習）
+
+<center>
+  <section style="width: 90%">
+    <img src="13_NeuralNetwork.assets/instruct-gpt-method.png" />
+    <br/>
+    <span style="font-size: 0.8em;">
+      図：InstructGPTの開発手法
+      （出所：<a href="https://arxiv.org/abs/2203.02155">Ouyang et al. (2022)</a>）
+    </span>
+  </section>
+</center>
 
 
 
-scaling law
 
-GPT（Generative Pretrained Transformer）
-
-
+## 実際に触ってみる
 
 ### （参考）textパッケージによる学習済みモデルの利用
 
@@ -607,7 +776,7 @@ $x_generated
 [1] "Hello, I'm a new employee at Drexel University! Last Friday, I was an excellent choice for a professor teaching math and math courses at the college we currently offer at Georgetown. After making the move to a local university in California, I"
 ```
 
-### （参考）Hugging Face
+### Hugging Face
 
 [Hugging Face](https://huggingface.co/)は大規模なAIのコミュニティであり、学習済みモデルやデータセットが公開されている。
 
@@ -615,16 +784,7 @@ $x_generated
 
 Hugging Faceのウェブサイト上で学習済みモデルを動かすことができるInference APIという機能もある。
 
-例えばrinna株式会社の[rinna/japanese-gpt2-medium · Hugging Face](https://huggingface.co/rinna/japanese-gpt2-medium?text=%E7%94%9F%E5%91%BD%E3%80%81%E5%AE%87%E5%AE%99%E3%80%81%E3%81%9D%E3%81%97%E3%81%A6%E4%B8%87%E7%89%A9%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E3%81%AE%E7%A9%B6%E6%A5%B5%E3%81%AE%E7%96%91%E5%95%8F%E3%81%AE%E7%AD%94%E3%81%88%E3%81%AF)は日本語のデータを用いてGPT-2を学習したモデルである。Inference APIもあるためウェブサイト上で試すことができる。
-
-
-# ChatGPT
-
-## 概要
-
-ChatGPTはOpenAI社が開発したチャットボットサービスである。
-
-バックエンドにはGPT-3やGPT-4を利用
+例えばrinna株式会社の[rinna/japanese-gpt2-medium · Hugging Face](https://huggingface.co/rinna/japanese-gpt2-medium)は日本語のデータを用いてGPT-2を学習したモデルである。Inference APIもあるためウェブサイト上で試すことができる。
 
 
 # 文章生成モデルの課題と対策
@@ -639,7 +799,7 @@ ChatGPTはOpenAI社が開発したチャットボットサービスである。
   <img src="13_NeuralNetwork.assets/chat-gpt-hallucination.png" width="90%"/>
   <br/>
   <span style="font-size: 0.8em;">
-    バックエンドにGPT-3.5（May 24 ver.）を利用したChatGPTによる回答。撮影日は2023年6月26日。
+    図：バックエンドにGPT-3.5（May 24 ver.）を利用したChatGPTによる回答（撮影日：2023年6月26日）
   </span>
 </center>
 
@@ -687,7 +847,7 @@ Few-shotの際に解答例を単に答えだけにするのではなく、思考
 </center>
 
 
-## Retrieval Augmented Generation
+## Retrieval Augmentation
 
 モデル内に学習されている知識は訓練時点での情報がベースとなるため、新しい情報に関する適切な返答を行うことは難しい。
 例えば「今の日本の首相は？」と質問しても訓練時点での首相の名前が返答される。
@@ -697,53 +857,44 @@ Few-shotの際に解答例を単に答えだけにするのではなく、思考
 
 このような情報の不足もHallucinationを引き起こす原因となりかねない。
 
-こうした問題に対して、モデル内に学習された知識ではなくモデル外の知識を利用して回答文を生成する方法が考えられている。
+こうした問題に対して、モデル内に学習された知識ではなくモデル外の知識を利用して回答文を生成する方法が考えられており、**Retrieval Augmentation**あるいは**Retrieval Augumented Generation（RAG）**と呼ばれる。
+
+例えばMicrosoftの[Bing AI](https://www.bing.com/search?q=Bing+AI&showconv=1&FORM=hpcodx)はウェブ上の記事を外部知識として利用し、脚注として回答結果にも付与することで回答内容の信頼性を向上させている。
+
+<center>
+  <img src="13_NeuralNetwork.assets/rag-bing-ai.png" width="80%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    図：[Bing AI](https://www.bing.com/search?q=Bing+AI&showconv=1&FORM=hpcodx)の結果画面
+  </span>
+</center>
 
 
-[Retrieval Augmented Generative QA - a Hugging Face Space by deepset](https://huggingface.co/spaces/deepset/retrieval-augmentation-svb)
+Hugging FaceにもWeb上で試すことができる[Demo](https://huggingface.co/spaces/deepset/retrieval-augmentation-svb)が存在し、RAGを使わない場合と使った場合の比較を簡単に行うことができる。
 
+<center>
+  <img src="13_NeuralNetwork.assets/rag-hagging-face.png" width="100%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    出所：[Retrieval Augmented Generative QA - a Hugging Face Space by deepset](https://huggingface.co/spaces/deepset/retrieval-augmentation-svb)
+  </span>
+</center>
 
-
-
-# 文章生成モデル
-
-近年、生成モデルとしての応用が進み、非技術者への普及が進んだ。概要を軽く紹介する。
-
-**生成モデル**（generative model）とは、データの分布を学習するモデルであり、$p(X, Y)$あるいは教師ラベルがなければ単に$p(X)$を学習する。
-
-一方でこれまで学んできたようなアプローチは**判別モデル**（discriminative model）と呼ばれ、条件付き分布$p(Y|X)$を学習するモデルである（例えばロジスティック回帰では$p(y=1|x) = \sigma(\beta_0 + \beta_1 x_1)$を学習していた）
-
-![](13_NeuralNetwork.assets/generative_v_discriminative.png)
-
-GPT
-
-教師あり学習では教師ラベル（予測の正解データ）が必要だったが、
-
-## 文章生成
-
-ChatGPTの背景で動く言語モデル
-
-Scaling lawの発見後、開発競争が進んだ。これらの大規模なモデルたちはLLMと言われる
-
-ChatGPTはLLMをベースに、強化学習（明確な正解がない問題について、良し悪しのフィードバックをもとに学習していく）を用いて人間がフィードバックを行って問題のないチャットAIとなるようにした（従来のチャットAIは
-
-原理としては次に出てくるもっともらしい単語を予測するモデルに過ぎないが、知性を持っていると思われるような振る舞いになり、AIの研究としても興味深いものになっている。
 
 # 参考文献
 
-大関真之（2016）『機械学習入門 ボルツマン機械学習から深層学習まで』、オーム社.
+**書籍**
 
-瀧雅人（2017）『これならわかる深層学習入門: 機械学習スタートアップシリーズ』、講談社.
+- 大関真之（2016）『機械学習入門 ボルツマン機械学習から深層学習まで』、オーム社。
+- 瀧雅人（2017）『これならわかる深層学習入門: 機械学習スタートアップシリーズ』、講談社。
+- 平井有三（2022）『はじめてのパターン認識 ディープラーニング編』、森北出版。
 
-# 参考ウェブサイト&スライド
+**ウェブサイト & スライド**
 
-清水遼平（2023）「[DiffusionによるText2Imageの系譜と生成画像が動き出すまで](https://speakerdeck.com/nhamanasu/diffusionniyorutext2imagenoxi-pu-tosheng-cheng-hua-xiang-gadong-kichu-sumade)」
-
-岡崎直観（2023）「[大規模言語モデルの驚異と脅威](https://speakerdeck.com/chokkan/20230327_riken_llm)」
-
-岩澤有祐（2023）「[基盤モデルの技術と展望](https://speakerdeck.com/yusuke0519/jsai2023-tutorial-ji-pan-moderunoji-shu-tozhan-wang)」
-
-[Prompt Engineering Guide](https://www.promptingguide.ai/)
-
+- 岡崎直観（2023）「[大規模言語モデルの驚異と脅威](https://speakerdeck.com/chokkan/20230327_riken_llm)」
+- 岩澤有祐（2023）「[基盤モデルの技術と展望](https://speakerdeck.com/yusuke0519/jsai2023-tutorial-ji-pan-moderunoji-shu-tozhan-wang)」
+- [Prompt Engineering Guide](https://www.promptingguide.ai/)
 -   [Posit AI Blog: State-of-the-art NLP models from R](https://blogs.rstudio.com/ai/posts/2020-07-30-state-of-the-art-nlp-models-from-r/)
+- 清水遼平（2023）「[DiffusionによるText2Imageの系譜と生成画像が動き出すまで](https://speakerdeck.com/nhamanasu/diffusionniyorutext2imagenoxi-pu-tosheng-cheng-hua-xiang-gadong-kichu-sumade)」
+  - 今回紹介しきれなかった画像処理の分野の話。画像生成の最近の動きがまとまっている
 
