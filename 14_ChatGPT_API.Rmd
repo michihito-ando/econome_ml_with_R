@@ -149,65 +149,58 @@ content(response) # response body
 
 # APIにアクセスする
 
-## 例1：天気予報API
+## 例1: 不動産取引価格情報取得API
 
-[Open-Meteo.com](https://open-meteo.com/)のFree Weather APIを使用する。
+利用者登録が不要で手軽に利用できるWeb APIの例として、国土交通省の[土地総合情報システム](https://www.land.mlit.go.jp/webland/)の[API](https://www.land.mlit.go.jp/webland/api.html)を使って試していく。
 
-[API Docs](https://open-meteo.com/en/docs)ページに行くとAPIで取得したい情報の設定画面が現れ、どの地点の天気予報が欲しいのか、欲しい情報は何か（気温、湿度など）、などの設定を行うことができる。
+土地総合情報システムはアンケート調査によって得た不動産価格を公開しているWebサイトで、このAPIを利用することで不動産価格のデータをRから直接取得することができる。
 
-「API URL」の欄にAPIのURLが表示される。例えば
+[APIの操作説明](https://www.land.mlit.go.jp/webland/api.html)を見ると2つAPIが存在するが、今回は「不動産取引価格情報取得API」を利用する。
 
-```
-https://api.open-meteo.com/v1/forecast?latitude=35.7368&longitude=139.7071&hourly=temperature_2m,rain&timezone=Asia%2FTokyo&forecast_days=1
-```
-
-のようなURLが表示されているので、コピーして使う。
-
-```{r}
-url <- "https://api.open-meteo.com/v1/forecast?latitude=35.7368&longitude=139.7071&hourly=temperature_2m,rain&timezone=Asia%2FTokyo&forecast_days=1"
-res <- GET(url)
-body <- content(res)
-summary(body)  # bodyの情報が多いのでsummaryだけ表示する
-```
-
-`content()`でボディを取り出す際に`type = "text"`とすると原文を見ることができる。JSON形式で色々な情報が入っていることがわかる。
-
-```{r}
-content(res, type = "text") %>% cat()
-```
-
-
-bodyに含まれる情報を整えてやると、このような1時間ごとの気温・降水量の予報データが取得できる。
-
-```{r}
-df <- tibble(
-  time = body$hourly$time %>% unlist(),
-  temp = body$hourly$temperature_2m %>% unlist(),
-  rain = body$hourly$rain %>% unlist()
-)
-df
-```
-
-
-### （参考）リクエストパラメータ{-}
-
-URLの`?`以降の部分は**リクエストパラメータ**と呼ばれるもので、`key=value`の形式で値を指定し、複数指定したい場合は`&`で繋げていく。
-
-なお、`httr::GET()`では`query`にlistとしてリクエストパラメータを指定することもできる。
+操作説明にはURLとパラメータをどう指定すればよいのかが書かれている。
+パラメータとはURLの`?`以降に`key=value`形式書かれるもので、`httr::GET()`では`query`という引数に`list()`形式で渡していく。
 
 ```{r}
 res <- GET(
-  url = "https://api.open-meteo.com/v1/forecast",
+  # APIのURL
+  url = "https://www.land.mlit.go.jp/webland/api/TradeListSearch",
+  # クエリパラメータ
   query = list(
-    latitude = 35.7368,
-    longitude = 139.7071,
-    hourly = "temperature_2m,rain",
-    timezone = "Asia/Tokyo",
-    forecast_days = 1
+    from = 20224, # 何年の第何四半期以降の取引を取得するか
+    to = 20231,   # 何年の第何四半期までの取引を取得するか
+    area = 13     # 都道府県コード（東京は13）
   )
 )
+```
+
+まずステータスコードを確認する。200であればリクエストに成功している。
+
+```{r}
 res$status_code
 ```
+
+レスポンスからbodyを取り出す。
+
+```{r}
+body <- content(res)
+```
+
+結果はbody$dataに含まれているため、取り出してデータフレームに変換する
+
+```{r}
+rows <- data.frame()
+for (row in body$data) {
+  rows <- bind_rows(rows, as.data.frame(row))
+}
+```
+
+このようなデータが取得できた
+
+```{r}
+# 最終的に得られたデータ
+rows %>% tibble()
+```
+
 
 
 ## （参考）例2：OpenAI API
@@ -222,17 +215,52 @@ OpenAI APIは本来は有料のサービスであるが、アカウントを作�
 
 ### 利用登録
 
-APIを
+[OpenAI](https://openai.com/)にログインして右上の自分のプロフィール部分をクリックして開くメニューの「Veiw API Keys」をクリックする。
+すると自分のAPIキー（APIで本人認証するための鍵となる情報）の管理画面が表示される。
+まだキーを作ったことがなければ何も存在しない。
+
+
+<center>
+  <img src="14_appendix_ChatGPT_API.assets/api-keys.png" width="70%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    図：https://platform.openai.com/account/api-keys の画面
+  </span>
+</center>
+
+下部の「＋Create new secret key」ボタンをクリックして新規作成する。
+名前の入力欄が出てくるが任意の設定項目なので無視して先に進んでも問題ない。
+
+作成するとキー（半角英数字の羅列）が出てくるため、コピーしておく。
+（APIキーが万一流出してしまうと第三者に好き勝手にAPIを使われてしまうため、扱いには注意する。もしクレジットカード情報をOpenAI に登録して有料ライセンスを保有している場合は特に慎重に扱うこと）
+
 
 
 ### Rで実践
+
+#### 環境変数の設定{-}
+
+まずAPIキーの扱いについて述べる。APIキーのような機密情報はソースコード中に直接書き込まないことが望ましいため、**環境変数**（environment variable）に設定してRから読み込むことにする。環境変数はOSなどプログラムを動かす環境に設定した変数であり、環境変数を利用することでプログラム側（R側）ではあらかじめ定義済みの変数を呼び出すだけでよいことになる。
+
+環境変数を定義する方法は複数あり、例えば`Sys.setenv(変数名="value")`のように書いてその場で実行したり、ホームディレクトリに`.Renviron`ファイルを作ってそちらに設定したりする。
+今回は簡易的に`Sys.setenv()`を使う方法を紹介する。Rのスクリプトではなく、RStudioの左下の「Console」タブに、次のように打ち込んで実行する。
+
+```{r, eval=F}
+Sys.setenv("OPENAI_API_KEY"="（取得したAPIキー）")
+```
+
+なお環境変数を読み込むときは`Sys.getenv("変数名")`と書けばよい。
+
+
+#### APIの呼び出し{-}
 
 OpenAIの[ChatAPIのドキュメント](https://platform.openai.com/docs/api-reference/chat/create)を見ると`POST`メソッドを使用する必要があることがわかる。
 POSTリクエストを送るには、`httr::POST()`を使用すればよい。
 
 まず、先にリクエストボディを作成しておく。APIがJSON形式を受け取る仕様であるため、`list()`で記述していく。
 
-```{r, eval=F}
+
+```{r}
 body <- list(
   # 使用する言語モデルを指定する
   model = "gpt-3.5-turbo",
@@ -246,21 +274,13 @@ body <- list(
 )
 ```
 
-`POST()`を呼び出す前に、API_KEYについて
-
-```{r}
-api_key <- Sys.getenv("OPENAI_API_KEY")
-```
-
-
-
 ```{r, eval=F}
 res <- POST(
   url="https://api.openai.com/v1/chat/completions",
   # 認証情報などの付加的な情報
   config = add_headers(
-    "Content-Type" = "application/json",        # JSON形式で送ることを明示
-    "Authorization" = str_c("Bearer ", api_key) # 認証情報
+    "Content-Type" = "application/json", # JSON形式で送ることを明示
+    "Authorization" = str_c("Bearer ", Sys.getenv("OPENAI_API_KEY")) # 認証情報
   ),
   body = body,     # リクエストの本文
   encode = "json"  # リクエストはjsonで送るため、list形式で渡している
@@ -274,41 +294,73 @@ res <- POST(
 
 ```{r, eval=F}
 body <- content(res)
-body$choices[[1]]$message
+body$choices[[1]]$message$content %>% cat()
 ```
 
 ```
-$role
-[1] "assistant"
-
-$content
-[1] "Hello! How can I assist you today?"
+Hello! How can I assist you today?
 ```
 
+role=systemとしてシステム側からの指示を与えることもできる。
+
+```{r, eval=F}
+body <- list(
+  model = "gpt-3.5-turbo",
+  messages = list(
+    # role: systemならシステムがAIに対して与えた指示になる
+    list(role="system", content="あなたは英語の先生です。メッセージ内の英語に誤りがあれば訂正し、日本語で解説をしてください。"),
+    list(role="user", content="This is pen.")
+  )
+)
+```
+
+```{r, eval=F}
+res <- POST(
+  url="https://api.openai.com/v1/chat/completions",
+  # 認証情報などの付加的な情報
+  config = add_headers(
+    "Content-Type" = "application/json", # JSON形式で送ることを明示
+    "Authorization" = str_c("Bearer ", Sys.getenv("OPENAI_API_KEY")) # 認証情報
+  ),
+  body = body,     # リクエストの本文
+  encode = "json"  # リクエストはjsonで送るため、list形式で渡している
+)
+```
+
+```{r, eval=F}
+body <- content(res)
+body$choices[[1]]$message$content %>% cat()
+```
+
+```
+This is a pen.
+
+「This is pen.」という表現には誤りがあります。正しくは、「This is a pen.」と言います。英語では、不特定の物を表す場合は冠詞「a」（または「an」）を使います。したがって、この文では「a pen」という具体的な物の名前の前に「a」を置く必要があります。
+```
+
+### APIキーの無効化
+
+APIキーの不正利用を防ぐ手段のひとつは、使わなくなったキーを無効化して使えなくしておくことである。
+必要になればすぐに新しいキーを作れるので、一通り試し終わったら無効化しておくことを推奨する。
+
+再び[API keys](https://platform.openai.com/account/api-keys)ページに向かい、今回作ったキーを無効化する。
+
+2つ以上のキーが存在する状態でなければ無効化できないようなので、「Create new secret key」から再度新たなキーを作り、今回作った方を削除する。
+
+<center>
+  <img src="14_appendix_ChatGPT_API.assets/revoke-key.png"/>
+</center>
 
 
+## （参考）公的統計のAPI
 
-
-## （参考）政府統計系のAPI
-
-[e-Stat](https://www.e-stat.go.jp/)や[RESAS](https://resas.go.jp/)はAPIを公開している。
+[e-Stat](https://www.e-stat.go.jp/)や[RESAS](https://resas.go.jp/)といった公的統計のサイトはAPIを公開している。
 これらも`{httr}`パッケージでアクセスすることが可能である。
 
 例えば、[矢内（2016）](https://yukiyanai.github.io/jp/classes/rm1/contents/R/R-and-API.html)はe-Stat APIにhttrパッケージでアクセスする方法を解説している。
 
-APIによってはhttpリクエストを送ってbodyを整形する処理があらかじめ関数にまとめられているパッケージが提供されていることもある。例えばe-Stat APIであれば[{estatapi}パッケージ](https://yutannihilation.github.io/estatapi/)が存在し、R側から関数を呼び出す形でAPIにアクセスし、tibbleのデータフレームで結果を返してくれるようになっている。こうしたパッケージを使うことでAPIを気軽に使うことができる。
+しかし、APIによってはhttpリクエストを送ってbodyを整形する処理があらかじめ関数にまとめられパッケージとして提供されていることもある。
+例えばe-Stat APIであれば[{estatapi}パッケージ](https://yutannihilation.github.io/estatapi/)が存在し、R側から関数を呼び出す形でAPIにアクセスし、tibbleのデータフレームで結果を返してくれるようになっている。こうしたパッケージを使うことでAPIをより手軽に扱うことができる。
+（ただし、こうしたパッケージは公式のものもあれば第三者が公開しているものもあるため、有償APIを使う際は注意する）
 
-
-# （参考）Shinyのアプリに組み込む
-
-few-shot learningさせた
-
-
-
-
-
-
-
-
-
-
+e-statやRESASの他にも行政のAPIは多数存在し、[e-Gov APIカタログ](https://api-catalog.e-gov.go.jp/info/ja/apicatalog/list)などで検索することができる。
