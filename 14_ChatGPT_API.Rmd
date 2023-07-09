@@ -145,7 +145,7 @@ response$status_code  # ステータスコード
 content(response) # response body
 ```
 
-上記はGoogleのトップページ部分のhtmlである
+上記はGoogleのトップページ部分のhtml（をR側で見やすく表示したもの）である。
 
 # APIにアクセスする
 

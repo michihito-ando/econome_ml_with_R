@@ -1671,8 +1671,8 @@ APIであればJSON等が送られる。</p>
 <pre><code>## {html_document}
 ## &lt;html itemscope=&quot;&quot; itemtype=&quot;http://schema.org/WebPage&quot; lang=&quot;ja&quot;&gt;
 ## [1] &lt;head&gt;\n&lt;meta content=&quot;世界中のあらゆる情報を検索するためのツールを提供しています。さまざまな検索機能を活用して、お探しの情 ...
-## [2] &lt;body bgcolor=&quot;#fff&quot;&gt;\n&lt;script nonce=&quot;drzdDwQY-posiSCVbjpsIw&quot;&gt;(function() ...</code></pre>
-<p>上記はGoogleのトップページ部分のhtmlである</p>
+## [2] &lt;body bgcolor=&quot;#fff&quot;&gt;\n&lt;script nonce=&quot;8w9rWAEK0eIqRfBN3pJQ2Q&quot;&gt;(function() ...</code></pre>
+<p>上記はGoogleのトップページ部分のhtml（をR側で見やすく表示したもの）である。</p>
 </div>
 </div>
 </div>
@@ -1839,15 +1839,18 @@ new secret key」から再度新たなキーを作り、今回作った方を削
 </center>
 </div>
 </div>
-<div id="参考政府統計系のapi" class="section level2" number="3.3">
+<div id="参考公的統計のapi" class="section level2" number="3.3">
 <h2><span class="header-section-number">3.3</span>
-（参考）政府統計系のAPI</h2>
-<p><a href="https://www.e-stat.go.jp/">e-Stat</a>や<a href="https://resas.go.jp/">RESAS</a>はAPIを公開している。
+（参考）公的統計のAPI</h2>
+<p><a href="https://www.e-stat.go.jp/">e-Stat</a>や<a href="https://resas.go.jp/">RESAS</a>といった公的統計のサイトはAPIを公開している。
 これらも<code>{httr}</code>パッケージでアクセスすることが可能である。</p>
 <p>例えば、<a href="https://yukiyanai.github.io/jp/classes/rm1/contents/R/R-and-API.html">矢内（2016）</a>はe-Stat
 APIにhttrパッケージでアクセスする方法を解説している。</p>
-<p>しかし、APIによってはhttpリクエストを送ってbodyを整形する処理があらかじめ関数にまとめられているパッケージが提供されていることもある。
-例えばe-Stat APIであれば<a href="https://yutannihilation.github.io/estatapi/">{estatapi}パッケージ</a>が存在し、R側から関数を呼び出す形でAPIにアクセスし、tibbleのデータフレームで結果を返してくれるようになっている。こうしたパッケージを使うことでAPIをより手軽に扱うことができる。</p>
+<p>しかし、APIによってはhttpリクエストを送ってbodyを整形する処理があらかじめ関数にまとめられパッケージとして提供されていることもある。
+例えばe-Stat APIであれば<a href="https://yutannihilation.github.io/estatapi/">{estatapi}パッケージ</a>が存在し、R側から関数を呼び出す形でAPIにアクセスし、tibbleのデータフレームで結果を返してくれるようになっている。こうしたパッケージを使うことでAPIをより手軽に扱うことができる。
+（ただし、こうしたパッケージは公式のものもあれば第三者が公開しているものもあるため、有償APIを使う際は注意する）</p>
+<p>e-statやRESASの他にも行政のAPIは多数存在し、<a href="https://api-catalog.e-gov.go.jp/info/ja/apicatalog/list">e-Gov
+APIカタログ</a>などで検索することができる。</p>
 </div>
 </div>
 
