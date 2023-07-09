@@ -1,0 +1,314 @@
+---
+title: "WebAPI / ChatGPTをRから呼び出す"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+date: "`r Sys.Date()`"
+output:
+ html_document:
+    css : R_style.css
+    self_contained: true   # 画像などの埋め込み 
+    #theme: cosmo
+    highlight: haddock     # Rスクリプトのハイライト形式
+    #code_folding: 'hide'  # Rコードの折りたたみ表示を設定
+    toc: true
+    toc_depth: 2           # 見出しの表示とその深さを指定
+    toc_float: true        # 見出しを横に表示し続ける
+    number_sections: true # 見出しごとに番号を振る
+    # df_print: paged        # head()の出力をnotebook的なものに（tibbleと相性良）
+    latex_engine: xelatex  # zxjatypeパッケージを使用するために変更
+    fig_height: 4          # 画像サイズのデフォルトを設定
+    fig_width: 6           # 画像サイズのデフォルトを設定
+    dev: png
+classoption: xelatex,ja=standard
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+```
+
+
+Web APIを通じてRからウェブサービスを利用する方法と、その例としてOpenAI APIを利用してChatGPTをRから利用する方法を述べる。
+
+
+# 使用するパッケージ
+
+今回使用するパッケージは以下のものである。
+
+```{r}
+pacman::p_load(
+  jsonlite,
+  httr,
+  tidyverse
+)
+```
+
+
+
+# WebとAPIの基礎
+
+APIとはapplication programming interfaceの略で、アプリケーション同士が互いに情報を送信しあうためのインターフェース（入り口）である。
+Webを通じて提供されるものをWeb APIという（Webを省略して単にAPIと呼ばれることも多い）。
+
+
+## そもそもWebとは？
+
+Webの仕組みについて軽く述べておく。
+
+### Webページ
+
+ウェブサイト（例えばGoogleのトップページ www.google.com ）にアクセスする際は、ユーザーがブラウザ（Google Chromeなど）を通じてサーバーにWebページの情報を求めるリクエストを送り、サーバーが情報を返すという処理が行われる。
+ブラウザのことを**Webクライアント**と呼ぶこともある。Webはこうしたクライアントとサーバーのやりとりで実現されている。
+
+なお、サーバーが返してくる情報についてもう少し具体的に述べると、Webページはhtmlという形式のテキストファイルを中心として構成されているため、サーバーはhtmlなどを送信する。
+htmlは、Google Chromeで閲覧中のページを右クリックして「ページのソースを表示」のメニューをクリックしたときに出てくる
+
+```html
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+...（以下略）...
+```
+
+などと書かれているファイルである。
+
+
+## Web API
+
+Webページの場合、基本的に人間が見ることを想定して開発されるものであるため、サーバーはhtmlなどを返す。
+しかしWeb APIのユーザーは人ではなくアプリケーションであるため、基本的に機械にとって扱いやすいようなインターフェース（送受信するデータの形式）とする。
+
+
+よく使われる形式のひとつはJSON形式である。JSONは次のような形式になっている。
+
+```json
+{
+  "status": "OK",
+  "values": [100, 200, 300]
+}
+```
+
+JSONはキーと対応するバリュー（値）の集合になっており、多くのプログラミング言語に用意されているキー・バリュー・ストア（Rだと名前付きのリスト `list(key = "value")`のこと）に変換して扱うことができる。例えば`{jsonlite}`パッケージを使うことでJSONをlistに変えることができる。
+
+```{r}
+json_text <- '{
+  "status": "OK",
+  "values": [100, 200, 300]
+}'
+
+data <- jsonlite::fromJSON(json_text)
+data["values"]
+```
+
+
+
+## HTTP
+
+WebサーバーとはHTTPという通信方法を用いて通信する。
+
+### リクエストメソッド
+
+リクエストを送る際はメソッドというものが9種類存在し、状況に応じて使い分けていく。
+例えば情報を閲覧したい際は`GET`メソッド、書き込みたい場合は`POST`メソッドを使う。
+
+Rの場合、`{httr}`パッケージを使うことでHTTP通信を行うことができる。
+
+```{r}
+response <- httr::GET(url = "https://www.google.com")
+```
+
+
+### レスポンス
+
+HTTPリクエストに対するサーバーからのレスポンスには**ステータスコード**（status code）と**ボディ**（body）が含まれる。
+
+```{r}
+response$status_code  # ステータスコード
+```
+
+ステータスコードは3桁の数字で、例えば次のようなものがある。
+
+
+| ステータスコード | 名前                  | 意味                                 |
+| ---------------- | --------------------- | ------------------------------------ |
+| 200              | OK                    | 正常に通信できた                     |
+| 404              | Not found             | ページが見つからない                 |
+| 500              | Internal Server Error | サーバー側で想定外のエラーが発生した |
+
+
+
+ボディはレスポンス内容の本文に相当するものであり、Webページであればhtml等が、Web APIであればJSON等が送られる。
+
+```{r}
+content(response) # response body
+```
+
+上記はGoogleのトップページ部分のhtmlである
+
+# APIにアクセスする
+
+## 例1：天気予報API
+
+[Open-Meteo.com](https://open-meteo.com/)のFree Weather APIを使用する。
+
+[API Docs](https://open-meteo.com/en/docs)ページに行くとAPIで取得したい情報の設定画面が現れ、どの地点の天気予報が欲しいのか、欲しい情報は何か（気温、湿度など）、などの設定を行うことができる。
+
+「API URL」の欄にAPIのURLが表示される。例えば
+
+```
+https://api.open-meteo.com/v1/forecast?latitude=35.7368&longitude=139.7071&hourly=temperature_2m,rain&timezone=Asia%2FTokyo&forecast_days=1
+```
+
+のようなURLが表示されているので、コピーして使う。
+
+```{r}
+url <- "https://api.open-meteo.com/v1/forecast?latitude=35.7368&longitude=139.7071&hourly=temperature_2m,rain&timezone=Asia%2FTokyo&forecast_days=1"
+res <- GET(url)
+body <- content(res)
+summary(body)  # bodyの情報が多いのでsummaryだけ表示する
+```
+
+`content()`でボディを取り出す際に`type = "text"`とすると原文を見ることができる。JSON形式で色々な情報が入っていることがわかる。
+
+```{r}
+content(res, type = "text") %>% cat()
+```
+
+
+bodyに含まれる情報を整えてやると、このような1時間ごとの気温・降水量の予報データが取得できる。
+
+```{r}
+df <- tibble(
+  time = body$hourly$time %>% unlist(),
+  temp = body$hourly$temperature_2m %>% unlist(),
+  rain = body$hourly$rain %>% unlist()
+)
+df
+```
+
+
+### （参考）リクエストパラメータ{-}
+
+URLの`?`以降の部分は**リクエストパラメータ**と呼ばれるもので、`key=value`の形式で値を指定し、複数指定したい場合は`&`で繋げていく。
+
+なお、`httr::GET()`では`query`にlistとしてリクエストパラメータを指定することもできる。
+
+```{r}
+res <- GET(
+  url = "https://api.open-meteo.com/v1/forecast",
+  query = list(
+    latitude = 35.7368,
+    longitude = 139.7071,
+    hourly = "temperature_2m,rain",
+    timezone = "Asia/Tokyo",
+    forecast_days = 1
+  )
+)
+res$status_code
+```
+
+
+## （参考）例2：OpenAI API
+
+ChatGPTはWebサイトだけでなくWeb APIも提供されているため、ChatGPTを例にとっていく。
+利用登録が必要なため、参考として載せておく。
+
+
+OpenAI APIは本来は有料のサービスであるが、アカウントを作成して3ヶ月間は18ドル分の無料枠があり、気軽に使うことができる。
+（なお、有料でもGPT-3.5は1000トークンあたり0.002ドル程度とかなり安い）
+
+
+### 利用登録
+
+APIを
+
+
+### Rで実践
+
+OpenAIの[ChatAPIのドキュメント](https://platform.openai.com/docs/api-reference/chat/create)を見ると`POST`メソッドを使用する必要があることがわかる。
+POSTリクエストを送るには、`httr::POST()`を使用すればよい。
+
+まず、先にリクエストボディを作成しておく。APIがJSON形式を受け取る仕様であるため、`list()`で記述していく。
+
+```{r, eval=F}
+body <- list(
+  # 使用する言語モデルを指定する
+  model = "gpt-3.5-turbo",
+
+  # メッセージを指定する
+  messages = list(
+    # role: user ならユーザーがAIに対して発したメッセージを意味する
+    # content: メッセージ本文
+    list(role="user", content="Hello!")
+  )
+)
+```
+
+`POST()`を呼び出す前に、API_KEYについて
+
+```{r}
+api_key <- Sys.getenv("OPENAI_API_KEY")
+```
+
+
+
+```{r, eval=F}
+res <- POST(
+  url="https://api.openai.com/v1/chat/completions",
+  # 認証情報などの付加的な情報
+  config = add_headers(
+    "Content-Type" = "application/json",        # JSON形式で送ることを明示
+    "Authorization" = str_c("Bearer ", api_key) # 認証情報
+  ),
+  body = body,     # リクエストの本文
+  encode = "json"  # リクエストはjsonで送るため、list形式で渡している
+)
+```
+
+ステータスコードが200の場合、成功している。
+401や403が返ってくる場合はAPIキーの情報をうまく渡せていない可能性が高いため、コードを今一度確認したほうがよい。
+
+成功すると次のように返答が返ってくる。
+
+```{r, eval=F}
+body <- content(res)
+body$choices[[1]]$message
+```
+
+```
+$role
+[1] "assistant"
+
+$content
+[1] "Hello! How can I assist you today?"
+```
+
+
+
+
+
+## （参考）政府統計系のAPI
+
+[e-Stat](https://www.e-stat.go.jp/)や[RESAS](https://resas.go.jp/)はAPIを公開している。
+これらも`{httr}`パッケージでアクセスすることが可能である。
+
+例えば、[矢内（2016）](https://yukiyanai.github.io/jp/classes/rm1/contents/R/R-and-API.html)はe-Stat APIにhttrパッケージでアクセスする方法を解説している。
+
+APIによってはhttpリクエストを送ってbodyを整形する処理があらかじめ関数にまとめられているパッケージが提供されていることもある。例えばe-Stat APIであれば[{estatapi}パッケージ](https://yutannihilation.github.io/estatapi/)が存在し、R側から関数を呼び出す形でAPIにアクセスし、tibbleのデータフレームで結果を返してくれるようになっている。こうしたパッケージを使うことでAPIを気軽に使うことができる。
+
+
+# （参考）Shinyのアプリに組み込む
+
+few-shot learningさせた
+
+
+
+
+
+
+
+
+
+
