@@ -46,7 +46,7 @@ $$
 
 生物の脳神経には多数のニューロン（神経細胞）があり、それらが結合してネットワークを形成している。生物のニューロン（生体ニューロン）ではニューロンの樹状突起が他のニューロンの軸索末端から信号（神経伝達物質を受容することで発生する電気信号）を受け取り、閾値を超える電気信号を受け取ると別のニューロンに信号を送るような仕組みになっている。
 
-ニューロン間の結合部（シナプス）の結合の強さ（神経伝達物質の放出量）はそれぞれ異なり、よく使う神経回路はシナプス結合が強くなり、そうすることで学習が進行すると考えられている。
+ニューロン間の結合部（シナプス）の結合の強さ（神経伝達物質の放出量など）はそれぞれ異なり、よく使う神経回路はシナプス結合が強くなり、そうすることで学習が進行すると考えられている。
 
 <center>
   <img src="13_NeuralNetwork.assets/neuron.png" width="70%"/>
@@ -327,7 +327,7 @@ test[,1] = h2o::as.factor(test[,1])
 splits <- h2o.splitFrame(train, ratios = 0.8, seed = 0)
 ```
 
-ネットワーク構造の定義と学習を行う。ここでは中間層は1層目を128ユニット、2層目を64ユニット、3層目を16ユニットとしてみる。
+`h2o.deeplearning()`でネットワーク構造の定義と学習を行う。
 
 ```{r results='hide'}
 # 学習
@@ -423,13 +423,12 @@ Tensorflow（Googleが開発したディープラーニングのライブラリ�
 
 - **機械翻訳**（machine translation）：ある言語を別の言語に翻訳する
   - 応用例：Google翻訳、DeepLなど
-- **固有表現抽出**（named entity recognition: NER）：文章中の固有表現（人名、組織名、地名、日付など）を取り出す
-  - 応用例1：[ニュース配信における固有表現抽出の取り組み / Extraction of Unique Expressions in News Distribution - Speaker Deck](https://speakerdeck.com/sansandsoc/extraction-of-unique-expressions-in-news-distribution?slide=6)
-  - 応用例2：[AIによる有価証券報告書のキーワード分析　～BERTを用いた固有表現抽出の検証～ | DCS blog](https://blog.dcs.co.jp/ai/20230222-nlp.html)
-- **感情分析**（sentiment analysis）：文章中のネガティブな表現やポジティブな表現を抽出し、全体としてポジティブかネガティブかを評価する
-  - 応用例：[青嶋智久, & 中川慧. (2019). 日本語 BERT モデルを用いた経済テキストデータのセンチメント分析](https://www.jstage.jst.go.jp/article/pjsai/JSAI2019/0/JSAI2019_4Rin127/_article/-char/ja/)
 - **文章生成**（text generation）：指定された文章を生成したり、文章を要約したり、チャットボットとしての返答を生成したりなど
   - 応用例：ChatGPT、Bing AIなど
+- **固有表現抽出**（named entity recognition: NER）：文章中の固有表現（人名、組織名、地名、日付など）を取り出す
+  - 応用例：[ニュース配信における固有表現抽出の取り組み / Extraction of Unique Expressions in News Distribution - Speaker Deck](https://speakerdeck.com/sansandsoc/extraction-of-unique-expressions-in-news-distribution?slide=7)
+- **感情分析**（sentiment analysis）：文章中のネガティブな表現やポジティブな表現を抽出し、全体としてポジティブかネガティブかを評価する
+  - 応用例：[青嶋智久, & 中川慧. (2019). 日本語 BERT モデルを用いた経済テキストデータのセンチメント分析](https://www.jstage.jst.go.jp/article/pjsai/JSAI2019/0/JSAI2019_4Rin127/_article/-char/ja/)
 
 
 ## 言語モデル
@@ -512,7 +511,7 @@ unlist(res)
 
 <details>
   <summary><bold>（参考）RMeCabを使ってみたい方へ</bold></summary>
-  <section style="background-color: #D7EEFF; padding: 10px;">
+  <section style="border: solid silver 1px; padding: 10px;">
   WindowsでRMeCabを使う際は文字化けに悩まされる可能性が高いため注意点を述べておく。
 
   Rはver.4.2.0以降、UTF-8という文字コードがデフォルトとなった。
@@ -1157,6 +1156,7 @@ Hugging FaceにもWeb上で試すことができる[Demo](https://huggingface.co
 - 岡崎直観（2023）「[大規模言語モデルの驚異と脅威](https://speakerdeck.com/chokkan/20230327_riken_llm)」
 - 岩澤有祐（2023）「[基盤モデルの技術と展望](https://speakerdeck.com/yusuke0519/jsai2023-tutorial-ji-pan-moderunoji-shu-tozhan-wang)」
 - [Prompt Engineering Guide](https://www.promptingguide.ai/)
+- [Natural Language Processing with R](https://s-ai-f.github.io/Natural-Language-Processing/)
 - [Posit AI Blog: State-of-the-art NLP models from R](https://blogs.rstudio.com/ai/posts/2020-07-30-state-of-the-art-nlp-models-from-r/)
 - [Simple Self-Attention from Scratch](https://cran.r-project.org/web/packages/attention/vignettes/simple_attention.html)
 - 清水遼平（2023）「[DiffusionによるText2Imageの系譜と生成画像が動き出すまで](https://speakerdeck.com/nhamanasu/diffusionniyorutext2imagenoxi-pu-tosheng-cheng-hua-xiang-gadong-kichu-sumade)」
