@@ -25,18 +25,6 @@ editor_options:
     wrap: 72
 ---
 
-```{css, echo=F}
-.card {
-  border: solid silver 1px;
-  border-radius: 5px;
-  background-color: white;
-  padding: 0.5em;
-}
-.card ol {
-  padding-inline-start: 2em;
-  margin: 1em;
-}
-```
 
 ```{r include = FALSE}
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
