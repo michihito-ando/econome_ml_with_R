@@ -61,6 +61,14 @@ Webの仕組みについて軽く述べておく。
 ウェブサイト（例えばGoogleのトップページ www.google.com ）にアクセスする際は、ユーザーがブラウザ（Google Chromeなど）を通じてサーバーにWebページの情報を求めるリクエストを送り、サーバーが情報を返すという処理が行われる。
 ブラウザのことを**Webクライアント**と呼ぶこともある。Webはこうしたクライアントとサーバーのやりとりで実現されている。
 
+<center>
+  <img src="14_appendix_ChatGPT_API.assets/web.png" width="70%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    図：Webの仕組みの大まかなイメージ（出所：筆者作成）
+  </span>
+</center>
+
 なお、サーバーが返してくる情報についてもう少し具体的に述べると、Webページはhtmlという形式のテキストファイルを中心として構成されているため、サーバーはhtmlなどを送信する。
 htmlは、Google Chromeで閲覧中のページを右クリックして「ページのソースを表示」のメニューをクリックしたときに出てくる
 
@@ -80,6 +88,13 @@ htmlは、Google Chromeで閲覧中のページを右クリックして「ペー
 Webページの場合、基本的に人間が見ることを想定して開発されるものであるため、サーバーはhtmlなどを返す。
 しかしWeb APIのユーザーは人ではなくアプリケーションであるため、基本的に機械にとって扱いやすいようなインターフェース（送受信するデータの形式）とする。
 
+<center>
+  <img src="14_appendix_ChatGPT_API.assets/web-api.png" width="80%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    図：WebAPIの仕組みの大まかなイメージ（出所：筆者作成）
+  </span>
+</center>
 
 よく使われる形式のひとつはJSON形式である。JSONは次のような形式になっている。
 
@@ -147,9 +162,8 @@ content(response) # response body
 
 上記はGoogleのトップページ部分のhtml（をR側で見やすく表示したもの）である。
 
-# APIにアクセスする
 
-## 例1: 不動産取引価格情報取得API
+# 例1: 不動産取引価格情報取得API
 
 利用者登録が不要で手軽に利用できるWeb APIの例として、国土交通省の[土地総合情報システム](https://www.land.mlit.go.jp/webland/)の[API](https://www.land.mlit.go.jp/webland/api.html)を使って試していく。
 
@@ -202,18 +216,31 @@ rows %>% tibble()
 ```
 
 
+## （参考）公的統計のAPI
 
-## （参考）例2：OpenAI API
+[e-Stat](https://www.e-stat.go.jp/)や[RESAS](https://resas.go.jp/)といった公的統計のサイトはAPIを公開している。
+これらも`{httr}`パッケージでアクセスすることが可能である。
+
+例えば、[矢内（2016）](https://yukiyanai.github.io/jp/classes/rm1/contents/R/R-and-API.html)はe-Stat APIにhttrパッケージでアクセスする方法を解説している。
+
+しかし、APIによってはhttpリクエストを送ってbodyを整形する処理があらかじめ関数にまとめられパッケージとして提供されていることもある。
+例えばe-Stat APIであれば[{estatapi}パッケージ](https://yutannihilation.github.io/estatapi/)が存在し、R側から関数を呼び出す形でAPIにアクセスし、tibbleのデータフレームで結果を返してくれるようになっている。こうしたパッケージを使うことでAPIをより手軽に扱うことができる。
+（ただし、こうしたパッケージは公式のものもあれば第三者が公開しているものもあるため、有償APIを使う際は注意する）
+
+e-statやRESASの他にも行政のAPIは多数存在し、[e-Gov APIカタログ](https://api-catalog.e-gov.go.jp/info/ja/apicatalog/list)などで検索することができる。
+
+
+
+# （参考）例2：OpenAI API
 
 ChatGPTはWebサイトだけでなくWeb APIも提供されているため、ChatGPTを例にとっていく。
-利用登録が必要なため、参考として載せておく。
+利用登録が必要でハードルがやや高いため、参考として載せておく。
+
+OpenAI APIは本来は有料のサービスであるが、アカウントを作成してから3ヶ月間は18ドル分の無料枠があり、気軽に使うことができる。
+（なお、有料と言ってもGPT-3.5は1000トークンあたり0.002ドル程度とかなり安い）
 
 
-OpenAI APIは本来は有料のサービスであるが、アカウントを作成して3ヶ月間は18ドル分の無料枠があり、気軽に使うことができる。
-（なお、有料でもGPT-3.5は1000トークンあたり0.002ドル程度とかなり安い）
-
-
-### 利用登録
+## 利用登録
 
 [OpenAI](https://openai.com/)にログインして右上の自分のプロフィール部分をクリックして開くメニューの「Veiw API Keys」をクリックする。
 すると自分のAPIキー（APIで本人認証するための鍵となる情報）の管理画面が表示される。
@@ -236,9 +263,9 @@ OpenAI APIは本来は有料のサービスであるが、アカウントを作�
 
 
 
-### Rで実践
+## Rで実践
 
-#### 環境変数の設定{-}
+### 環境変数の設定{-}
 
 まずAPIキーの扱いについて述べる。APIキーのような機密情報はソースコード中に直接書き込まないことが望ましいため、**環境変数**（environment variable）に設定してRから読み込むことにする。環境変数はOSなどプログラムを動かす環境に設定した変数であり、環境変数を利用することでプログラム側（R側）ではあらかじめ定義済みの変数を呼び出すだけでよいことになる。
 
@@ -252,7 +279,7 @@ Sys.setenv("OPENAI_API_KEY"="（取得したAPIキー）")
 なお環境変数を読み込むときは`Sys.getenv("変数名")`と書けばよい。
 
 
-#### APIの呼び出し{-}
+### APIの呼び出し{-}
 
 OpenAIの[ChatAPIのドキュメント](https://platform.openai.com/docs/api-reference/chat/create)を見ると`POST`メソッドを使用する必要があることがわかる。
 POSTリクエストを送るには、`httr::POST()`を使用すればよい。
@@ -301,7 +328,9 @@ body$choices[[1]]$message$content %>% cat()
 Hello! How can I assist you today?
 ```
 
-role=systemとしてシステム側からの指示を与えることもできる。
+### 役割の指定{-}
+
+`role = "system"`としてシステム側からの指示を与え、ChatGPTの役割を明確化したり、どのように返答するかの例を与えたりすることもできる。
 
 ```{r, eval=F}
 body <- list(
@@ -338,29 +367,32 @@ This is a pen.
 「This is pen.」という表現には誤りがあります。正しくは、「This is a pen.」と言います。英語では、不特定の物を表す場合は冠詞「a」（または「an」）を使います。したがって、この文では「a pen」という具体的な物の名前の前に「a」を置く必要があります。
 ```
 
-### APIキーの無効化
+
+## APIキーの無効化
 
 APIキーの不正利用を防ぐ手段のひとつは、使わなくなったキーを無効化して使えなくしておくことである。
 必要になればすぐに新しいキーを作れるので、一通り試し終わったら無効化しておくことを推奨する。
 
-再び[API keys](https://platform.openai.com/account/api-keys)ページに向かい、今回作ったキーを無効化する。
-
-2つ以上のキーが存在する状態でなければ無効化できないようなので、「Create new secret key」から再度新たなキーを作り、今回作った方を削除する。
+まず、再び[API keys](https://platform.openai.com/account/api-keys)ページに向かう。
+API keyはゴミ箱のアイコンをクリックすれば削除できるが、2つ以上のキーが存在する状態でなければ無効化できない制限があるようなので、「Create new secret key」から再度新たなキーを作り、今回作った方を削除すればよい。
 
 <center>
   <img src="14_appendix_ChatGPT_API.assets/revoke-key.png"/>
 </center>
 
 
-## （参考）公的統計のAPI
 
-[e-Stat](https://www.e-stat.go.jp/)や[RESAS](https://resas.go.jp/)といった公的統計のサイトはAPIを公開している。
-これらも`{httr}`パッケージでアクセスすることが可能である。
+## （参考）ChatGPTに外部のツールを操作させる{-}
 
-例えば、[矢内（2016）](https://yukiyanai.github.io/jp/classes/rm1/contents/R/R-and-API.html)はe-Stat APIにhttrパッケージでアクセスする方法を解説している。
+ChatGPTからの応答を人間に向けたフォーマットではなく機械に向けたフォーマットとして、ChatGPT自身に外部のツールを操作させる方法も存在する。その方法の一つが、ChatGPTのAPIへのリクエストボディに`functions`という情報を記入し、操作したいツールの情報を記載することである。
 
-しかし、APIによってはhttpリクエストを送ってbodyを整形する処理があらかじめ関数にまとめられパッケージとして提供されていることもある。
-例えばe-Stat APIであれば[{estatapi}パッケージ](https://yutannihilation.github.io/estatapi/)が存在し、R側から関数を呼び出す形でAPIにアクセスし、tibbleのデータフレームで結果を返してくれるようになっている。こうしたパッケージを使うことでAPIをより手軽に扱うことができる。
-（ただし、こうしたパッケージは公式のものもあれば第三者が公開しているものもあるため、有償APIを使う際は注意する）
+[Function calling and other API updates](https://openai.com/blog/function-calling-and-other-api-updates)
 
-e-statやRESASの他にも行政のAPIは多数存在し、[e-Gov APIカタログ](https://api-catalog.e-gov.go.jp/info/ja/apicatalog/list)などで検索することができる。
+上記のページの例では、「What’s the weather like in Boston right now?」という質問に対して、
+
+1. 質問文に応じた天候情報取得APIのリクエストボディ（JSON形式）をChatGPTに出力させる
+2. そのJSONを利用してAPIを呼び出し、天候情報を取得する
+3. 天候情報APIのレスポンス（JSON）をChatGPTに送信し、人間がわかりやすいように自然言語で返答させる
+
+という3ステップを経て最終的に「The weather in Boston is currently sunny with a temperature of 22 degrees Celsius.」と返答させている。
+
