@@ -47,6 +47,10 @@ Posit Cloud（旧名：RStudio Cloud）というサービスを利用して、�
 2. 「Log In with Google」から立教のアカウントを選び、ログインする
 3. 「New Project」から「New RStudio Project」をクリックして新しいプロジェクトを立ち上げる
 
+
+※卒論など本格的にRを使う場合はPosit Cloudではなく大学のPCを利用するか、自身のPCに[R](https://cran.ism.ac.jp/)と[R Studio](https://posit.co/products/open-source/rstudio/)をインストールして使用することをおすすめする。Posit Cloudの無料枠は1ヶ月につき25時間しか利用できず、サーバーのスペックが限られているためである。
+
+
 ## RStudioの基本操作
 
 ### 新規Rファイルの作成
