@@ -39,15 +39,16 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F,
 
 まず、{tidyverse}や{AER}や{stargazer}など、今回用いるパッケージのインストールと読み込みを行う。新しい関数については、適宜説明していく。
 
-```{r}
-pacman::p_load(readxl, 
-               tidyverse, 
-               skimr, 
-               AER, 
-               stargazer, 
-               gridExtra, 
-               estimatr, 
-               texreg)
+```{r, results='hide'}
+pacman::p_load(
+   tidyverse,
+   skimr,
+   estimatr,
+   AER,
+   stargazer,
+   texreg,
+   gridExtra
+)
 ```
 
 
@@ -192,7 +193,7 @@ g1 <- ggplot(CPS1985, aes(x = wage)) +
 g2 <- ggplot(CPS1985, aes(x = log(wage))) +
   geom_histogram(bins = 10)
 
-grid.arrange(g1, g2) #gridextraパッケージによるグラフの結合。他にもpatchworkパッケージなどがある。
+grid.arrange(g1, g2) # gridExtraパッケージによるグラフの結合。他にもpatchworkパッケージなどがある。
 ```
 
 ```{r, echo = FALSE}
@@ -304,9 +305,10 @@ df = CPS1985 %>%
 次に、このデータフレーム`df`と新たな変数名`experience2`を使って`lm()`関数を書く。
 
 ```{r}
-reg_mincer <- lm(formula = log(wage) ~ 
-                   education + experience + experience2, 
-                 data = df)
+reg_mincer <- lm(
+  formula = log(wage) ~ education + experience + experience2, 
+  data = df
+)
 ```
 
 text形式で分析結果表を作成すると以下のようになる。
@@ -359,6 +361,7 @@ reg_mincer_r <-
 なお、`HC1`は計量経済学でもっともよく使われるロバスト標準誤差であり、経済学者によく使用される計量分析ソフトのStataのロバスト標準誤差と同一のものであり、`lm_robust`では、`HC1`のかわりに`stata`と表記してもよい。
 
 推定結果は、lmと同じく`summary()`関数で見ることができる。
+
 ````{r}
 summary(reg_logwage_r)
 summary(reg_multiple_r)
@@ -395,6 +398,7 @@ htmlreg(list(reg_logwage_r,
         include.ci = FALSE, 
         digits = 3)
 ```
+
 
 # （参考）不均一分散への対応 (lm_robustを使わない方法)
 
