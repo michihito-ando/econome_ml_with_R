@@ -45,7 +45,7 @@ install.packages("pacman")
 
 今回は、`readxl`と`tidyverse`と`plotly`と`skimr`を使う。以下のように書けば、まとめて読み込むことができる。
 
-```{r}
+```{r, results='hide'}
 pacman::p_load(readxl, tidyverse, plotly, skimr)
 ```
 
@@ -56,7 +56,7 @@ pacman::p_load(readxl, tidyverse, plotly, skimr)
 
 ```{r, eval = FALSE}
 setwd(自分のディレクトリ) # ディレクトリの設定
-getwd # ディレクトリの確認
+getwd() # ディレクトリの確認
 ```
 
 # 例示用データの用意と前処理 
