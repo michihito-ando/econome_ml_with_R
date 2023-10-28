@@ -124,7 +124,6 @@ ability <- runif(n, min = 0, max = 100)
 # IDとabilityをデータフレームに格納する。
 # 以下の"tibble()"はtidyverseにおけるデータフレームを作成する関数。
 # 代わりに"data.frame()"を用いても構わない。
-
 df <- tibble(ID = 1:n, ability)
 
 # 大卒ダミーの作成
@@ -159,7 +158,7 @@ df_temp1 <- bind_rows(university_df, no_university_df) %>% # 両者を結合
 # 元のデータフレームに学費免除ダミー変数を追加したり、大卒ダミー変数を修正したりする。
 
 # df_tempの個体は、能力に関係なく、30%の確率で学費免除（exemption = 1）となる
-# rbinom(n, m, p): 成功確率pの試行をm回試みたときの成功回数の分布をnを生成
+# rbinom(n, m, p): 成功確率pの試行をm回試みたときの成功回数の二項分布からn個の乱数を生成
 df_temp2 <- df_temp1 %>% 
   dplyr::mutate(exemption = rbinom(n, 1, 0.3)) 
 
@@ -167,18 +166,21 @@ df_temp2 <- df_temp1 %>%
 # ただし、能力が80以上のときには学費免除の有無に関わりなく卒業できるものとする。
 # mutate()の中でcase_when()を使う
 # case_when()の場合分けでの数字生成がnumericで行われるように、as.numeric()の中でrbinomを使って0,1の乱数を生成
-df <- df_temp2 %>% 
-  mutate(university = case_when(exemption == 1 ~ as.numeric(rbinom(n, 1, 0.5)), # exemption=1なら50%の確率で1
-                                university == 1 ~ 1, #すでにuniversity=1なら1
-                                TRUE ~ 0)) # それ以外は0
+df <- df_temp2 %>% mutate(
+  university = case_when(
+    exemption == 1 ~ as.numeric(rbinom(n, 1, 0.5)), # exemption=1なら50%の確率で1
+    university == 1 ~ 1, #すでにuniversity=1なら1
+    TRUE ~ 0  # それ以外は0
+  ))
 
 # 所得の生成
-df <- df %>% 
-  dplyr::mutate(income = 
-                  200 + 
-                  10*ability + 
-                  500*university + 
-                  rnorm(n, mean = 0, sd = 50)) # 誤差項は平均=0、SD=50
+df <- df %>% mutate(
+  income = 
+    200 + 
+    10*ability + 
+    500*university + 
+    rnorm(n, mean = 0, sd = 50) # 誤差項は平均=0、SD=50
+)
 
 # 伝統的なやり方はこちら→df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, mean = 0, sd = 50)  # 誤差項は平均=0、SD=50
 
@@ -215,10 +217,10 @@ ggplot(df, aes(x = ability, y = income, color = edu_label)) +
 
 # 操作変数法の概要
 
+効果を測りたい処置変数（学歴$X$）を通じてのみアウトカム変数（所得$Y$)に影響を与える変数のことを**操作変数（instrumental variable）**という。そのような変数が存在することは多くないが、今回の場合は学費免除ダミー$Z$を操作変数として用いることができる。
 
-前回、回帰分析などで学歴の効果を推定しようとした際には、能力が所得に影響を与えているにもかかわらず能力のデータを入手することができず、学歴の効果が過大に推定されることが問題であった。
-
-**操作変数法（instrumental variable method、IV method）**は、効果を測りたい処置変数（学歴$X$）を通じてのみアウトカム変数（所得$Y$)に影響を与える変数である。そのような変数が存在することは多くないが、今回の場合は学費免除ダミー$Z$を操作変数として用いることができる。
+前回、回帰分析などで学歴の効果を推定しようとした際には、交絡要因である能力がデータとして得られないという想定の下では
+学歴の効果が過大に推定される問題が起こることを述べた。**操作変数法（instrumental variable method、IV method）**は操作変数から得られる情報を活用することで、そのような状況においてもよりよい推定を行う方法である。
 
 
 ## 操作変数法の求め方
@@ -246,10 +248,10 @@ $$
 回帰分析結果は以下のようになる。
 
 ```{r}
-reg_biased1 = lm(income ~ university, 
-                 data = df)
-reg_biased2 = lm(income ~ university + exemption, 
-                 data = df)
+reg_biased1 <- lm(formula = income ~ university,
+                  data = df)
+reg_biased2 <- lm(formula = income ~ university + exemption,
+                  data = df)
 
 stargazer(reg_biased1, reg_biased2, 
           type = "text")
@@ -278,11 +280,10 @@ $$
 第一段階の推定結果は以下のようになる。
 
 ```{r}
-first_stage = lm(university ~ exemption, 
-                 data = df)
+first_stage <- lm(formula = university ~ exemption, 
+                  data = df)
 
-stargazer(first_stage, 
-          type = "text")
+stargazer(first_stage, type = "text")
 ```
 
 学歴ダミーの係数推定値は、約`r round(first_stage$coefficients[2], 2)`である。本モデルは線形確率モデルであるため、この結果は、学費免除になると大卒になる確率が約40%上昇することを示している。
@@ -294,11 +295,10 @@ stargazer(first_stage,
 一方、誘導型の推定結果は以下のようになる。
 
 ```{r}
-reduced_form = lm(income ~ exemption, 
-                  data = df)
+reduced_form <- lm(formula = income ~ exemption, 
+                   data = df)
 
-stargazer(reduced_form, 
-          type = "text")
+stargazer(reduced_form, type = "text")
 ```
 
 学歴ダミーの係数推定値は、約`r round(reduced_form$coefficients[2], 0)`であり、これは、「学費免除にあたると（大卒になることを通じて）平均所得が約`r round(reduced_form$coefficients[2], 0)`万円上昇する」ことを意味している。つまり誘導形推定値は、「学費免除の所得に対する平均処置効果」である。
@@ -353,10 +353,10 @@ texreg::screenreg(list(iv_reg, iv_reg_robust),
 
 htmlで出力するには、{textreg}パッケージの`htmlreg()`を使う。
 
-```{r}
+```{r, eval=FALSE}
 #結果表の出力：html
 texreg::htmlreg(list(iv_reg, iv_reg_robust), 
-                file = "./06ivreg_table.html", 
+                file = "06ivreg_table.html", 
                 include.ci = FALSE, 
                 digits = 3)
 ```

@@ -93,15 +93,15 @@ skimr::skim(CPS1985)
 まず、text形式で直接表示する。
 
 ```{r}
-#textでの表示
+# textでの表示
 stargazer(CPS1985, 
           type = "text")
 ```
 
 次に、html形式で出力し、フォルダに保存する。
 
-```{r, results = 'asis'}
-#htmlで表示し、summary_CPS1985.htmlという名前での保存
+```{r, results = 'asis', eval=FALSE}
+# htmlで表示し、summary_CPS1985.htmlという名前での保存
 stargazer(CPS1985, 
           type = "html", 
           out = "summary_CPS1985.html")
@@ -321,7 +321,7 @@ stargazer(reg_logwage,
 
 html形式で分析結果表を作成すると以下のようになる。なおRMarkdown（このウェブ資料）ではNote以下の部分が正しく表示されていないので、出力・保存されたhtmlファイルを見ること。
 
-```{r, results='asis'}
+```{r, results='asis', eval=FALSE}
 stargazer(reg_logwage, 
           reg_multiple, 
           reg_mincer, 
@@ -381,7 +381,7 @@ screenreg(list(reg_logwage_r,
 
 htmlもしくはWordで出力する場合は、次のようにする。
 
-```{r, results = 'asis'}
+```{r, results = 'asis', eval=FALSE}
 # html
 htmlreg(list(reg_logwage_r, 
              reg_multiple_r, 

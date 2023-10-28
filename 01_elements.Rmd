@@ -360,7 +360,7 @@ setwd(".")
 
 データの書き出しには`write.csv()`関数を使う。
 
-```{r}
+```{r, eval=FALSE}
 #データをcsvファイルに書き出す
 write.csv(df1, "df1.csv", row.names = FALSE)
 ```
