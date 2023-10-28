@@ -422,8 +422,8 @@ ggplotly(g)
 # グラフの保存
 
 図の保存にはggsaveを使用する
-```{r}
-ggsave(plot = g, file = "bubble_chart.png")    # violin_box.pngとして保存される（必要に応じて保存場所は指定する）
+```{r, eval=FALSE}
+ggsave(plot = g, file = "bubble_chart.png")
 ```
 
 
