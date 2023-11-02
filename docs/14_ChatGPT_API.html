@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-07-10" />
+<meta name="date" content="2023-09-04" />
 
 <title>WebAPI / ChatGPTをRから呼び出す</title>
 
@@ -1550,7 +1550,7 @@ border-radius: 0px;
 <h1 class="title toc-ignore">WebAPI / ChatGPTをRから呼び出す</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-07-10</h4>
+<h4 class="date">2023-09-04</h4>
 
 </div>
 
@@ -1632,8 +1632,8 @@ APIのユーザーは人ではなくアプリケーションであるため、�
 <div id="リクエストメソッド" class="section level3" number="2.3.1">
 <h3><span class="header-section-number">2.3.1</span>
 リクエストメソッド</h3>
-<p>リクエストを送る際はメソッドというものが9種類存在し、状況に応じて使い分けていく。
-例えば情報を閲覧したい際は<code>GET</code>メソッド、書き込みたい場合は<code>POST</code>メソッドを使う。</p>
+<p>リクエストを送る際はメソッドというものが9種類存在し、状況に応じて使い分けられている。
+例えば情報を閲覧したい際は<code>GET</code>メソッドを使う事が多く、テキストなど比較的大きめの情報を送信したい場合は<code>POST</code>メソッドを使うことが多い。</p>
 <p>Rの場合、<code>{httr}</code>パッケージを使うことでHTTP通信を行うことができる。</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>response <span class="ot">&lt;-</span> httr<span class="sc">::</span><span class="fu">GET</span>(<span class="at">url =</span> <span class="st">&quot;https://www.google.com&quot;</span>)</span></code></pre></div>
 </div>
@@ -1681,7 +1681,7 @@ APIであればJSON等が送られる。</p>
 <pre><code>## {html_document}
 ## &lt;html itemscope=&quot;&quot; itemtype=&quot;http://schema.org/WebPage&quot; lang=&quot;ja&quot;&gt;
 ## [1] &lt;head&gt;\n&lt;meta content=&quot;世界中のあらゆる情報を検索するためのツールを提供しています。さまざまな検索機能を活用して、お探しの情 ...
-## [2] &lt;body bgcolor=&quot;#fff&quot;&gt;\n&lt;script nonce=&quot;Ookf5yWo0iyQMdQQXYe12g&quot;&gt;(function() ...</code></pre>
+## [2] &lt;body bgcolor=&quot;#fff&quot;&gt;\n&lt;script nonce=&quot;jHuCV0hHYt3HF50DV2ftPQ&quot;&gt;(function() ...</code></pre>
 <p>上記はGoogleのトップページ部分のhtml（をR側で見やすく表示したもの）である。</p>
 </div>
 </div>
@@ -1717,20 +1717,20 @@ APIであればJSON等が送られる。</p>
 <p>このようなデータが取得できた</p>
 <div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="co"># 最終的に得られたデータ</span></span>
 <span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>rows <span class="sc">%&gt;%</span> <span class="fu">tibble</span>()</span></code></pre></div>
-<pre><code>## # A tibble: 3,108 × 27
+<pre><code>## # A tibble: 10,563 × 27
 ##    Type         MunicipalityCode Prefecture Municipality DistrictName TradePrice
 ##    &lt;chr&gt;        &lt;chr&gt;            &lt;chr&gt;      &lt;chr&gt;        &lt;chr&gt;        &lt;chr&gt;     
 ##  1 中古マンシ…  13101            東京都     千代田区     飯田橋       13000000  
 ##  2 中古マンシ…  13101            東京都     千代田区     飯田橋       44000000  
-##  3 宅地(土地と… 13101            東京都     千代田区     飯田橋       130000000 
-##  4 中古マンシ…  13101            東京都     千代田区     一番町       47000000  
-##  5 中古マンシ…  13101            東京都     千代田区     岩本町       24000000  
-##  6 中古マンシ…  13101            東京都     千代田区     内神田       23000000  
-##  7 中古マンシ…  13101            東京都     千代田区     内神田       20000000  
-##  8 宅地(土地)   13101            東京都     千代田区     神田小川町   300000000 
-##  9 中古マンシ…  13101            東京都     千代田区     神田佐久間町 39000000  
-## 10 中古マンシ…  13101            東京都     千代田区     神田猿楽町   30000000  
-## # ℹ 3,098 more rows
+##  3 中古マンシ…  13101            東京都     千代田区     飯田橋       70000000  
+##  4 宅地(土地と… 13101            東京都     千代田区     飯田橋       130000000 
+##  5 中古マンシ…  13101            東京都     千代田区     飯田橋       150000000 
+##  6 中古マンシ…  13101            東京都     千代田区     一番町       190000000 
+##  7 中古マンシ…  13101            東京都     千代田区     一番町       350000000 
+##  8 宅地(土地と… 13101            東京都     千代田区     一番町       430000000 
+##  9 中古マンシ…  13101            東京都     千代田区     一番町       52000000  
+## 10 中古マンシ…  13101            東京都     千代田区     一番町       47000000  
+## # ℹ 10,553 more rows
 ## # ℹ 21 more variables: FloorPlan &lt;chr&gt;, Area &lt;chr&gt;, BuildingYear &lt;chr&gt;,
 ## #   Structure &lt;chr&gt;, Use &lt;chr&gt;, Purpose &lt;chr&gt;, CityPlanning &lt;chr&gt;,
 ## #   CoverageRatio &lt;chr&gt;, FloorAreaRatio &lt;chr&gt;, Period &lt;chr&gt;, Renovation &lt;chr&gt;,
