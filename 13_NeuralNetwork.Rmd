@@ -1109,7 +1109,7 @@ Few-shotの際に解答例を単に答えだけにするのではなく、思考
 
 
 
-## Retrieval Augmentation
+## Retrieval Augumented Generation（RAG）
 
 モデル内に学習されている知識は訓練時点での情報がベースとなるため、新しい情報に関する適切な返答を行うことは難しい。
 例えば「今の日本の首相は？」と質問しても訓練時点での首相の名前が返答される。
@@ -1119,7 +1119,7 @@ Few-shotの際に解答例を単に答えだけにするのではなく、思考
 
 このような情報の不足もHallucinationを引き起こす原因となりかねない。
 
-こうした問題に対して、モデル内に学習された知識ではなくモデル外の知識を利用して回答文を生成する方法が考えられており、**Retrieval Augmentation**あるいは**Retrieval Augumented Generation（RAG）**と呼ばれる。
+こうした問題に対して、モデル内に学習された知識ではなくモデル外の知識を利用して回答文を生成する方法が考えられており、**Retrieval Augumented Generation（RAG）**あるいは**Retrieval Augmentation**と呼ばれる。
 
 例えばMicrosoftの[Bing AI](https://www.bing.com/search?q=Bing+AI&showconv=1&FORM=hpcodx)はウェブ上の記事を外部知識として利用し、脚注として回答結果にも付与することで回答内容の信頼性を向上させている。
 
@@ -1156,6 +1156,7 @@ Hugging FaceにもWeb上で試すことができる[Demo](https://huggingface.co
 - 岡崎直観（2023）「[大規模言語モデルの驚異と脅威](https://speakerdeck.com/chokkan/20230327_riken_llm)」
 - 岩澤有祐（2023）「[基盤モデルの技術と展望](https://speakerdeck.com/yusuke0519/jsai2023-tutorial-ji-pan-moderunoji-shu-tozhan-wang)」
 - [Prompt Engineering Guide](https://www.promptingguide.ai/)
+- 宮脇峻平（2023）[Retrieval-based LM (RAG system) ざっくり理解する](https://speakerdeck.com/smiyawaki0820/retrieval-based-lm-rag-system-zatukurili-jie-suru)
 - [Natural Language Processing with R](https://s-ai-f.github.io/Natural-Language-Processing/)
 - [Posit AI Blog: State-of-the-art NLP models from R](https://blogs.rstudio.com/ai/posts/2020-07-30-state-of-the-art-nlp-models-from-r/)
 - [Simple Self-Attention from Scratch](https://cran.r-project.org/web/packages/attention/vignettes/simple_attention.html)

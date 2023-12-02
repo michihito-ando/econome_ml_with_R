@@ -123,7 +123,7 @@ df1 <- df1 %>% mutate(income = 200 + 10*ability + 500*training +
                         rnorm(n, mean = 0, sd = 50))
 ```
 
-最後に、1年目と2年目のデータを結合し、パネルデータとして認識させる。
+最後に1年目と2年目のデータを結合して1つのデータフレームにする。
 
 ```{r}
 # 1年目と2年目をくっつける。
@@ -149,7 +149,7 @@ head(df_binded)
 #処置群ダミーの作成
 
 ##　処置群の抽出
-df_treated <- df_binded %>% filter(training == 1) %>% select(ID)
+df_treated <- df_binded %>% filter(training == 1) %>% dplyr::select(ID)
 
 ##　処置群ダミーの作成
 df_treated <- df_treated %>% mutate(treated = 1)
@@ -168,13 +168,33 @@ df_panel <- df_panel %>% mutate(treated = replace(treated, which(is.na(treated))
 
 次に、`treated`と`year`のグループごとに、アウトカム変数(`income`)の４つの平均値を作成する。
 
+
 ```{r}
-# group_byでグループ分けし、summarise_eachですべての列（変数）でグループごとに平均値を計算
+# summarize(.by)でグループごとに平均値を計算
+df_panel_mean <- df_panel %>% summarize(
+  income = mean(income),
+  .by = c("treated", "year")  # すべての列（変数）でグループごとに平均値を計算
+)
+```
+
+
+（なお、別の書き方として`group_by()`してから`summarize()`する方法もある）
+
+```{r}
+# （参考） group_byでグループ分けし、summariseでグループごとに平均値を計算
 df_panel_mean <- df_panel %>% 
-  group_by(treated, year) %>% #グループわけ
-  dplyr::summarise_each(list(mean)) %>%  # すべての列（変数）でグループごとに平均値を計算
+  group_by(treated, year) %>% # グループわけ
+  summarize(income = mean(income), .groups = "keep") %>%  # グループごとに平均値を計算
   ungroup() # グループ分けを解除
 ```
+
+
+<!--
+  MEMO:
+  dplyr::summarise_each(list(mean)) はdeprecatedなので書き換えた.
+  summarise_each(list(mean))に相当する処理（全カラムでmean）は summarize(across(everything(), mean)) だが
+  今回はincomeだけmeanがとれればよいので summarize(income = mean(income), .groups = "keep")にする
+-->
 
 この４つの平均値を図示すると、以下のようになる。
 
@@ -196,9 +216,9 @@ g <- df_panel_mean %>% ggplot(aes(x = year,
                                   color = treated_label)) +
   geom_point() + # 散布図
   geom_line() +  # 直線
-  labs(title = "Income by year and group") + #タイトル
-  scale_x_continuous(breaks = c(0,1)) +　# X軸は0と1のみ
-  geom_text(aes(label = point_label), vjust = -0.45) #A,B,C,Dの文字を点の0.45上に表示。
+  labs(title = "Income by year and group") + # タイトル
+  scale_x_continuous(breaks = c(0,1)) +　# X軸は0と1のみにする
+  geom_text(aes(label = point_label), vjust = -0.45) #A,B,C,Dの文字を点の0.45上に表示
 
 # 図の表示  
 g
