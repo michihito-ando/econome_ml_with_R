@@ -173,7 +173,7 @@ df_panel <- df_panel %>% mutate(treated = replace(treated, which(is.na(treated))
 # summarize(.by)でグループごとに平均値を計算
 df_panel_mean <- df_panel %>% summarize(
   income = mean(income),
-  .by = c("treated", "year")  # すべての列（変数）でグループごとに平均値を計算
+  .by = c("treated", "year")  # グループごとにmean(income)を計算
 )
 ```
 

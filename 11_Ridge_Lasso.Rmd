@@ -533,7 +533,7 @@ data_for_plot <- data_for_plot %>%
 # plot
 data_for_plot %>% ggplot(aes(x = x,
                              y = value,
-                             color = model))　+
+                             color = model)) +
   geom_point(aes(x = x,
                  y = y),
              size = 1.5, 
@@ -673,7 +673,7 @@ str_c("test_error: ", round(test_error, 3)) %>% print() # 結果を表示
 
 ## 推定量
 
-最小二乗法残差二乗和$\sum_{i=1}^n(y_i - \hat{y}_i)^2$という誤差関数を最小化するパラメータ$\hat{\boldsymbol{\beta}}^{LS}$を採用するというものだった。
+最小二乗法は残差二乗和$\sum_{i=1}^n(y_i - \hat{y}_i)^2$という誤差関数を最小化するパラメータ$\hat{\boldsymbol{\beta}}^{LS}$を採用するというものだった。
 
 $$
 \hat{\boldsymbol{\beta}}^{LS} = \argmin_{\boldsymbol{\beta}} \sum_{i=1}^n(y_i - \hat{y}_i)^2
@@ -701,12 +701,10 @@ $$
 
 ```{r, echo=F}
 coef_df <- cbind(OLS = coef(reg_ols) %>% round(3),
-                Ridge = coef(ridge_cv, 
-                             s = "lambda.min") %>% 
-                  as.matrix() %>% round(3),
-                Lasso = coef(lasso_cv, 
-                             s = "lambda.min") %>% 
-                  as.matrix() %>% round(3)) %>% 
+                 Ridge = coef(ridge_cv, s = "lambda.min") %>% 
+                   as.matrix() %>% round(3),
+                 Lasso = coef(lasso_cv, s = "lambda.min") %>% 
+                   as.matrix() %>% round(3)) %>% 
   as.data.frame()
 
 colnames(coef_df) <- c("OLS","Ridge","Lasso")
@@ -725,7 +723,7 @@ data_for_plot <- tibble(x = test$x,
                         y = test$y,
                         OLS = y_test_pred_ols,
                         Ridge = c(y_test_pred_ridge),
-                        Lasso = c(y_test_pred_lasso))　
+                        Lasso = c(y_test_pred_lasso))
 # long形式に変換
 data_for_plot <- data_for_plot %>% tidyr::pivot_longer(OLS:Lasso,
                                                       names_to = "model",
@@ -758,8 +756,8 @@ data_for_plot %>% ggplot(aes(x = x,
 
 ```{r, echo=F}
 error_df <- data.frame(OLS = RMSE(y_test_pred_ols, y_test),
-                      Ridge = RMSE(y_test_pred_ridge, y_test),
-                      Lasso = RMSE(y_test_pred_lasso, y_test)) 
+                       Ridge = RMSE(y_test_pred_ridge, y_test),
+                       Lasso = RMSE(y_test_pred_lasso, y_test)) %>% round(3)
 rownames(error_df) <- "RMSE"
 knitr::kable(error_df)
 ```

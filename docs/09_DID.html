@@ -11,7 +11,7 @@
 
 <meta name="author" content="安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)" />
 
-<meta name="date" content="2023-12-02" />
+<meta name="date" content="2023-12-09" />
 
 <title>Rで学ぶ計量経済学と機械学習 9    計量経済学5：差分の差分(DID)法</title>
 
@@ -1551,7 +1551,7 @@ border-radius: 0px;
 計量経済学5：差分の差分(DID)法</h1>
 <h4 class="author">安藤道人（立教大学）　三田匡能 (株式会社 GA
 technologies)</h4>
-<h4 class="date">2023-12-02</h4>
+<h4 class="date">2023-12-09</h4>
 
 </div>
 
@@ -1679,7 +1679,7 @@ Process）をそれぞれ作成する。</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="co"># summarize(.by)でグループごとに平均値を計算</span></span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>df_panel_mean <span class="ot">&lt;-</span> df_panel <span class="sc">%&gt;%</span> <span class="fu">summarize</span>(</span>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  <span class="at">income =</span> <span class="fu">mean</span>(income),</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">.by =</span> <span class="fu">c</span>(<span class="st">&quot;treated&quot;</span>, <span class="st">&quot;year&quot;</span>)  <span class="co"># すべての列（変数）でグループごとに平均値を計算</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>  <span class="at">.by =</span> <span class="fu">c</span>(<span class="st">&quot;treated&quot;</span>, <span class="st">&quot;year&quot;</span>)  <span class="co"># グループごとにmean(income)を計算</span></span>
 <span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a>)</span></code></pre></div>
 <p>（なお、別の書き方として<code>group_by()</code>してから<code>summarize()</code>する方法もある）</p>
 <div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="co"># （参考） group_byでグループ分けし、summariseでグループごとに平均値を計算</span></span>
