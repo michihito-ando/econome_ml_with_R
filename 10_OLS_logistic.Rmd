@@ -118,7 +118,7 @@ $$
 
 教師あり学習では予測の悪さの指標として**誤差関数**（error function）あるいは**損失関数**（loss function）と呼ばれる関数$L(\boldsymbol{\theta})$を定義し、誤差を最小化することを主な基準としてパラメータを推定していく。
 
-線形回帰のパラメータ$\boldsymbol{\beta}=\begin{pmatrix}\beta_1 & \beta_2 & \cdots & \beta_m\end{pmatrix}^\top$の推定では、実測値$y_i$と予測値$\hat{y}_i$の二乗誤差$(y_i - \hat{y}_i)^2$の和
+線形回帰のパラメータ$\boldsymbol{\beta} = (\beta_1, \beta_2, \dots, \beta_m)^\top$の推定では、実測値$y_i$と予測値$\hat{y}_i$の二乗誤差$(y_i - \hat{y}_i)^2$の和
 
 $$
 L(\boldsymbol{\beta})
@@ -476,12 +476,16 @@ $$
 4回投げて表が1回、裏が3回という結果（データ）を踏まえると、尤度関数$L(p)$は
 
 $$
-L(p) = p^1(1-p)^3
+\begin{align}
+L(p)
+&= P(X = 1| p) \times P(X = 0| p) \times P(X = 0| p) \times P(X = 0| p)\\
+&= p^1(1-p)^3
+\end{align}
 $$
 
 となる。
 
-実際に尤度関数を定義して描画してみると、尤度$L(p)$が最大になっている点でパラメータが$p = 0.25 = \frac{1}{4}$になっていることがわかる。
+この尤度関数を描画してみると、尤度$L(p)$が最大になっている点でパラメータが$p = 0.25 = \frac{1}{4}$になっていることがわかる。
 
 ```{r, echo=F}
 # 尤度関数
@@ -503,7 +507,7 @@ ggplot(df, aes(x = p, y = `L(p)`))+
 確率の積は非常に小さな値になってしまうため、実際に計算する際は対数で変換した**対数尤度**（log-likelihood）
 
 $$
-\mathcal{L}(p) = \ln L(\theta) = \sum_{i=1}^n \ln P(x_i|\theta)
+\ell(\theta) = \ln L(\theta) = \sum_{i=1}^n \ln P(x_i|\theta)
 $$
 
 を使用する。
@@ -524,19 +528,102 @@ ggplot(df, aes(x = p, y = `log_likelihood(p)`))+
 
 また統計学の分野では尤度という言葉を使うが、機械学習の分野ではベルヌーイ分布の対数尤度の符号を反転させたものを**交差エントロピー誤差**（cross entropy error）と呼ぶ。
 
+$$
+\mathcal{L}(\theta)
+= - \ell(\theta)
+= - \ln L(\theta)
+$$
+
+符号を反転させることで「誤差を最小化するようなパラメータを推定する」という教師あり学習の標準的な枠組みに持っていくことができる。
+
+```{r, echo=F}
+# 描画用データ
+p <- 1:100 * 0.01
+df <- tibble(p, -log_likelihood(p))
+
+# plot
+ggplot(df, aes(x = p, y = `-log_likelihood(p)`))+
+  geom_line(color = "dodgerblue")+
+  labs(title = "Cross-Entropy Error")
+```
+
 
 ### ニュートン法
 
-最尤法では一般に解析的に解が求まらないため、ロジスティック回帰の推定では**ニュートン法**（Newton's method）あるいは**ニュートン・ラフソン法**（Newton-Raphson method）と呼ばれるという方法を用いて数値的に解く。これは尤度が高くなる方向へ少しずつ推定値を変える計算を何度も反復することで推定する。
+最尤法では一般に解析的には解が求まらないため、数値的に解いていく。尤度が高くなる方向（交差エントロピー誤差が下がる方向）へ少しずつ推定値を変える計算を何度も反復することで推定する。
 
-$t$回目の反復では、現状の推定値$\hat{\theta}_t$と対数尤度の1次と2次の導関数を用いて次のように推定値を更新する。
+この方法の大まかな流れは次のようになる。まず、初期値$\hat{\theta}_{0}$を乱数などで適当に決める。そして$t$回目の反復では、現状の推定値$\hat{\theta}_{t}$と対数尤度の1次と2次の導関数を用いて次のように推定値を更新する。
 
 $$
-\hat{\theta}_{t+1} = \hat{\theta}_t - \frac{ \mathcal{L}'(\hat{\theta}_t) }{ \mathcal{L}''(\hat{\theta}_t) }
+\hat{\theta}_{t+1} = \hat{\theta}_{t} - \hat{\theta}_{t}の地点における\mathcal{L}の傾き
 $$
 
-そして、小さな正の数$\varepsilon$について$|\hat{\theta}_{t+1} - \hat{\theta}_{t}| < \varepsilon$を満たすなら（更新してもあまり変化しなくなったら）反復を終了して$\hat{\theta}_{t+1}$を最終的な解とする。
+そして、更新してもあまり変化しなくなったら（ある小さな正の数$\varepsilon$について$|\hat{\theta}_{t+1} - \hat{\theta}_{t}| < \varepsilon$を満たすなら）反復を終了して$\hat{\theta}_{t+1}$を最終的な解とする。
 
+ロジスティック回帰の推定では**ニュートン法**（Newton's method）と呼ばれるという方法を用いることが多い。ニュートン法では傾きの計算に$\mathcal{L}$の2次の導関数も用いて次のように推定値を更新する。
+
+$$
+\hat{\theta}_{t+1} = \hat{\theta}_{t}
+- \frac
+{ \mathcal{L}'(\hat{\theta}_{t}) }
+{ \mathcal{L}''(\hat{\theta}_{t}) }
+$$
+
+コイン投げの例で使用した交差エントロピー誤差において実際にこの反復計算を行うと、次の図のようになる（初期値は0.9とした）
+
+```{r, echo=F, fig.width=6, fig.height=3}
+grad <- function(p, n = 4, k = 1) (k * (1/p)) - ( (n - k) * (1/(1-p)) )
+hess <- function(p, n = 4, k = 1) -(k* (1 / p^2) + (n - k) * (1 / (1 - p)^2))
+
+p <- 0.9  # 初期値
+p_vec <- c(p)  # 結果保存用ベクトル
+p_prev_vec <- c(NA)
+e = 0.0001
+for (i in 1:10) {
+  p_prev <- p
+  p <- p - (grad(p) / hess(p))  # pを更新
+
+  # 結果をベクトルに保存
+  p_vec <- append(p_vec, p)
+  p_prev_vec <- append(p_prev_vec, p_prev)
+
+  # 終了判定
+  if (abs(p_prev - p) < e) break
+}
+
+# 結果Dfを縦持ちで保存
+estimates <- tibble(
+  new = p_vec,
+  prev = p_prev_vec,
+  desc = p_vec < p_prev_vec,
+  反復回数 = 1:length(p_vec) %>% as.factor()
+) %>% 
+  tidyr::pivot_longer(
+    cols = c(-`反復回数`, -desc),
+    names_to = "state",
+    values_to = "p"
+  ) %>% 
+  mutate(error = -log_likelihood(p))
+
+
+# 描画用データ
+p <- 1:100 * 0.01
+df <- tibble(p, `L(p)` = -log_likelihood(p))
+
+# plot
+ggplot(estimates, aes(x = p, y = error))+
+  geom_line(data=df, mapping=aes(x = p, y = `L(p)`),
+            color = "dodgerblue") +
+  geom_point(data = estimates %>% filter(state == "new"),
+             mapping = aes(color=`反復回数`))+
+  geom_line(mapping = aes(x = p, y = error, group=`反復回数`),
+            data = estimates %>% na.omit() %>% filter(desc == T),
+            arrow = arrow(length=unit(0.30, "cm"), ends="first", type = "open"))+
+  geom_line(mapping = aes(x = p, y = error, group=`反復回数`),
+            data = estimates %>% na.omit() %>% filter(desc == F),
+            arrow = arrow(length=unit(0.30, "cm"), ends="last", type = "open"))+
+    labs(title = "ニュートン法によるパラメータ更新", y = "Error")
+```
 
 <!--
 
@@ -544,10 +631,13 @@ $$
 grad <- function(p, n = 4, k = 1) (k * (1/p)) - ( (n - k) * (1/(1-p)) )
 hess <- function(p, n = 4, k = 1) -(k* (1 / p^2) + (n - k) * (1 / (1 - p)^2))
 
-p = 0.1
+p = 0.9
+e = 0.0001
 for (i in 1:10) {
+  p_prev = p
   p = p - (grad(p) / hess(p))
   print(p)
+  if (abs(p_prev - p) < e) break
 }
 ```
 
