@@ -134,12 +134,12 @@ grid.arrange(g1, g2, g3, ncol = 3)
 <center><img src="13_NeuralNetwork.assets/multilayer_perceptron.png" width="40%"/></center>
 
 
-### 線形分離可能性
+### 多層パーセプトロンの識別境界
 
 単純パーセプトロンは線形モデルであるため、線形分離不可能なデータをうまく分類することができない。
 しかし多層パーセプトロンは非線形モデルとなり、線形分離不可能なデータも分類することができる。
 
-次の図は典型的な線形分離不可能問題のデータに対して単純パーセプトロンと多層パーセプトロンを用いて学習させた場合の決定境界である。なお、多層パーセプトロンは中間層を1層、中間層のユニット数（形式ニューロンの数）は3個の構造にした。
+次の図は典型的な線形分離不可能問題のデータに対して単純パーセプトロンと多層パーセプトロンを用いて学習させた場合の識別境界である。なお、多層パーセプトロンは中間層を1層、中間層のユニット数（形式ニューロンの数）は3個の構造にした。
 
 ```{r, echo=F}
 pacman::p_load(nnet, MLmetrics)
@@ -581,7 +581,8 @@ model <- word2vec(texts, dim = 100, window = 5)  # モデルの学習
 embeddings <- as.matrix(model) # 単語埋め込みを取得
 head(embeddings[,1:5])  # 単語埋め込み
 
-# ある単語に類似した単語のtop5（モデルの精度が悪いためかうまく機能しない）
+# ある単語に類似した単語のtop5
+# （データが少なくモデルの精度が悪いため、納得感のある結果にはならない）
 e <- embeddings[c("happy"),]
 predict(model, e, top_n = 5)
 ```
@@ -596,6 +597,7 @@ pacman::p_load(word2vec, text2vec)
 data("movie_review")
 df <- movie_review %>% sample_n(1000)
 -->
+
 
 ::: card
 **（参考）日本語の単語ベクトルの例**
@@ -676,7 +678,7 @@ $$
 \text{softmax}(\boldsymbol{x})_i = \frac{\exp(x_i)}{\sum_{k=1}^{K} \exp (x_k)}
 $$
 
-を用いる。これは入力値$\boldsymbol{x}=(x_1, x_2, \dots, x_K)$を0から1の値かつ全クラスの合計が1になるように（つまり「クラス$i$の確率」として）変換する関数である。
+を用いる。これは入力値$\boldsymbol{x}=(x_1, x_2, \dots, x_K)^\top$を0から1の値かつ全クラスの合計が1になるように（つまり「クラス$i$の確率」として）変換する関数である。
 
 
 ```{r}
@@ -700,13 +702,14 @@ RNNは時刻数（文脈・トークン数）が長くなると勾配消失が�
 
 # Transformer
 
-Transformerはattentionという計算処理を用いるディープラーニングのアーキテクチャ（ネットワーク構造）である。
-ChatGPTの内部で使われるGPTシリーズやGoogleのBERTなど多くの言語モデルで用いられている。
+Transformerはself-attentionという計算処理を用いることが特徴的な、ディープラーニングのアーキテクチャ（ネットワーク構造）である。
+
+TransformerはChatGPTの内部で使われる言語モデル（GPTシリーズ）やGoogleのBERTなど様々な言語モデルにおいて用いられており、画像処理の分野でも利用されている。
 
 
 ## Transformerの構造
 
-Transformerもいくつか種類がある。理解しやすさのため、比較的シンプルな構造をしているGPTシリーズのTransformerを例にとって説明していく。
+理解しやすさのため、比較的シンプルな構造をしているGPTシリーズのTransformerを例にとって説明していく。
 Transformerは次の図のような構造になっている。
 
 <center>
@@ -725,30 +728,40 @@ Transformerは次の図のような構造になっている。
 
 「**Masked Multi Self Attention**」はAttentionを使っている層で、Transformerにおいて非常に重要な層である。詳しくは後述する。
 
-「**Layer Norm**」は学習中などに極端に大きい値にならないようにベクトルの各要素を正規化する（平均を引いたり標準偏差で割ったりなどする）処理である。
+「**Layer Norm**」は学習中などに極端に大きい値にならないようにベクトルの各要素を正規化する（平均を引き標準偏差で割る）処理である。
 
-「**Feed Forward**」は2層のDNNである。ただし、入力の次元数よりも中間層の次元数（ユニット数）を大きくすることが多い。
+「**Feed Forward**」は2層のニューラルネットワーク（多層パーセプトロン）である。ただし、入力の次元数よりも中間層の次元数（ユニット数）を大きくすることが多い。
 
 
 ## Attention
 
-attentionは入力の単語埋め込み$\boldsymbol{x}$を、クエリ$q$、キー$k$、バリュー$v$という3つの変数やsoftmax関数で計算してベクトル$\boldsymbol{x}'$を再構築する。
-なお、$q, k, v$は入力の単語埋め込み$\boldsymbol{x}_i$に重みを掛けて計算されたものである。この重みも学習によって決定される。
+Attentionは入力の単語埋め込みに対して文脈の情報を付与していく仕組みである。
+入力の単語埋め込み$\boldsymbol{x}$を、クエリ$\boldsymbol{q}$、キー$\boldsymbol{k}$、バリュー$\boldsymbol{v}$という3つのベクトルやsoftmax関数で計算して、文脈の情報を追加したベクトル$\boldsymbol{x}'$を構築していく。
 
-attentionは次のような流れで計算されていく。
-まず、クエリとキーと埋め込みの次元数$d$を使って$s_{ij}$を計算する。
+<center>
+  <img src="13_NeuralNetwork.assets/attention.png" width="80%"/>
+  <br/>
+  <span style="font-size: 0.8em;">
+    attentionの概略図
+  </span>
+</center>
+
+
+なお、$\boldsymbol{q}, \boldsymbol{k}, \boldsymbol{v}$は入力の単語埋め込み$\boldsymbol{x}$に重みを掛けて計算された$d$次元ベクトルで、その重みも学習によって決定される。
+
+Attentionは次のような流れで計算されていく。
+まず、$i$番目のトークンのクエリ$\boldsymbol{q}_i$と$j$番目のトークンのキー$\boldsymbol{k}_j$を使って、$i$番目のトークンから見た$j$番目のトークンとの関連性のスコア$s_{ij}$を次のように計算する。
 
 $$
-s_{ij} = \frac{ \sum_{l=1}^d q_l k_l }{ \sqrt{d} }
+s_{ij} = \frac{ \sum_{m=1}^d q_{im} k_{jm} }{ \sqrt{d} }
 $$
 
-分子の$\sum_{l=1}^d q_l k_l$は線形代数において内積と呼ばれる計算で、2つのベクトル間の類似度の計算に使われることもある計算である。
-これを$\sqrt{d}$で割って正規化することで、類似度のような値になっている。
+分子の計算は線形代数において内積と呼ばれる計算で、2つのベクトル間の類似度の計算に使われることもある計算である。$\sqrt{d}$で割っているのは内積が大きすぎる値になって学習が不安定になることを防ぐためである。
 
 ::: card
-**（参考）コサイン類似度**
+**（参考）内積とコサイン類似度**
 
-2つの$d$次元ベクトル$\boldsymbol{a, b}$があるとき、その内積$a \cdot b = \sum a_i b_i$とベクトルの長さ（ノルム）$\|a\|=\sqrt{ \sum |a_i|^2 }$から計算される
+2つの$d$次元ベクトル$\boldsymbol{a, b}$があるとき、その内積$a \cdot b = \sum_{i=1}^d a_i b_i$とベクトルの長さ（ノルム）$\|a\|=\sqrt{ \sum_{i=1}^d |a_i|^2 }$から計算される
 
 $$
 \cos(\boldsymbol{a}, \boldsymbol{b})
@@ -765,47 +778,59 @@ $$
 :::
 
 
-続いて、$s_{ij}$のベクトル$\boldsymbol{s}_i = (s_{i1}, s_{i2}, \dots, s_{dp})$（$p$はトークンの最大長）をsoftmax関数にかけて、合計が1になるように正規化する。
+続いて、関連性のスコア$s_{ij}$のベクトル$\boldsymbol{s}_i = (s_{i1}, s_{i2}, \dots, s_{in})^\top$（$n$は入力トークン数）をsoftmax関数にかけて、合計が1になるように正規化する。
 
 $$
 \begin{align}
 \boldsymbol{a}_i
   &= \text{softmax}( \boldsymbol{s}_i ) \\
   &= \left(
-    \frac{ \exp(s_{i1}) }{ \sum^p_{j = 1} \exp(s_{ij}) }, \dots, \frac{ \exp(s_{ip}) }{ \sum^p_{j = 1} \exp(s_{ij}) }
-  \right)
+    \frac{ \exp(s_{i1}) }{ \sum^n_{j = 1} \exp(s_{ij}) },
+    \dots,
+    \frac{ \exp(s_{in}) }{ \sum^n_{j = 1} \exp(s_{ij}) }
+  \right)^\top
 \end{align}
 $$
 
-最終的な出力はこの重み$\boldsymbol{a}_i$とバリュー$\boldsymbol{v}_l$の内積で計算される。
+最終的な出力$\boldsymbol{x}'_i$はこの重み$\boldsymbol{a}_i$でバリュー$\boldsymbol{v}_j$を重み付き和にして得られる
 
 $$
-x'_{ij} = \boldsymbol{a}_i \cdot \boldsymbol{v}_l = \sum^p_{j=1} a_{ij} v_{jl}
+\boldsymbol{x}'_i = a_1 \boldsymbol{v}_1 + a_2 \boldsymbol{v}_2 + \cdots + a_n \boldsymbol{v}_n
 $$
 
 ::: card
-**argmaxとの対比で解釈するsoftmax**
+**（参考）softmaxの働きについて**
 
-softmaxは足し合わせたら1になる。
-似たものでargmaxがあり、これも足し合わせたら1になるが、入力のベクトルのうち最も値が高い要素が1をとり、ほかは全部0になる。
+プログラミングにおいて、連想配列というデータ構造やキー・バリュー・ストアというデータベースがある。Rだと名前付きのlistがそれに相当し、名前がキー、値がバリューである。
+
+```{r}
+kvs <- list(昨日=0.2, は=0.1, 雨=0.7, が=0.1, 降った=0.1)
+kvs["雨"]
+```
+
+attentionはsoftmaxを使うことでキー・バリュー・ストアをsoftに実装しているものと解釈することができる。
+詳しくは以下で述べていく。
+
+softmaxと似た関数にargmaxがある。
+argmaxは、入力のベクトルのうち最も値が高い要素が1と出力され、それ以外の要素は全部0と出力される。
 
 例えばベクトル$s$が
 
 $$
-\boldsymbol{s} = (1, 3, 5, 2, 0)
+\boldsymbol{s} = (1, 3, 5, 2, 0)^\top
 $$
 
 だったとすると、ベクトル$a$は次のように計算される
 
 $$
 \begin{align}
-\boldsymbol{a}^{soft} &= \text{softmax}(\boldsymbol{s}) = (0.02, 0.11, 0.83, 0.04, 0.01)
+\boldsymbol{a}^{soft} &= \text{softmax}(\boldsymbol{s}) = (0.02, 0.11, 0.83, 0.04, 0.01)^\top
 \\
-\boldsymbol{a}^{arg} &= \text{argmax}(\boldsymbol{s}) = (0, 0, 1, 0, 0)
+\boldsymbol{a}^{arg} &= \text{argmax}(\boldsymbol{s}) = (0, 0, 1, 0, 0)^\top
 \end{align}
 $$
 
-別のベクトル$\boldsymbol{v}=(v_1, v_2, v_3, v_4, v_5)$と内積をとったとき、argmaxのほうは内積をとったベクトルの1つの要素だけを取り出す操作に相当する
+別のベクトル$\boldsymbol{v}=(v_1, v_2, v_3, v_4, v_5)$と内積をとったとき、argmaxのほうは内積をとったベクトルの1つの要素だけを取り出す操作に相当し、キー・バリュー・ストアと同様のふるまいになる。
 
 $$
 \begin{align}
@@ -815,31 +840,21 @@ $$
 \end{align}
 $$
 
-プログラミングにおいて、キー・バリュー・ストアというデータ構造がある。Rだと名前付きのlistがそれに相当し、名前がキー、値がバリューである。
-
-```{r}
-kvs <- list(昨日=0.2, は=0.1, 雨=0.7, が=0.1, 降り=0.1, まし=0.1, た=0.1)
-kvs["雨"]
-```
-
-argmaxの場合はキー・バリュー・ストアと同様のふるまいになる。
-
-一般的なattentionはsoftmaxを使用するため、「attentionはキー・バリュー・ストアをsoftに実装しているもの」（「取り出されるかどうか」の$\{0, 1\}$ではなく実数値で重みをつけて取り出すもの）と解釈することもできる
+一般的なattentionはsoftmaxを使用するため、「attentionはキー・バリュー・ストアをsoftに実装しているもの」（「取り出されるかどうか」の$\{0, 1\}$ではなく実数値で重みをつけて取り出すもの）と解釈することができる
 :::
 
 
-なお、「Masked Multi Self Attention」の他の語については、
+なお、「Masked Multi Self Attention」の「Masked Multi Self」の意味については次の通りである
 
 - 「Masked」は未来の時点の情報を見せないように覆い隠す（要素をゼロで埋める）処理である
-- 「Multi」はこのattentionが複数ある（multi-head attention）ことを示す
+- 「Multi」はこのattentionが複数ある（multi-head attention）ことを示す。複数のAttentionを動かし、複数の観点から文脈情報を付与していく。
 - 「Self」は、もともとattentionは2つのデータソースからの類似度を計算するものだったが、Transformerにおいては自身から計算したクエリとキーの類似度を計算しているself-attentionを採用しているためである
 
 
 また、RNN系の問題は次のように解消されている
 
 1. 長期記憶の保持（勾配消失）の問題：attentionはトークン系列同士を掛け合わせるため、時点（位置）が離れている入力同士も考慮される
-2. 並列計算の問題：multi-head部分は並列に計算できる
-
+2. 並列計算の問題：multi-head部分は並列に計算できるため
 
 
 # 大規模言語モデル
@@ -1033,16 +1048,16 @@ $x_generated
 [1] "Hello, I'm a new employee at Drexel University! Last Friday, I was an excellent choice for a professor teaching math and math courses at the college we currently offer at Georgetown. After making the move to a local university in California, I"
 ```
 
+
 ### Hugging Face
 
 [Hugging Face](https://huggingface.co/)は大規模なAIのコミュニティであり、学習済みモデルやデータセットが公開されている。
 
-学習済みモデルはPythonの[Transformers](https://huggingface.co/docs/transformers/index)パッケージとしても公開されており、実はRの[{text}](https://r-text.org/index.html)パッケージはこのパッケージをRから読み込んでいる。
+学習済みモデルはPythonの[Transformers](https://huggingface.co/docs/transformers/index)パッケージからアクセスすることが可能で、実はRの[{text}](https://r-text.org/index.html)パッケージはTransformersパッケージをRから読み込んでいる。
 
 Hugging Faceのウェブサイト上で学習済みモデルを動かすことができるInference APIという機能もある。
 
-例えばrinna株式会社の[rinna/japanese-gpt2-medium · Hugging Face](https://huggingface.co/rinna/japanese-gpt2-medium)は日本語のデータを用いてGPT-2を学習したモデルである。Inference APIもあるためウェブサイト上で試すことができる。
-
+例えば株式会社ABEJAの[abeja/gpt2-large-japanese](https://huggingface.co/abeja/gpt2-large-japanese)は日本語のデータを用いてGPT-2を学習したモデルである。Inference APIもあるためウェブサイト上で試すことができる。
 
 
 # 文章生成モデルの課題と対策
@@ -1156,10 +1171,9 @@ Hugging FaceにもWeb上で試すことができる[Demo](https://huggingface.co
 - 岡崎直観（2023）「[大規模言語モデルの驚異と脅威](https://speakerdeck.com/chokkan/20230327_riken_llm)」
 - 岩澤有祐（2023）「[基盤モデルの技術と展望](https://speakerdeck.com/yusuke0519/jsai2023-tutorial-ji-pan-moderunoji-shu-tozhan-wang)」
 - [Prompt Engineering Guide](https://www.promptingguide.ai/)
-- 宮脇峻平（2023）[Retrieval-based LM (RAG system) ざっくり理解する](https://speakerdeck.com/smiyawaki0820/retrieval-based-lm-rag-system-zatukurili-jie-suru)
+- 宮脇峻平（2023）「[Retrieval-based LM (RAG system) ざっくり理解する](https://speakerdeck.com/smiyawaki0820/retrieval-based-lm-rag-system-zatukurili-jie-suru)」
 - [Natural Language Processing with R](https://s-ai-f.github.io/Natural-Language-Processing/)
 - [Posit AI Blog: State-of-the-art NLP models from R](https://blogs.rstudio.com/ai/posts/2020-07-30-state-of-the-art-nlp-models-from-r/)
-- [Simple Self-Attention from Scratch](https://cran.r-project.org/web/packages/attention/vignettes/simple_attention.html)
 - 清水遼平（2023）「[DiffusionによるText2Imageの系譜と生成画像が動き出すまで](https://speakerdeck.com/nhamanasu/diffusionniyorutext2imagenoxi-pu-tosheng-cheng-hua-xiang-gadong-kichu-sumade)」
   - 今回紹介しきれなかった画像処理の分野の話。画像生成の最近の動きがまとまっている
 
