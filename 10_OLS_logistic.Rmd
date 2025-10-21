@@ -25,6 +25,7 @@ editor_options:
 
 
 ```{r include = FALSE}
+
 knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F,
                       fig.height=2.5, fig.width=3)
 set.seed(0)
@@ -99,7 +100,11 @@ ggplot(tibble(y, x),
   theme_classic()+
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks = element_blank())
+        axis.ticks = element_blank()) +
+  theme_set(theme_gray(base_size   = 9,
+                     base_family = "HiraginoSans-W3"))
+
+
 ```
 
 **線形回帰**（linear regression）は、予測の**目的変数**（objective variable, target variable）$y_i$と**特徴量**（feature）$x_{i1}, x_{i2}, ..., x_{im}$の間に次のような線形関係を仮定したモデルを建てて予測を行う[^1]。
@@ -363,7 +368,7 @@ RMSE(y_pred, y_test)
 
 一方で最初に行ったような訓練用データに対する予測誤差を**訓練誤差（training error）**という。訓練誤差は一般に真の誤差（真の分布で誤差関数の期待値をとった誤差）以下になる推定量であることが知られているため、機械学習の分野ではあまり重視されない。
 
-一方でホールドアウト誤差はデータを分割しなければならないためサンプル数が小さい状況と相性が悪い。この点を改善する方法として**交差検証（cross validation）**という方法がある。詳細は次回に述べる。
+一方でホールドアウト誤差はデータを分割しなければならないためサンプルサイズが小さい状況と相性が悪い。この点を改善する方法として**交差検証（cross validation）**という方法がある。詳細は次回に述べる。
 
 
 #### （参考）その他の評価指標{-}

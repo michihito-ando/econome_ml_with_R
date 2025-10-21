@@ -39,7 +39,8 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 ```{r}
 pacman::p_load(tidyverse, 
-               estimatr, # lm_robustによるパネルデータ分析(メイン)
+               estimatr, # lm_robustによる固定効果分析
+               fixest, # fixestによる固定効果分析
                stargazer, # lmやplmのときの結果表
                texreg, # lmやplmやlm_robustのときの結果表
                plm, # plmによるパネルデータ分析(参考)
@@ -306,7 +307,7 @@ screenreg(list(pooled_robust, oneway_fe1, oneway_fe2),
 
 ## Two-way固定効果モデル
 
-次に、個体固定効果に加えて、時間固定効果を加えた固定効果モデル（twoway fixed-effect model)を推定する。
+次に、個体固定効果に加えて、時間固定効果を加えた固定効果モデル（twoway fixed-effect model:TWFE)を推定する。
 
 ```{r}
 #n-1個の個体ダミーとT-1個の年ダミーを直接導入
@@ -332,156 +333,23 @@ screenreg(list(pooled_robust, oneway_fe1, oneway_fe2, twoway_fe1, twoway_fe2),
 ここでも、どちらの方法を用いても係数推定値および標準誤差は全く同じとなる。しかし、個体ダミー（`factor(firm)`)および時間ダミー(`factor(year)`)を用いた推定の場合、定数項や個々の個体ダミーや年ダミーの推定結果が表示される。
 
 
+# fixestによる推定
 
-# （参考）`plm`による推定
-
-ここでは、`plm`を用いて固定効果モデルを推定する方法を紹介する。ただし、標準誤差はロバスト標準誤差やクラスタロバスト標準誤差ではない点に注意が必要である。そのため、`plm`を用いた場合の標準誤差の修正方法も紹介する。
-
-## パネルデータフレームへの転換
-
-まず、{plm}パッケージの`pdata.frame()を使って`、個体と時間を有するパネル・データフレームとする。
-ただし、今回使うGrunfeldデータ(plmパッケージに所収）は最初からパネルデータフレームとなっているため、下記のコードは説明のための便宜的な処置である。
+`lm_robust`だと、固定効果の数が3つ以上になる場合など、推定速度が著しく遅くなることがある。そこで、はやい速度で固定効果モデルを推定できる`fixest`の`feols'を紹介する。ここではTWFE(twoway fixed-effect model)のみを実施する。
 
 ```{r}
-original_df <- Grunfeld # いったんdfとして読み込む（下記のpdata.frameの説明のための便宜的な処置）
-panel_df <- pdata.frame(original_df, index = c("firm", "year")) # 個体=firm、時間=yearと認識させたdf
-```
+twoway_fe2_fixest <- fixest::feols(inv ~ value + capital | firm + year, # firmとyearが固定効果
+                    data = Grunfeld,
+                    cluster = ~ firm) #firmレベルのクラスタロバストSE
 
-ここで、`firm`と`year`が因子（factor)に変換されている点に注意が必要である。
-
-## Pooled OLS
-
-まず、`lm`関数あるいは`plm`関数を使って、プールドOLSモデルを推定する。
-
-```{r}
-# lmによるpooled OLS
-pool_lm <- lm(inv ~ value + capital, data = panel_df)
-
-# plmによるpooled OLS
-pool_plm <- plm(inv ~ value + capital, data = panel_df, 
-                model = "pooling")
-
-#stargazer
-stargazer(pool_lm, pool_plm, 
-          type = "text", 
-          digits = 3, 
-          df = FALSE, 
-          column.labels = c("Pooled lm", "Pooled plm"), 
-          model.names = F, 
-          model.numbers = F)
-```
-
-## One-way固定効果モデル
-
-次に、固定効果として個体固定効果のみを含むone-way固定効果モデルを推定する。
-
-```{r}
-# lmによる固定効果モデル推定(個体固定効果のみ）
-# panel_dfにおけるfirmはすでに因子に変換されているので、
-# そのままでも個体ダミー変数となるが、誤解のないようにfactor(firm)と書く。
-
-fe_oneway_lm <- lm(inv ~ value + capital + factor(firm), 
-                   data = panel_df)
-
-# plmによる固定効果モデル推定（個体固定効果のみ）
-# yearも因子なので、factor(year)と書くと、ダミー変数として認識される。
-fe_oneway_plm <- plm(inv ~ value + capital, 
-                     data = panel_df, 
-                     model = "within") # within=固定効果モデル
-
-#stargazer
-stargazer(pool_lm, pool_plm, fe_oneway_lm, fe_oneway_plm, 
-          type = "text", 
-          digits = 3, 
-          df = FALSE, 
-          column.labels = c("Pooled lm", "Pooled plm", "Oneway lm", "Oneway plm"), 
-          model.names = F, 
-          model.numbers = F)
-```
-
-## Two-way固定効果モデル
-
-最後に、時間固定効果も含むtwo-way固定効果モデルを推定する。
-
-```{r}
-# lm関数による固定効果モデル推定(個体固定効果と時間固定効果)
-# panel_dfにおけるfirmとyearはすでに因子に変換されているので、
-# そのままでも個体ダミー変数となるが、誤解のないようにfactor(firm), factor(year)と書く。
-fe_twoway_lm <- lm(inv ~ value + capital + factor(firm) + factor(year), 
-                   data = panel_df)
-
-# plmの固定効果モデル推定（個体固定効果と時間固定効果）
-fe_twoway_plm <- plm(inv ~ value + capital,
-          data = panel_df, 
-          model = "within", 
-          effect = "twoways") # within=固定効果モデル
-
-#stargazer
-stargazer(fe_oneway_lm, 
-          fe_oneway_plm, 
-          fe_twoway_lm, 
-          fe_twoway_plm, 
-          type = "text", 
-          digits = 3, 
-          df = FALSE, 
-          column.labels = c("Oneway lm", 
-                            "Oneway plm", 
-                            "Twoway lm",
-                            "Twoway plm"), 
-          model.names = F, model.numbers = F)
+screenreg(list(twoway_fe2, twoway_fe2_fixest), 
+          custom.model.names = c("TWFE, lm_robust", "TWFE, fixest"),
+          include.ci = FALSE, 
+          digits = 3)
 
 ```
 
-
-`lm`を用いても`plm`を用いても`value`および`capital`の係数推定値および標準誤差は全く同じとなる。しかし、`lm`と個体ダミー・時間ダミーを用いた推定の場合、個体固定効果や時間固定効果の値が推定される。それぞれの個体固定効果はfirm 1との差を、それぞれの時間固定効果は1935年からの差を推定している。
-
-なお、twoway固定効果は、`plm`関数のoneway推定と時間ダミーを用いて、以下のように推定することもできる。
-
-```{R}
-# plmの固定効果モデル推定2（個体固定効果と時間固定効果）
-fe_twoway_plm2 <- plm(inv ~ value + capital + factor(year),
-          data = panel_df, 
-          model = "within") # within =固定効果モデル
-
-#stargazerで3つのtwoway FEを比べる。
-stargazer(fe_twoway_lm, fe_twoway_plm, fe_twoway_plm2, 
-          type = "text", 
-          digits = 3, 
-          df = FALSE,
-          column.labels = c("Twoway lm", "Twoway plm", "Twoway plm2"), 
-          model.names = F, 
-          model.numbers = F)
-```
-
-## `coeftest`による（クラスタ）ロバスト標準誤差
-
-`plm`によるOLS推定における標準誤差も、デフォルトでは均一分散を仮定している。したがって、ここでもロバスト標準誤差を用いる必要がある。さらに、パネルデータ分析については、誤差項の系列相関も考慮する必要があるため、クラスタロバスト標準誤差を用いることが望ましい。
-
-
-上記の重回帰モデルの推定結果の標準誤差を、（クラスタ）ロバスト標準誤差に置き換える。
-ここでは、`lmtest`および`plm`パッケージに含まれる`coeftest()`を用いる。
-
-```{r}
-# coeftest()を用いてロバスト標準誤差を計算する。
-
-# lmで推定したものをロバスト標準誤差にする。
-fe_twoway_lm_robust <- coeftest(fe_twoway_lm, 
-                                vcovHC(fe_twoway_lm, method = "arellano", type = "HC1"))
-
-#plmで推定したものをクラスタロバスト標準誤差にする。
-fe_twoway_plm_clustered <- coeftest(fe_twoway_plm, 
-                                 vcovHC(fe_twoway_plm, method = "arellano", type = "HC1"))
-
-# stargazerで比べる。
-stargazer(fe_twoway_lm, fe_twoway_lm_robust, fe_twoway_plm, fe_twoway_plm_clustered, 
-          type = "text", 
-          digits = 3, 
-          df = FALSE,
-          column.labels = c("lm", "lm,robust", "plm", "plm,clustered"), 
-          model.names = F, 
-          model.numbers = F)
-```
-
+`Adj. R^2 (full model) `は、固定効果も含めた全体の説明力、`Adj. R^2 (proj model) `は、固定効果を除去したwithinモデルにおける説明変数の説明力を示す。
 
 # 参考文献
 
