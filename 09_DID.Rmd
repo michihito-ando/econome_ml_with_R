@@ -40,10 +40,11 @@ knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
 
 ```{r}
 pacman::p_load(tidyverse, 
-               estimatr, # lm_robustによるパネルデータ分析(メイン)
+               estimatr, # lm_robustによるパネルデータ分析
+               fixest, # feolsによるパネルデータ分析
                stargazer, # lmやplmのときの結果表
-               texreg, # lmやplmやlm_robustのときの結果表
-               plm) # plmによるパネルデータ分析(参考)
+               texreg) # lmやplmやlm_robustのときの結果表
+               
 ```
 
 <!-- pacman::p_load(lmtest) # lmやplmでロバスト標準誤差に修正（参考) -->
@@ -297,7 +298,7 @@ stargazer(DID_pooled,
 DID推定値は概ね500近傍となっており、(1)式と(2)式で完全に一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果$\theta$を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果$\theta_i$を除去しているためである。
 
 
-### lm_robustを用いた推定（メイン）
+### lm_robustを用いた推定
 
 パネルデータであれば、(1)式の処置群ダミー$\theta D_i$の代わりに、個体ダミーを用いてもよい。（ただし、繰り返しクロスセクションデータを用いたDID推定では個体ダミーは用いることはできない点は留意が必要である。）
 
@@ -346,38 +347,39 @@ df_selected = inner_join(df_panel, df_temp, by = "ID")
 -->
 
 
-### plmを用いた推定(参考)
+### fixestを用いた推定
 
-`plm`関数で個体固定効果モデルを推定してもよいが、標準誤差は均一分散を仮定したものである点は注意が必要。
+`fixest`関数を用いた推定も可能。
 
 
 ```{r}
-# df_panelのデータをpanelとして認識
-df_panel <- pdata.frame(df_panel, 
-                        index = c("ID", "year")) # 個体=firm、時間=yearと認識させたdf
+# DID with a two-by-two DID model (オーソドックスなDIDモデル)
+DID_fe1 <- feols(
+  income ~ treated + year + treated:year,
+  data = df_panel,
+  vcov = ~ ID   # ← こちらの方が新しい書き方
+)
 
-# DID regression
+# DID with two-way FE model (年ダミー変数は変数として入れ，個体FEはfeolsで指定)
+DID_fe2 <- feols(
+  income ~ treated:year + year | ID,
+  data = df_panel,
+  vcov = ~ ID
+)
 
-# DID with two-way FE model (年ダミーは活用） 
-DID_plm1 <- plm(income ~ treated:year + year, 
-                data = df_panel, 
-                model = "within")
+# DID with two-way FE model（個体固定効果と年固定効果をfeolsで指定）
+DID_fe3 <- feols(
+  income ~ treated:year | ID + year,
+  data = df_panel,
+  vcov = ~ ID
+)
 
-# DID with two-way FE model（年ダミーも入れない）
-DID_plm2 <- plm(income ~ treated:year, 
-                data = df_panel, 
-                model = "within", 
-                effect = "twoways")
-
-# stargazer
-stargazer(DID_plm1, 
-          DID_plm2, 
-          type = "text", 
-          digits = 3, 
-          df = FALSE,
-          column.labels = c("DID (onewayFE)","DID (twowayFE)"),
-          model.names = F, 
-          model.numbers = F)
+screenreg(
+  list(DID_fe1, DID_fe2, DID_fe3),
+  custom.model.names = c("Pooled", "Oneway", "Twoway"),
+  include.ci = FALSE,
+  digits = 3
+)
 ```
 
 
