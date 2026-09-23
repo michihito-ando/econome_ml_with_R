@@ -62,7 +62,8 @@ div.section.level1 h1{
   margin: 2em 0 0.5em;
 }*/
 
-div.section.level1 h1 {
+div.section.level1 h1,
+section.level1 > h1 {
   /*color: #6cb4e4;
   text-align: center;*/
   padding: 0.5em;
@@ -87,12 +88,14 @@ div.section.level2 h2:after {
 }
 */
 
-div.section.level2 h2 {
+div.section.level2 h2,
+section.level2 > h2 {
   border-bottom: solid 3px #E6E6E6;
   position: relative;
 }
 
-div.section.level2 h2:after {
+div.section.level2 h2:after,
+section.level2 > h2:after {
   position: absolute;
   content: " ";
   display: block;
