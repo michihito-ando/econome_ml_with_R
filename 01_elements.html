@@ -2533,15 +2533,15 @@ vertical-align: -.125em;
 <section id="データフレームの作成" class="level2" data-number="6.1">
 <h2 data-number="6.1" class="anchored" data-anchor-id="データフレームの作成"><span class="header-section-number">6.1</span> データフレームの作成</h2>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(クラス <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                  英語 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>                  数学 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>))</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>df1 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">class =</span> <span class="fu">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">english =</span> <span class="fu">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">math =</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>))</span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>df1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  クラス 英語 数学
-1      B   79   75
-2      A   91   81
-3      A   89   92</code></pre>
+<pre><code>  class english math
+1     B      79   75
+2     A      91   81
+3     A      89   92</code></pre>
 </div>
 </div>
 </section>
@@ -2551,8 +2551,8 @@ vertical-align: -.125em;
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">1</span>, ] <span class="co"># 1行目を表示</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  クラス 英語 数学
-1      B   79   75</code></pre>
+<pre><code>  class english math
+1     B      79   75</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>df1[ ,<span class="dv">2</span>] <span class="co"># 2列目を表示</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
@@ -2560,44 +2560,44 @@ vertical-align: -.125em;
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">2</span>] <span class="co"># 2列目をデータフレームとして表示</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  英語
-1   79
-2   91
-3   89</code></pre>
+<pre><code>  english
+1      79
+2      91
+3      89</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>] <span class="co"># 1~3行の1~3列を表示</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  クラス 英語 数学
-1      B   79   75
-2      A   91   81
-3      A   89   92</code></pre>
+<pre><code>  class english math
+1     B      79   75
+2     A      91   81
+3     A      89   92</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>), <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">3</span>)] <span class="co"># 1,3行の1,3列を表示</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  クラス 数学
-1      B   75
-3      A   92</code></pre>
+<pre><code>  class math
+1     B   75
+3     A   92</code></pre>
 </div>
 </div>
-<p><code>df[&quot;列名&quot;]</code>や<code>df$クラス</code>のように列を指定することもできる</p>
+<p><code>df[&quot;列名&quot;]</code>や<code>df$class</code>のように列を指定することもできる</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="st">&quot;クラス&quot;</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>df1[<span class="st">&quot;class&quot;</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  クラス
-1      B
-2      A
-3      A</code></pre>
+<pre><code>  class
+1     B
+2     A
+3     A</code></pre>
 </div>
 </div>
 <p>取り出したデータフレームの一部を別途代入し、新しいオブジェクト（数値、ベクトル、データフレーム）にすることもできる。</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df1[<span class="fu">c</span>(<span class="st">&quot;英語&quot;</span>,<span class="st">&quot;数学&quot;</span>)]</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> df1[<span class="fu">c</span>(<span class="st">&quot;english&quot;</span>,<span class="st">&quot;math&quot;</span>)]</span>
 <span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  英語 数学
-1   79   75
-2   91   81
-3   89   92</code></pre>
+<pre><code>  english math
+1      79   75
+2      91   81
+3      89   92</code></pre>
 </div>
 </div>
 </section>
@@ -2619,7 +2619,7 @@ vertical-align: -.125em;
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colMeans</span>(df1[, <span class="sc">-</span><span class="dv">1</span>]) <span class="co"># 1列目以外の各列（columns）に対する平均を表示</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>    英語     数学 
+<pre><code> english     math 
 86.33333 82.66667 </code></pre>
 </div>
 </div>
@@ -2669,7 +2669,7 @@ vertical-align: -.125em;
 <p>文字列と似たデータ型で<strong>因子</strong>（factor）型というものがある。</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 因子(ファクター)</span></span>
-<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>classes <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>クラス)</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>classes <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(df2<span class="sc">$</span>class)</span>
 <span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>classes</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[1] B A A
@@ -2696,16 +2696,16 @@ Levels: A B</code></pre>
 <h2 data-number="8.3" class="anchored" data-anchor-id="参考-文字列型の因子型への自動変換"><span class="header-section-number">8.3</span> （参考） 文字列型の因子型への自動変換</h2>
 <p>バージョン4.0.0より前のRではデータフレーム作成時（<code>data.frame()</code>）やcsvの読み込み時（<code>read.csv()</code>）には、文字列型のデータは因子型に自動的に変換する処理が<code>data.frame()</code>や<code>read.csv()</code>の関数ではデフォルト設定となっていたため、不意に因子型に遭遇することがあった。もし古いRを使っていて自動変換を防ぎたい場合は、<code>stringsAsFactors = FALSE</code>という引数を追加して関数を実行すればよい。</p>
 <div class="cell" data-layout-align="center">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>df3 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(クラス <span class="ot">=</span> <span class="fu">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>                  英語 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</span>
-<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>                  数学 <span class="ot">=</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>),</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb60"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a>df3 <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">class =</span> <span class="fu">c</span>(<span class="st">&quot;B&quot;</span>,<span class="st">&quot;A&quot;</span>,<span class="st">&quot;A&quot;</span>),</span>
+<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">english =</span> <span class="fu">c</span>(<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>),</span>
+<span id="cb60-3"><a href="#cb60-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">math =</span> <span class="fu">c</span>(<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>),</span>
 <span id="cb60-4"><a href="#cb60-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>)</span>
 <span id="cb60-5"><a href="#cb60-5" aria-hidden="true" tabindex="-1"></a><span class="fu">str</span>(df3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>&#39;data.frame&#39;:   3 obs. of  3 variables:
- $ クラス: chr  &quot;B&quot; &quot;A&quot; &quot;A&quot;
- $ 英語  : num  79 91 89
- $ 数学  : num  75 81 92</code></pre>
+ $ class  : chr  &quot;B&quot; &quot;A&quot; &quot;A&quot;
+ $ english: num  79 91 89
+ $ math   : num  75 81 92</code></pre>
 </div>
 </div>
 </section>
@@ -2731,10 +2731,10 @@ Levels: A B</code></pre>
 [1] &quot;A&quot; &quot;B&quot; &quot;C&quot;
 
 $df
-  クラス 英語 数学
-1      B   79   75
-2      A   91   81
-3      A   89   92
+  class english math
+1     B      79   75
+2     A      91   81
+3     A      89   92
 
 $list
 $list[[1]]
@@ -2754,10 +2754,10 @@ $list[[2]]
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb64"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="co"># リストの中のdfという要素（データフレーム）の取り出し</span></span>
 <span id="cb64-2"><a href="#cb64-2" aria-hidden="true" tabindex="-1"></a>list_ex<span class="sc">$</span>df</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>  クラス 英語 数学
-1      B   79   75
-2      A   91   81
-3      A   89   92</code></pre>
+<pre><code>  class english math
+1     B      79   75
+2     A      91   81
+3     A      89   92</code></pre>
 </div>
 </div>
 <p>要素に名前がついていない場合、要素の番号（<code>list[[i]]</code>）を指定して参照する</p>
@@ -2798,10 +2798,10 @@ $list[[2]]
 <span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>D <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(df1[,<span class="dv">2</span><span class="sc">:</span><span class="dv">3</span>])</span>
 <span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a>D</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>     英語 数学
-[1,]   79   75
-[2,]   91   81
-[3,]   89   92</code></pre>
+<pre><code>     english math
+[1,]      79   75
+[2,]      91   81
+[3,]      89   92</code></pre>
 </div>
 </div>
 </section>
@@ -2811,9 +2811,9 @@ $list[[2]]
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb72"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a>M <span class="sc">%*%</span> D</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>     英語 数学
-[1,]  797  778
-[2,] 1056 1026</code></pre>
+<pre><code>     english math
+[1,]     797  778
+[2,]    1056 1026</code></pre>
 </div>
 </div>
 </section>
@@ -2887,17 +2887,17 @@ $list[[2]]
 <h2 data-number="11.4" class="anchored" data-anchor-id="データフレームpandas"><span class="header-section-number">11.4</span> データフレーム（pandas）</h2>
 <p>Rのデータフレームに相当するのはpandasの<strong>DataFrame</strong>である。列を辞書（dict）形式で指定して作成する。</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb81"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb81-1"><a href="#cb81-1" aria-hidden="true" tabindex="-1"></a>df1 <span class="op">=</span> pd.DataFrame({</span>
-<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;クラス&quot;</span>: [<span class="st">&quot;B&quot;</span>, <span class="st">&quot;A&quot;</span>, <span class="st">&quot;A&quot;</span>],</span>
-<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;英語&quot;</span>: [<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>],</span>
-<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;数学&quot;</span>: [<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>],</span>
+<span id="cb81-2"><a href="#cb81-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;class&quot;</span>: [<span class="st">&quot;B&quot;</span>, <span class="st">&quot;A&quot;</span>, <span class="st">&quot;A&quot;</span>],</span>
+<span id="cb81-3"><a href="#cb81-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;english&quot;</span>: [<span class="dv">79</span>, <span class="dv">91</span>, <span class="dv">89</span>],</span>
+<span id="cb81-4"><a href="#cb81-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;math&quot;</span>: [<span class="dv">75</span>, <span class="dv">81</span>, <span class="dv">92</span>],</span>
 <span id="cb81-5"><a href="#cb81-5" aria-hidden="true" tabindex="-1"></a>})</span>
 <span id="cb81-6"><a href="#cb81-6" aria-hidden="true" tabindex="-1"></a>df1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>要素の取得には<code>.iloc[]</code>（位置による指定）や<code>.loc[]</code>（ラベルによる指定）、列名の指定を使う。</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb82"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a>df1.iloc[<span class="dv">0</span>]             <span class="co"># 1行目を表示（Rの df1[1, ] に相当）</span></span>
-<span id="cb82-2"><a href="#cb82-2" aria-hidden="true" tabindex="-1"></a>df1.iloc[:, <span class="dv">1</span>]           <span class="co"># 2列目を表示（Rの df1[ ,2] に相当）</span></span>
-<span id="cb82-3"><a href="#cb82-3" aria-hidden="true" tabindex="-1"></a>df1[[<span class="st">&quot;英語&quot;</span>, <span class="st">&quot;数学&quot;</span>]]     <span class="co"># 複数列をデータフレームとして表示</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb82"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a>df1.iloc[<span class="dv">0</span>]                  <span class="co"># 1行目を表示（Rの df1[1, ] に相当）</span></span>
+<span id="cb82-2"><a href="#cb82-2" aria-hidden="true" tabindex="-1"></a>df1.iloc[:, <span class="dv">1</span>]                <span class="co"># 2列目を表示（Rの df1[ ,2] に相当）</span></span>
+<span id="cb82-3"><a href="#cb82-3" aria-hidden="true" tabindex="-1"></a>df1[[<span class="st">&quot;english&quot;</span>, <span class="st">&quot;math&quot;</span>]]      <span class="co"># 複数列をデータフレームとして表示</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>平均値の計算には<code>.mean()</code>メソッドを使う（Rの<code>colMeans()</code>に相当）。</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb83"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>df1[[<span class="st">&quot;英語&quot;</span>, <span class="st">&quot;数学&quot;</span>]].mean()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb83"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>df1[[<span class="st">&quot;english&quot;</span>, <span class="st">&quot;math&quot;</span>]].mean()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="csvデータの読み書き" class="level2" data-number="11.5">
 <h2 data-number="11.5" class="anchored" data-anchor-id="csvデータの読み書き"><span class="header-section-number">11.5</span> csvデータの読み書き</h2>
@@ -2908,7 +2908,7 @@ $list[[2]]
 <section id="因子factor型-カテゴリ型" class="level2" data-number="11.6">
 <h2 data-number="11.6" class="anchored" data-anchor-id="因子factor型-カテゴリ型"><span class="header-section-number">11.6</span> 因子（factor）型 → カテゴリ型</h2>
 <p>Rの因子（factor）型に相当するのは、pandasの<strong>category型</strong>である。</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb85"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>classes <span class="op">=</span> df2[<span class="st">&quot;クラス&quot;</span>].astype(<span class="st">&quot;category&quot;</span>)</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb85"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>classes <span class="op">=</span> df2[<span class="st">&quot;class&quot;</span>].astype(<span class="st">&quot;category&quot;</span>)</span>
 <span id="cb85-2"><a href="#cb85-2" aria-hidden="true" tabindex="-1"></a>classes</span>
 <span id="cb85-3"><a href="#cb85-3" aria-hidden="true" tabindex="-1"></a>classes.cat.codes  <span class="co"># 内部的な数値コード（Rのas.integer()に相当）</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
@@ -2923,7 +2923,7 @@ $list[[2]]
 <span id="cb86-6"><a href="#cb86-6" aria-hidden="true" tabindex="-1"></a>list_ex[<span class="st">&quot;df&quot;</span>]        <span class="co"># 辞書のdfという要素の取り出し（Rの list_ex$df に相当）</span></span>
 <span id="cb86-7"><a href="#cb86-7" aria-hidden="true" tabindex="-1"></a>list_ex[<span class="st">&quot;list&quot;</span>][<span class="dv">0</span>]   <span class="co"># listという要素の第一要素（Rの list_ex$list[[1]] に相当）</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb87"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a>M <span class="op">=</span> np.array([[<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">5</span>], [<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">6</span>]])  <span class="co"># Rのmatrix(1:6, nrow=2, ncol=3)に相当</span></span>
-<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>D <span class="op">=</span> df1[[<span class="st">&quot;英語&quot;</span>, <span class="st">&quot;数学&quot;</span>]].to_numpy()    <span class="co"># データフレームをNumPy配列に変換</span></span>
+<span id="cb87-2"><a href="#cb87-2" aria-hidden="true" tabindex="-1"></a>D <span class="op">=</span> df1[[<span class="st">&quot;english&quot;</span>, <span class="st">&quot;math&quot;</span>]].to_numpy()    <span class="co"># データフレームをNumPy配列に変換</span></span>
 <span id="cb87-3"><a href="#cb87-3" aria-hidden="true" tabindex="-1"></a>M <span class="op">@</span> D                                  <span class="co"># 行列の積（Rの %*% に相当）</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>

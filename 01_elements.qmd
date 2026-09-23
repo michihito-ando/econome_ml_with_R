@@ -248,9 +248,9 @@ Rでは基本的にデータフレームを使ってデータ分析を行うこ�
 ## データフレームの作成
 
 ```{r}
-df1 <- data.frame(クラス = c("B","A","A"),
-                  英語 = c(79, 91, 89),
-                  数学 = c(75, 81, 92))
+df1 <- data.frame(class = c("B","A","A"),
+                  english = c(79, 91, 89),
+                  math = c(75, 81, 92))
 df1
 ```
 
@@ -268,16 +268,16 @@ df1[c(1,3), c(1,3)] # 1,3行の1,3列を表示
 ```
 
 
-`df["列名"]`や`df$クラス`のように列を指定することもできる
+`df["列名"]`や`df$class`のように列を指定することもできる
 
 ```{r}
-df1["クラス"]
+df1["class"]
 ```
 
 取り出したデータフレームの一部を別途代入し、新しいオブジェクト（数値、ベクトル、データフレーム）にすることもできる。
 
 ```{r}
-df <- df1[c("英語","数学")]
+df <- df1[c("english","math")]
 df
 ```
 
@@ -361,7 +361,7 @@ df2 <- read.csv("df1.csv")
 
 ```{r}
 # 因子(ファクター)
-classes <- as.factor(df2$クラス)
+classes <- as.factor(df2$class)
 classes
 
 str(classes) # str() = structure
@@ -384,9 +384,9 @@ str(as.character(classes))
 バージョン4.0.0より前のRではデータフレーム作成時（`data.frame()`）やcsvの読み込み時（`read.csv()`）には、文字列型のデータは因子型に自動的に変換する処理が`data.frame()`や`read.csv()`の関数ではデフォルト設定となっていたため、不意に因子型に遭遇することがあった。もし古いRを使っていて自動変換を防ぎたい場合は、`stringsAsFactors = FALSE`という引数を追加して関数を実行すればよい。
 
 ```{r}
-df3 <- data.frame(クラス = c("B","A","A"),
-                  英語 = c(79, 91, 89),
-                  数学 = c(75, 81, 92),
+df3 <- data.frame(class = c("B","A","A"),
+                  english = c(79, 91, 89),
+                  math = c(75, 81, 92),
                   stringsAsFactors = FALSE)
 str(df3)
 ```
@@ -551,9 +551,9 @@ Rのデータフレームに相当するのはpandasの**DataFrame**である。
 
 ```python
 df1 = pd.DataFrame({
-    "クラス": ["B", "A", "A"],
-    "英語": [79, 91, 89],
-    "数学": [75, 81, 92],
+    "class": ["B", "A", "A"],
+    "english": [79, 91, 89],
+    "math": [75, 81, 92],
 })
 df1
 ```
@@ -561,15 +561,15 @@ df1
 要素の取得には`.iloc[]`（位置による指定）や`.loc[]`（ラベルによる指定）、列名の指定を使う。
 
 ```python
-df1.iloc[0]             # 1行目を表示（Rの df1[1, ] に相当）
-df1.iloc[:, 1]           # 2列目を表示（Rの df1[ ,2] に相当）
-df1[["英語", "数学"]]     # 複数列をデータフレームとして表示
+df1.iloc[0]                  # 1行目を表示（Rの df1[1, ] に相当）
+df1.iloc[:, 1]                # 2列目を表示（Rの df1[ ,2] に相当）
+df1[["english", "math"]]      # 複数列をデータフレームとして表示
 ```
 
 平均値の計算には`.mean()`メソッドを使う（Rの`colMeans()`に相当）。
 
 ```python
-df1[["英語", "数学"]].mean()
+df1[["english", "math"]].mean()
 ```
 
 ## csvデータの読み書き
@@ -586,7 +586,7 @@ df2 = pd.read_csv("df1.csv")          # 読み込み
 Rの因子（factor）型に相当するのは、pandasの**category型**である。
 
 ```python
-classes = df2["クラス"].astype("category")
+classes = df2["class"].astype("category")
 classes
 classes.cat.codes  # 内部的な数値コード（Rのas.integer()に相当）
 ```
@@ -607,6 +607,6 @@ list_ex["list"][0]   # listという要素の第一要素（Rの list_ex$list[[1
 
 ```python
 M = np.array([[1, 3, 5], [2, 4, 6]])  # Rのmatrix(1:6, nrow=2, ncol=3)に相当
-D = df1[["英語", "数学"]].to_numpy()    # データフレームをNumPy配列に変換
+D = df1[["english", "math"]].to_numpy()    # データフレームをNumPy配列に変換
 M @ D                                  # 行列の積（Rの %*% に相当）
 ```
