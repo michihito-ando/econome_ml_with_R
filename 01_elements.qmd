@@ -19,6 +19,11 @@ format:
     fig-width: 4           # 画像サイズのデフォルトを設定
     fig-format: png
     link-external-newwindow: true  # 外部リンクを新しいタブで開く
+    # 「サイト内リンク」とみなすドメインを明示的に指定。
+    # 指定しない場合はブラウザの現在地(window.location.host)から自動判定されるが、
+    # file://で直接開いたときはhostが空文字になり、結果的に全リンクが「サイト内」と
+    # 誤判定されて新しいタブで開かなくなってしまう。それを避けるための設定。
+    link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'
 editor_options:
   chunk_output_type: console
 ---

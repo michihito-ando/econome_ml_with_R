@@ -2277,7 +2277,7 @@ vertical-align: -.125em;
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Rで学ぶ計量経済学と機械学習 1<br> <br> Rの基礎</h1>
-<p class="subtitle lead">This version: 2026-09-23</p>
+<p class="subtitle lead">This version: 2026-09-30</p>
 </div>
 
 
@@ -3003,7 +3003,7 @@ $list[[2]]
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
-        var filterRegex = new RegExp('/' + window.location.host + '/');
+        var filterRegex = new RegExp("^(?:http:|https:)\/\/michihito-ando\.github\.io");
       var isInternal = (href) => {
           return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
       }

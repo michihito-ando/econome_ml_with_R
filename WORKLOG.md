@@ -81,3 +81,59 @@
 
 - ユーザーが `gh auth setup-git` を実行後、`gh auth status` と `git credential fill` で正しく連動しているか確認する。
 - 残りの `.Rmd` ファイルを同様の方針で `.qmd` へ移行。
+
+## 2026-09-30: 02_data_wrangling.Rmd → 02_data_wrangling.qmd
+
+第2回「データ整理」を、第1回と同じ方針でqmd化。
+
+### やったこと
+
+1. **[02_data_wrangling.qmd](02_data_wrangling.qmd) を新規作成**。YAMLヘッダー、`R_style.css`との連携、`link-external-newwindow`などは第1回と同じ方針。全85+チャンクがゼロからのrenderでエラーなく通ることを確認（`test_scores.xlsx`は元々リポジトリに存在していたので依存関係の問題なし）。
+2. **リンク修正**: `test_scores.xlsx`へのGoogleリダイレクト経由リンクを直接URLに変更。「R Studio Cloud」の表記を第1回に合わせて「Posit Cloud」に統一。
+3. **パイプ演算子を`%>%`（{magrittr}）から`|>`（base Rのネイティブパイプ、R 4.1+）に変更**。本文中の実例はすべて`|>`に統一し、「パイプ演算子には`{dplyr}`が必要」という記述を「`|>`はbase Rの機能、`{dplyr}`はこの後使うfilter/select等のために読み込む」に修正。`%>%`についても、他の資料で今も広く使われているとの理由で参考節を1つ残した。
+4. **「（参考）Rのチートシート」の画像を削除**（`1549118953251.png`、Help→Cheatsheetsメニューの古いスクリーンショット）。前後の文章は画像なしでも自然に読めることを確認。
+5. **`test_scores.xlsx`の列名を日本語から英語に変更**（`クラス/名前/数学/英語/国語` → `class/name/math/english/japanese`）。ユーザーからの「変数名に日本語を使うのは避けたい」という方針に基づく。
+   - xlsx本体（リポジトリ直下および`docs/`の両方）をopenpyxlで書き換え。フォント・書式は変更していない。
+   - `02_data_wrangling.qmd`内の`df`に対するJapaneseな列名参照（`クラス`, `名前`, `数学`, `英語`, `国語`）をすべて英語名に置き換え。新規追加列（合計点→`total_score`、数国計→`math_japanese`、数英計→`math_english`）も英語名に統一。
+   - `ends_with("語")`（英語・国語の両方が「語」で終わることを利用した列選択デモ）は英語名では成立しなくなるため、`all_of(c("english","japanese"))`に変更。同様に`contains("国")`は`contains("an")`（`japanese`のみが"an"を含む）に変更し、元のデモ（1列だけがマッチする）の趣旨を維持。
+   - **「列名の変更」節を拡張**: 実務では読み込んだデータの列名が日本語のままのことがよくある、という説明を追加した上で、`colnames()`のデモを実データ(`df`)ではなく、説明用に作成した日本語列名のデータフレーム(`df_ja`)を使って「日本語→英語への変換」を実演する形に変更。`rename()`のデモは引き続き実データ(`df2`)を使い、`name`→`NAME`という「翻訳ではない一般的なリネーム」の例として維持。
+6. **[03_EDA.Rmd](03_EDA.Rmd)への波及対応**: このファイルは`test_scores.xlsx`読み込み直後に`dplyr::rename(class = クラス, ...)`としており、xlsx側の列名が変わったことでこのままではエラーになることが判明。まだqmd化していない章だが、放置すると壊れたソースになってしまうため、不要になった`rename()`チャンクとその説明文を削除する最小限の互換性修正のみ実施（第3章の内容自体は変更していない。本格的なqmd移行は別途行う）。
+7. 各変更後、Quarto CLIでレンダリングし、ブラウザで実際の出力（`contains("an")`が`japanese`列のみにマッチすること、`all_of()`のフィルタ結果、列名変更のデモ結果など）を確認済み。
+
+## 2026-09-30: 02_data_wrangling.qmdの仕上げ（画像削除・軽微な修正）
+
+1. 「列名の変更」節にあった、`test_scores.xlsx`がもともと日本語列名だったという裏話の一文を削除（ユーザー指示）。
+2. [02_data_wrangling.assets/view_table.PNG](02_data_wrangling.assets/view_table.PNG)（`View()`のスクリーンショット、変更前の日本語列名が写り込んだままだった）を削除。前後の文章はチートシート画像を削除したときと同様、画像なしでも自然に読めることを確認。
+3. **見つけて修正した既存のバグ**: 「データフレームオブジェクトの確認」「View()」の節の本文が、実際には存在しない`dat`という変数名を参照していた（実際のコードは一貫して`df`を使用）。`dat`→`df`に修正。該当スクリーンショット（[1549111107106.png](02_data_wrangling.assets/1549111107106.png)）は2019年当時の`dat`という表示のまま残っているが、実害は小さいためそのままにしている。
+4. **代入演算子を`<-`に統一**: 「新たな列を追加する」節（`df["total_score"] = ...`）と「データフレームの展開」節（`sales_wide = ...`）で使われていた`=`による代入を`<-`に変更。第1回で「`<-`が正統な記法」と説明していることとの一貫性のため。
+5. 「（参考）Rのチートシート」節にあった、日本語版チートシートへの言及（更新が古い可能性があると自身でも注記されていた一文）を削除。
+6. 各変更後、Quarto CLIでレンダリングしエラーがないことを確認済み。
+
+## 2026-09-30: 「9 （おまけ）Pythonで同様の作業を行う場合」を追加
+
+第1回と同じ方針で、末尾にPython（pandas）版の対応コードを追加。
+
+- 本文の各節（パッケージ／エクセル読み込み／データフレームの概観／パイプ演算子／条件指定・列の取り出し／列名の変更／並べ替え／新規列追加／連結／結合／展開／文字列操作）に対応するpandasコードを掲載。
+- 掲載前に、実際に`test_scores.xlsx`を読み込んですべてのコードを実行し、結果がR側の出力と整合すること（`filter(like="an")`が`japanese`列のみにマッチする、`merge(..., how="outer")`が`full_join()`と同じ欠損行を持つ、`pivot`/`melt`の往復が一致する等）を確認済み（venvは作業後に削除）。
+- 第1回同様、コードは実行はせず静的な```python```フェンスドコードブロックとして掲載（qmdのエンジンがknitrのため）。
+- Rの`|>`に直接対応する演算子はpandasに無いため、メソッドチェーン（`.method1().method2()`）が同様の役割を果たす旨を説明した。
+
+## 2026-09-30: 「参考文献」を刷新
+
+旧い参考文献（石田基広『Rによるテキストマイニング入門』、データ整理とは間接的にしか関連しない）を削除し、ウェブで調査した現行の資料に置き換えた。置き換え前にすべてのリンクが実際に生きていること、内容が本講義の範囲（select/filter/rename/arrange、パイプ、pivot、結合、文字列処理）と一致することを確認済み。
+
+- [R for Data Science (2nd edition)](https://r4ds.hadley.nz/) の[Data transformation](https://r4ds.hadley.nz/data-transform)・[Joins](https://r4ds.hadley.nz/joins)章（旧版と異なり`|>`ベースに更新されている）
+- [私たちのR](http://www.jaysong.net/RBook/)（第1回でも引用済みのサイト）の[第13章 データハンドリング[抽出]](http://www.jaysong.net/RBook/datahandling1.html)・[第17章 整然データ構造](http://www.jaysong.net/RBook/tidydata.html)・[第18章 文字列の処理](http://www.jaysong.net/RBook/string.html)
+- [tidyr公式: Pivoting](https://tidyr.tidyverse.org/articles/pivot.html)（パッケージ開発元による公式解説）
+
+## 2026-09-30: `link-external-newwindow`がfile://で無効化されるバグを修正（01・02共通）
+
+ユーザーから「外部リンクをクリックしても同じタブで開いてしまう」との報告。原因を調査したところ、Quartoの`link-external-newwindow`機能は内部で
+
+```js
+var filterRegex = new RegExp('/' + window.location.host + '/');
+```
+
+という正規表現で「サイト内リンクかどうか」を判定しており、`file://`で直接ローカルファイルを開いた場合は`window.location.host`が空文字列になるため、この正規表現が`//`という「ほぼ全てのhttp(s)リンクにマッチしてしまう」パターンになってしまうことが判明（Pythonで`re`を使って`//`が`https://r4ds.hadley.nz/`等に必ずマッチすることを確認）。結果として、ローカルでfile://として開いたときだけ全リンクが「サイト内リンク」と誤判定され、新しいタブで開かなくなっていた（GitHub Pagesで公開後は`window.location.host`が`michihito-ando.github.io`になるため、この問題自体は起きない想定だが、ローカルでの動作確認に支障が出る）。
+
+**対応**: `format: html:`に`link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'`を明示的に追加し、`window.location.host`に依存しない判定に変更。これにより`file://`で直接開いた場合でも、本サイト（michihito-ando.github.io）以外へのリンクは正しく新しいタブで開くようになる。01_elements.qmd・02_data_wrangling.qmdの両方に適用し、再レンダリング後、埋め込まれたスクリプトの正規表現が意図通りになっていることを確認。`docs/`配下の該当htmlにも反映済み。

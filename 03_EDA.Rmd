@@ -68,17 +68,6 @@ df <- read_excel("test_scores.xlsx") # エクセル読み込み
 head(df)
 ```
 
-今回は、`dplyr::rename()`によって変数名を英語に変換してから使う。
-
-```{r}
-df <- df %>% dplyr::rename(class = クラス,
-                           name = 名前,
-                           math = 数学,
-                           english = 英語,
-                           japanese = 国語)
-head(df)
-```
-
 
 
 # データの分布を要約する
