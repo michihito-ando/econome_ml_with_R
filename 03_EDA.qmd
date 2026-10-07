@@ -1,0 +1,605 @@
+---
+title: "Rで学ぶ計量経済学と機械学習 3<br> <br> データの可視化"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+subtitle: "This version: `r Sys.Date()`"
+format:
+  html:
+    css: R_style.css
+    embed-resources: true   # 画像などの埋め込み
+    # theme: cosmo
+    highlight-style: haddock     # Rスクリプトのハイライト形式
+    # code-fold: true       # Rコードの折りたたみ表示を設定
+    toc: true
+    toc-depth: 2           # 見出しの表示とその深さを指定
+    number-sections: true  # 見出しごとに番号を振る
+    # df-print: paged       # head()の出力をnotebook的なものに（tibbleと相性良）
+    fig-height: 4          # 画像サイズのデフォルトを設定
+    fig-width: 6           # 画像サイズのデフォルトを設定
+    fig-format: png
+    link-external-newwindow: true  # 外部リンクを新しいタブで開く
+    # 「サイト内リンク」とみなすドメインを明示的に指定。
+    # 指定しない場合はブラウザの現在地(window.location.host)から自動判定されるが、
+    # file://で直接開いたときはhostが空文字になり、結果的に全リンクが「サイト内」と
+    # 誤判定されて新しいタブで開かなくなってしまう。それを避けるための設定。
+    link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+# 日本語のグラフタイトルが文字化け（□）しないよう、フォントの代替表示に対応したraggで描画する
+knitr::opts_chunk$set(dev = "ragg_png")
+```
+
+
+# 本講義の目的
+
+- 要約統計量の算出方法を学ぶ。
+- ggplotやplotlyなどを用いたデータの可視化の基礎を学ぶ。
+
+# パッケージの読み込み
+
+`pacman`を使うと、`install.packages()`や`library()`を使わずにパッケージをまとめて読み込むことができる。
+
+まず`pacman`をインストールする。
+```{r, eval=F}
+install.packages("pacman")
+```
+
+今回は、`readxl`と`tidyverse`と`plotly`と`skimr`を使う。以下のように書けば、まとめて読み込むことができる。
+
+```{r, results='hide'}
+pacman::p_load(readxl, tidyverse, plotly, skimr)
+```
+
+# ディレクトリの設定
+
+（Posit CloudではなくローカルPCで作業する場合）作業ディレクトリを設定する。
+プロジェクト機能を活用できるのであれば、そちらを活用する。
+
+```{r, eval = FALSE}
+setwd(自分のディレクトリ) # ディレクトリの設定
+getwd() # ディレクトリの確認
+```
+
+# 例示用データの読み込み
+
+前回同様、今回も `test_scores.xlsx` のデータを使う
+
+```{r}
+df <- read_excel("test_scores.xlsx") # エクセル読み込み
+head(df)
+```
+
+
+
+# データの分布を要約する
+
+## 平均・分散など
+
+データの分布を要約するための指標（**要約統計量**）の代表的なものが**平均**（mean）と**分散**（variance）である。
+
+- **平均**（mean）：$n$個のデータ$x_i$の総和を、サンプルサイズ$n$で割ったもの。
+
+$$
+\bar{x} = \frac{1}{n}\sum_{i=1}^n  x_i
+$$
+
+- **分散**（variance）：平均からの差の2乗和の平均
+
+$$
+\sigma^2=\frac{1}{n}\sum_{i=1}^{n}(x_i-\bar{x})^2
+$$
+
+ただし、Rの`var()`関数の算出する値は、母集団の分散（母分散）の不偏推定量としての分散すなわち**不偏分散**
+
+$$
+s^2=\frac{1}{n-1}\sum_{i=1}^{n}(x_i-\bar{x})^2
+$$
+
+である。
+
+
+```{r}
+# 不偏分散
+var(df$english)
+```
+
+分散の単位は元の単位の2乗であるため、それを元の単位に戻すために平方根をとったものが**標準偏差**（standard deviation）である。
+
+```{r}
+# 不偏標準偏差
+sd(df$english)
+```
+
+
+## 要約統計量
+
+### summary()
+`summary()`関数は、データフレームの各行に関する代表値などの情報を取得することができる関数である。
+
+```{r}
+summary(df)
+```
+
+`class`と`name`は文字列（character）型なので、Length（行数、標本数）が40であることくらいしか表示されない。
+
+`math`、`english`、`japanese`は数値（numeric）型なので、代表値などの**要約統計量**（summary statistics）が表示されている。
+
+それぞれの統計量の意味は
+
+- `Min.`が最小値
+- `1st Qu.`が**第一四分位数**（1st quantile）：「データを小さいものから順に並べた時に標本数の4分の1の位置（下位25%）にくる値」
+- `Median`が**中央値**（median）：「データを小さい順に並べた時に標本数の2分の1の位置にくる値」
+- `Mean`が**平均値**（mean）：「データの総計をデータの個数で割ったもの」$\sum_{i=1}^n x_i/n$
+- `3rd Qu.`が**第三四分位数**（3rd quantile）：「データを小さい順に並べた時に標本数の4分の3の位置（75%）にくる値」
+- `Max.`が最大値
+
+である。これらのうちMean以外の５つの統計量をまとめて**五数要約**という。
+
+
+平均値は**外れ値**（極端に高かったり低かったりする値）の影響を受けやすいため、これらの統計量を見ることで、中央値と平均値が大きく異なるデータは外れ値があったりデータの分布に歪みがあることが推測できるわけである。
+
+### skimr::skim()
+
+`skimr`の`skim()`を使うと、小さなヒストグラムつきの要約統計量の表を出力できる。欠損値の数なども表示してくれる。
+
+```{r}
+skimr::skim(df)
+```
+
+
+# 2変数の関係を要約する
+
+## 相関係数
+
+**相関係数**（correlation coefficient）は２つの量的変数の直線的な関係の強さを測るもので、次の式で定義される
+
+$$
+\begin{align}
+x\text{と}y\text{の相関係数}r
+&= \frac{x\text{と}y\text{の共分散}}{x\text{の標準偏差}\times y\text{の標準偏差}} \\
+&= \frac{\frac{1}{n} \sum_{i=1}^n (x_i - \bar{x})(y_i - \bar{y})}
+{\sqrt{\frac{1}{n} \sum_{i=1}^n (x_i - \bar{x})^2}
+  \sqrt{\frac{1}{n} \sum_{i=1}^n (y_i - \bar{y})^2}}
+\end{align}
+$$
+
+Rでは`cor()`で計算できる。相関係数は-1から+1の範囲の値をとり、絶対値で1に近いほど関係が強いことを示す。
+
+```{r}
+cor(x = df$english, y = df$math)
+```
+
+
+## 相関行列
+
+相関係数が入った行列を相関行列という
+
+```{r}
+cor(df[,3:5])
+```
+
+
+
+# 描画用パッケージ
+
+グラフの描画で役立つパッケージを紹介する。
+
+## ggplot2
+
+`{ggplot2}`というグラフの描画用パッケージは綺麗なグラフを描くことができる。
+
+ggplotは次のように２つ以上の手順をとり、２つ以上の関数を`+`でつなげていき、レイヤーを重ねるように描画していく。
+
+1. キャンバスを用意する（`ggplot(データフレーム, aes(x, y))`）
+2. グラフを用意する（`geom_histogram()`などgeom_なんたらという関数）
+3. グラフの装飾のための関数を使う場合は、さらにレイヤーを重ねていく
+
+
+```{r}
+# 棒グラフをつくり、gに代入する
+g <- ggplot(df, aes(x = `class`)) + # dfのデータでキャンバスを作る（`で囲っているのは関数のclass()と名前が被っているため）
+  geom_bar() # キャンバスに棒グラフgeom_bar()を重ねる
+
+g # 表示
+```
+
+
+
+## plotly
+
+`{plotly}`パッケージを使うと、簡単なインタラクティブなグラフ（カーソルを合わせると情報が表示されたり、表示情報を変更したりできるグラフ）を描くことができる。
+
+`ggplotly()`関数を使うと、`{ggplot2}`で描いたグラフをインタラクティブなものに変換できる。
+
+
+
+```{r}
+plotly::ggplotly(g)   # ggplot2のグラフをplotlyのグラフへ変換
+```
+
+
+# 1変数のグラフ
+
+## ヒストグラム
+
+ヒストグラムは量的変数の分布を確認するには極めて有用なグラフである。
+
+```{r}
+# ヒストグラム
+ggplot(df, aes(x = english)) +
+  geom_histogram(bins = 10) # binsは棒の数。指定しない場合はbins=30になる
+```
+
+なおR本体の機能でヒストグラムを描く場合は`hist()`を使う
+
+```{r}
+# ヒストグラム
+hist(x = df[["math"]])
+```
+
+## 棒グラフ
+
+```{r}
+# ggplotの棒グラフ
+g <- ggplot(df, aes(x = `class`)) +
+  geom_bar()
+
+#グラフ表示
+g
+
+#plotlyで表示
+plotly::ggplotly(g) 
+```
+
+
+
+# 2変数のグラフ
+
+## 散布図
+
+2変数でグラフを描く場合、キャンバスに`x`（グラフ横軸）と`y`（グラフ縦軸）の両方を指定する。
+
+そして散布図を描く場合は`geom_point()`を`+`でつなげればよい
+
+```{r}
+# ggplot
+g <- ggplot(df, aes(x = english, y = japanese)) +
+  geom_point() +
+  xlab("English") + # X軸のラベルを変更
+  ylab("Japanese") # y軸のラベルを変更
+
+# 散布図表示
+g
+
+# plotlyで表示
+plotly::ggplotly(g) 
+```
+
+回帰直線を加えるには、`stat_smooth()`を使う。
+
+```{r}
+ggplot(df, aes(x = english, y = japanese)) +
+  geom_point() +
+  stat_smooth(method = "lm", se =FALSE, colour = "blue") # lm: 最小二乗法、信頼区間は表示させない(FALSE)、色は青(blue)
+```
+
+## 折れ線グラフ
+
+折れ線グラフは`geom_line()`で描くことができる。
+
+Excelで言うところの「マーカー付き折れ線グラフ」にしたい場合は`geom_point()`を重ねればよい。
+
+```{r}
+ggplot(df, aes(x = english, y = japanese)) +
+  geom_line() + # 折れ線
+  geom_point()  # マーカー
+```
+
+
+### （参考）アメリカのGNP {.unnumbered}
+
+上では説明の簡単のため散布図と同じデータを使ったが、折れ線グラフは本来は時系列データに使うのが望ましい。
+
+そこで、以下ではRにあらかじめ収録されている練習用のデータセットのひとつである`longley`を使った例をのせる。
+
+このデータは1947~62年のアメリカのGNPや雇用者数などが収録されている（詳細はhelpを参照してほしい）。
+
+```{r}
+head(longley)
+```
+
+```{r}
+# ggplot
+g <- ggplot(longley, aes(x = Year, y = GNP)) +
+  geom_line()+ # 折れ線
+  geom_point()+ # マーカー
+  labs(title = "1947~62年のアメリカのGNP")
+
+# グラフ表示
+g
+
+# plotlyで表示
+ggplotly(g)
+```
+
+
+## 箱ひげ図
+
+箱ひげ図は**五数要約**の統計量（最小値、第一四分位数、中央値、第三四分位数、最大値）をプロットすることで分布の概形を表示する図である。
+
+```{r}
+g <- ggplot(df, aes(x = class, y = japanese)) +
+  geom_boxplot()+   # 箱ひげ図
+  labs(title = "クラスごとの国語の点数の分布")
+
+
+ggplotly(g)
+```
+
+## バイオリンプロット
+
+バイオリンプロットは、「カーネル密度推定」という手法で推定されたデータ分布の曲線を左右対称に描いたもので、異なるデータの分布を視覚的に比較できる。デフォルトでは最小値から最大値の範囲でプロットされ、`geom_violin(trim = FALSE)`にすると曲線の端はカットされない。
+
+```{r}
+g <- ggplot(df, aes(x = class, y = japanese)) +
+  geom_violin() + # バイオリンプロット
+  labs(title = "クラスごとの国語の点数の分布")
+
+ggplotly(g)
+```
+
+## 箱ひげ図とバイオリンプロットの併用
+
+```{r}
+g <- ggplot(df, aes(x = class, y = japanese)) +
+  geom_violin() +             # バイオリンプロット。これを先に描く。
+  geom_boxplot(width = 0.3) + # 箱ひげ図を上書き。幅を0.3に指定
+  labs(title = "クラスごとの国語の点数の分布")
+
+g  # ggplotly(g)だと箱ひげ図が表示されない
+```
+
+
+# 層別化
+
+`ggplot()`関数の中に入れる`aes()`関数の`fill`や`color`といった引数に質的変数を指定することで、色の塗り分けによる層別化ができる。
+
+これにより３つ目の変数の情報を表現できる。
+
+```{r}
+ggplot(df, aes(x = english, y = japanese, fill = class, color = class)) +
+  geom_point() +
+  labs(title = "英語と国語の得点の散布図をクラスごとに塗り分けたもの")
+```
+
+# バブルチャート
+
+散布図のサークルの大きさを、第三の変数に合わせて変更することもできる。
+
+```{r}
+# ggplot
+g <- ggplot(df, aes(x = english, y = japanese, size = math)) +
+  geom_point(alpha = 0.5) + # alpha:バブルの透過度
+  labs(title = "英語と国語の得点の散布図(バブルサイズは数学の点数を反映)") +
+  scale_size(range = c(1,10)) # バブルサイズの範囲を設定
+
+# 散布図表示
+g
+
+#plotly
+ggplotly(g) 
+```
+
+# グラフの保存
+
+図の保存にはggsaveを使用する
+```{r, eval=FALSE}
+ggsave(plot = g, file = "bubble_chart.png")
+```
+
+
+# （参考）事前に集計をしてからplotを描く場合 {.unnumbered}
+
+`geom_bar()`はstatという引数があり、デフォルトでは`geom_bar(stat="count")`と、観測値の数をカウントして表示するようになっている。そのため`aes()`にはxを指定するだけで自動的にy軸も描画された。
+
+事前に集計を行って自分でx軸とy軸の変数を用意し、`geom_bar(stat="identity")`と指定することもできる。
+
+```{r}
+# クラスごとに国語の平均点を集計
+mean_ja <- df |> group_by(class) |> summarise(mean_ja=mean(japanese))
+mean_ja
+
+# プロット
+mean_ja |> ggplot(aes(x=`class`, y=mean_ja)) + geom_bar(stat="identity")
+```
+
+```{r}
+# pivot_longerで縦持ちデータに変え、科目ごとに平均得点を計算して描画する
+g <- df |>
+  tidyr::pivot_longer(cols=c(japanese, english, math),
+                      names_to="subject",
+                      values_to="score") |>
+  dplyr::group_by(subject) |>
+  dplyr::summarise(mean_score=mean(score)) |>
+  ggplot(aes(x=subject, y=mean_score)) +
+  geom_bar(stat="identity")
+
+ggplotly(g)
+```
+
+
+# 参考文献
+
+データ可視化については、様々な情報やテキストがある。また、作りたいグラフのイメージに近い例をウェブで探し、そのRコードを参考にするのも一つの方法である。
+
+- **[R for Data Science (2nd edition)](https://r4ds.hadley.nz/)**
+    - 第2回でも紹介した定番教科書の最新版。[Data visualization](https://r4ds.hadley.nz/data-visualize)（ggplot2の基本）、[Layers](https://r4ds.hadley.nz/layers)（geom・aesなどの仕組み）、[Exploratory data analysis](https://r4ds.hadley.nz/EDA.html)（可視化によるデータの探索）の章が本講義の内容と対応している。
+
+- **[私たちのR](http://www.jaysong.net/RBook/)**
+    - 宋財泫氏・矢内勇生氏のサイト。[第19章 可視化[理論]](http://www.jaysong.net/RBook/visualization1.html)、[第20章 可視化[基礎]](http://www.jaysong.net/RBook/visualization2.html)、[第21章 可視化[応用]](http://www.jaysong.net/RBook/visualization3.html)などで、ggplot2による可視化を日本語で詳しく解説している。
+
+- **[ggplot2: Elegant Graphics for Data Analysis (3rd edition)](https://ggplot2-book.org/)**
+    - ggplot2の開発者自身による解説書のウェブ版（英語）。ggplot2をより深く使いこなしたい場合に。
+
+- **Kieran Healy [Data Visualization: A Practical Introduction](https://socviz.co/)**
+    - 社会科学向けのデータ可視化の教科書のウェブ版（英語）。日本語訳『[データ分析のためのデータ可視化入門](https://www.kspub.co.jp/book/detail/5164044.html)』（講談社）も出版されている。
+
+- **Rob Kabacoff [Data Visualization with R](https://rkabacoff.github.io/datavis/)**
+    - グラフの種類ごとにggplot2のコード例がまとまっており、作りたいグラフの書き方を探すのに便利（英語）。
+
+- **[Plotly: ggplot2 in R](https://plotly.com/ggplot2/)**
+    - `ggplotly()`でggplot2のグラフをインタラクティブにする方法の公式解説（英語）。
+
+- **[Using Skimr](https://docs.ropensci.org/skimr/articles/using_skimr.html)**
+    - `skimr::skim()`の公式解説（英語）。
+
+
+# （おまけ）Pythonで同様の作業を行う場合
+
+本講義の演習はRで行うが、参考として、ここまで学んだ内容に対応するPythonのコードを簡単に紹介する。
+
+Pythonでの可視化には、主に**matplotlib**（基本的な描画）、**seaborn**（matplotlibをベースにした統計グラフ用のライブラリで、ggplot2に近い感覚で使える）、**plotly**（インタラクティブなグラフ）を使う。
+
+```python
+# ターミナル上で実行（Rのinstall.packages()に相当）
+# pip install pandas openpyxl matplotlib seaborn plotly statsmodels
+```
+
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+
+# matplotlibはそのままだと日本語が□□□になるので、日本語フォントを指定する
+plt.rcParams["font.family"] = "Hiragino Sans"  # Macの場合（Windowsなら"Yu Gothic"など）
+
+df = pd.read_excel("test_scores.xlsx")
+```
+
+## データの分布を要約する
+
+pandasの`.var()`・`.std()`は、Rの`var()`・`sd()`と同じく不偏分散・不偏標準偏差を返す。`.describe()`はRの`summary()`に相当する。
+
+```python
+df["english"].mean()   # 平均
+df["english"].var()    # 不偏分散（Rの var() に相当）
+df["english"].std()    # 不偏標準偏差（Rの sd() に相当）
+
+df.describe()               # 要約統計量（Rの summary() に相当）
+df.describe(include="all")  # 文字列の列も含めて表示（Rの skimr::skim() に近い）
+```
+
+## 2変数の関係を要約する
+
+```python
+df["english"].corr(df["math"])            # 相関係数（Rの cor(x, y) に相当）
+df[["math", "english", "japanese"]].corr()  # 相関行列（Rの cor(df[,3:5]) に相当）
+```
+
+## 描画用ライブラリ
+
+seabornは「データフレーム・x軸・y軸を指定してグラフの関数を呼ぶ」という、ggplot2に近い書き方ができる。plotlyの`plotly.express`を使うと、同じようにしてインタラクティブなグラフを描ける（Rの`ggplotly()`に近い役割）。
+
+```python
+# 棒グラフ（Rの ggplot(df, aes(x = class)) + geom_bar() に相当）
+sns.countplot(data=df, x="class", order=["A", "B", "C"])
+plt.show()
+
+# plotlyでインタラクティブな棒グラフ
+px.histogram(df, x="class")
+```
+
+## 1変数のグラフ
+
+```python
+# ヒストグラム（Rの geom_histogram(bins = 10) に相当）
+sns.histplot(data=df, x="english", bins=10)
+plt.show()
+```
+
+## 2変数のグラフ
+
+```python
+# 散布図（Rの geom_point() に相当）
+sns.scatterplot(data=df, x="english", y="japanese")
+plt.show()
+
+# 回帰直線つきの散布図（Rの stat_smooth(method = "lm", se = FALSE) に相当）
+sns.regplot(data=df, x="english", y="japanese", ci=None)
+plt.show()
+```
+
+折れ線グラフの例として、Rの`longley`と同じデータは`statsmodels`というライブラリに収録されている。
+
+```python
+import statsmodels.api as sm
+longley = sm.datasets.longley.load_pandas().data
+
+# マーカー付き折れ線グラフ（Rの geom_line() + geom_point() に相当）
+sns.lineplot(data=longley, x="YEAR", y="GNP", marker="o")
+plt.title("1947~62年のアメリカのGNP")
+plt.show()
+```
+
+箱ひげ図・バイオリンプロットは`sns.boxplot()`・`sns.violinplot()`で描ける。seabornのバイオリンプロットはデフォルトで最小値・最大値の外側まで曲線が伸びるので、Rの`geom_violin()`に合わせるには`cut=0`を指定する。
+
+```python
+# 箱ひげ図（Rの geom_boxplot() に相当）
+sns.boxplot(data=df, x="class", y="japanese", order=["A", "B", "C"])
+plt.title("クラスごとの国語の点数の分布")
+plt.show()
+
+# バイオリンプロットと箱ひげ図の併用
+ax = sns.violinplot(data=df, x="class", y="japanese", order=["A", "B", "C"],
+                    cut=0, inner=None, color="white")
+sns.boxplot(data=df, x="class", y="japanese", order=["A", "B", "C"], width=0.3, ax=ax)
+plt.show()
+```
+
+## 層別化・バブルチャート
+
+`hue`（色）や`size`（大きさ）に変数を指定する（Rの`aes()`の`color`・`size`に相当）。
+
+```python
+# クラスごとに色分けした散布図
+sns.scatterplot(data=df, x="english", y="japanese", hue="class")
+plt.show()
+
+# バブルチャート（バブルの大きさが数学の点数）
+sns.scatterplot(data=df, x="english", y="japanese", size="math",
+                sizes=(20, 400), alpha=0.5)
+plt.show()
+
+# plotlyでインタラクティブなバブルチャート
+px.scatter(df, x="english", y="japanese", size="math")
+```
+
+## グラフの保存
+
+```python
+plt.savefig("bubble_chart.png")   # matplotlib/seabornのグラフ（Rの ggsave() に相当）。plt.show()の前に実行する
+fig = px.scatter(df, x="english", y="japanese", size="math")
+fig.write_html("bubble_chart.html")  # plotlyのグラフはhtmlとして保存できる
+```
+
+## （参考）事前に集計をしてからplotを描く場合
+
+```python
+# クラスごとに国語の平均点を集計（Rの group_by() |> summarise() に相当）
+mean_ja = df.groupby("class", as_index=False)["japanese"].mean()
+sns.barplot(data=mean_ja, x="class", y="japanese")
+plt.show()
+
+# 縦持ちデータに変え（Rの pivot_longer() に相当）、科目ごとの平均点を描画
+mean_score = (
+    df.melt(id_vars=["class", "name"], value_vars=["japanese", "english", "math"],
+            var_name="subject", value_name="score")
+    .groupby("subject", as_index=False)["score"].mean()
+)
+px.bar(mean_score, x="subject", y="score")
+```

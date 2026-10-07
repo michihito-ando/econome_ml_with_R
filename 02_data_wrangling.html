@@ -2409,7 +2409,7 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Rで学ぶ計量経済学と機械学習 2<br> <br> データ整理</h1>
-<p class="subtitle lead">This version: 2026-09-30</p>
+<p class="subtitle lead">This version: 2026-10-08</p>
 </div>
 
 
@@ -2504,12 +2504,12 @@ window.Quarto = {
 <pre><code># A tibble: 6 × 5
   class name   math english japanese
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 C     安藤     67      78       45
-2 A     藤村     55      73       72
-3 B     大泉     47      55       73
-4 B     木村     78      71       85
-5 A     鈴井     51      74       61
-6 C     望月     79      84       75</code></pre>
+1 C     安藤     69      78       73
+2 A     藤村     61      60       60
+3 B     大泉     77      83       61
+4 B     木村     45      49       68
+5 A     鈴井     52      25       52
+6 C     望月     79      65       74</code></pre>
 </div>
 </div>
 <p>（なお、後尾6行を見たいときは<code>tail()</code>関数を使う）</p>
@@ -2525,12 +2525,12 @@ window.Quarto = {
 <pre><code># A tibble: 6 × 5
   class name   math english japanese
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 C     安藤     67      78       45
-2 A     藤村     55      73       72
-3 B     大泉     47      55       73
-4 B     木村     78      71       85
-5 A     鈴井     51      74       61
-6 C     望月     79      84       75</code></pre>
+1 C     安藤     69      78       73
+2 A     藤村     61      60       60
+3 B     大泉     77      83       61
+4 B     木村     45      49       68
+5 A     鈴井     52      25       52
+6 C     望月     79      65       74</code></pre>
 </div>
 </div>
 <p>そこで<strong>パイプ演算子</strong>（<code>|&gt;</code>）を利用する。 <code>|&gt;</code>はR 4.1以降であれば追加のパッケージなしで使える、base R（Rの標準機能）の演算子である。</p>
@@ -2550,12 +2550,12 @@ window.Quarto = {
 <pre><code># A tibble: 6 × 5
   class name   math english japanese
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 C     安藤     67      78       45
-2 A     藤村     55      73       72
-3 B     大泉     47      55       73
-4 B     木村     78      71       85
-5 A     鈴井     51      74       61
-6 C     望月     79      84       75</code></pre>
+1 C     安藤     69      78       73
+2 A     藤村     61      60       60
+3 B     大泉     77      83       61
+4 B     木村     45      49       68
+5 A     鈴井     52      25       52
+6 C     望月     79      65       74</code></pre>
 </div>
 </div>
 <p>なおRStudioでは<code>Shift + Ctrl + M</code>（Macは<code>Shift + Command + M</code>）でパイプ演算子を挿入することができる（最近のRStudioではデフォルトで<code>|&gt;</code>が挿入されるが、[Tools] → [Global Options] → [Code]の設定で<code>%&gt;%</code>に変更することもできる）。</p>
@@ -2567,12 +2567,12 @@ window.Quarto = {
 <pre><code># A tibble: 6 × 5
   class name    math english japanese
   &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 C     安藤      67      78       45
-2 C     望月      79      84       75
-3 C     嬉野      54      50       51
-4 C     安田      46      93       67
-5 C     伊藤      64      44       68
-6 C     津久井    52      77       52</code></pre>
+1 C     安藤      69      78       73
+2 C     望月      79      65       74
+3 C     嬉野      61      61       59
+4 C     安田      71      73       65
+5 C     伊藤      79      52       55
+6 C     津久井    62      65       52</code></pre>
 </div>
 </div>
 <p>なお、パイプ処理で関数に渡されるオブジェクトは関数の第一引数に入れられる。 （本来<code>subset(データフレーム, 条件)</code>となっていて、この「データフレーム」が第一引数）</p>
@@ -2587,12 +2587,12 @@ window.Quarto = {
 <pre><code># A tibble: 6 × 5
   class name   math english japanese
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 C     安藤     67      78       45
-2 A     藤村     55      73       72
-3 B     大泉     47      55       73
-4 B     木村     78      71       85
-5 A     鈴井     51      74       61
-6 C     望月     79      84       75</code></pre>
+1 C     安藤     69      78       73
+2 A     藤村     61      60       60
+3 B     大泉     77      83       61
+4 B     木村     45      49       68
+5 A     鈴井     52      25       52
+6 C     望月     79      65       74</code></pre>
 </div>
 </div>
 <p>基本的な使い方であれば<code>|&gt;</code>と<code>%&gt;%</code>はほぼ同じ結果になるので、本講義では以降<code>|&gt;</code>に統一して表記する。</p>
@@ -2705,21 +2705,21 @@ window.Quarto = {
 <pre><code># A tibble: 15 × 5
    class name    math english japanese
    &lt;chr&gt; &lt;chr&gt;  &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
- 1 C     安藤      67      78       45
- 2 C     望月      79      84       75
- 3 C     嬉野      54      50       51
- 4 C     安田      46      93       67
- 5 C     伊藤      64      44       68
- 6 C     津久井    52      77       52
- 7 C     松沢      69      60       99
- 8 C     平藤      65      62       81
- 9 C     荻下      51      98       48
-10 C     岸        90      51       43
-11 C     鈴木      66      46       62
-12 C     山津      68      77       74
-13 C     木村      43      97       71
-14 C     望月      87      98       87
-15 C     増田      70      97       66</code></pre>
+ 1 C     安藤      69      78       73
+ 2 C     望月      79      65       74
+ 3 C     嬉野      61      61       59
+ 4 C     安田      71      73       65
+ 5 C     伊藤      79      52       55
+ 6 C     津久井    62      65       52
+ 7 C     松沢      83      91       68
+ 8 C     平藤      49      71       59
+ 9 C     荻下      74      50       48
+10 C     岸        90      65       70
+11 C     鈴木      72      50       55
+12 C     山津      57      65       34
+13 C     木村      71      80       72
+14 C     望月      58      55       62
+15 C     増田      72      56       64</code></pre>
 </div>
 </div>
 <p>これは、<code>df</code>というデータフレームの<code>&quot;class&quot;</code>という列（<code>df[&quot;class&quot;]</code>）が<code>&quot;C&quot;</code>であるか否かを<code>df[&quot;class&quot;] == &quot;C&quot;</code>として計算させて論理値（TRUEやFALSE）のベクトルを得て、それを<code>df[行番号,列番号]</code>の行番号の部分に入れることで条件に合致する行を取り出す方法。</p>
@@ -2734,13 +2734,13 @@ window.Quarto = {
 <pre><code># A tibble: 7 × 5
   class name   math english japanese
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 B     大泉     47      55       73
-2 A     赤石     44      53       40
-3 B     吉川     43      58       56
-4 A     渡辺     42      59       89
-5 C     岸       90      51       43
-6 A     白川     45      58       68
-7 A     桜井     94      55       89</code></pre>
+1 C     伊藤     79      52       55
+2 A     後藤     79      51       59
+3 A     阿部     62      58       44
+4 A     豊田     60      56       78
+5 C     望月     58      55       62
+6 B     平井     56      56       73
+7 C     増田     72      56       64</code></pre>
 </div>
 </div>
 <p>（<code>filter()</code>はパイプ処理の節で登場した<code>subset()</code>と機能も文法もほぼ一緒）</p>
@@ -2751,13 +2751,13 @@ window.Quarto = {
 <pre><code># A tibble: 7 × 5
   class name   math english japanese
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 B     大泉     47      55       73
-2 A     赤石     44      53       40
-3 B     吉川     43      58       56
-4 A     渡辺     42      59       89
-5 C     岸       90      51       43
-6 A     白川     45      58       68
-7 A     桜井     94      55       89</code></pre>
+1 C     伊藤     79      52       55
+2 A     後藤     79      51       59
+3 A     阿部     62      58       44
+4 A     豊田     60      56       78
+5 C     望月     58      55       62
+6 B     平井     56      56       73
+7 C     増田     72      56       64</code></pre>
 </div>
 </div>
 <section id="参考filterの派生関数群" class="level4" data-number="5.2.3.1">
@@ -2768,11 +2768,10 @@ window.Quarto = {
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="co"># （参考）やや古い書き方になるが filter_all(df, any_vars(. == 100)) と書くこともできる</span></span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(df, <span class="fu">if_any</span>(<span class="fu">everything</span>(), <span class="sc">~</span> . <span class="sc">==</span> <span class="dv">100</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 2 × 5
+<pre><code># A tibble: 1 × 5
   class name   math english japanese
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 B     山口    100      99      100
-2 B     平井    100      49       96</code></pre>
+1 B     橋本     73      95      100</code></pre>
 </div>
 </div>
 <p><code>if_any(対象の列を指定する関数, 条件や処理を指定する関数)</code> というやや難しい記法になる。</p>
@@ -2786,7 +2785,7 @@ window.Quarto = {
 <pre><code># A tibble: 1 × 5
   class name   math english japanese
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
-1 B     山口    100      99      100</code></pre>
+1 B     橋本     73      95      100</code></pre>
 </div>
 </div>
 </section>
@@ -2844,16 +2843,16 @@ window.Quarto = {
 <pre><code># A tibble: 40 × 4
    class  math english japanese
    &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
- 1 C        67      78       45
- 2 A        55      73       72
- 3 B        47      55       73
- 4 B        78      71       85
- 5 A        51      74       61
- 6 C        79      84       75
- 7 C        54      50       51
- 8 B       100      99      100
- 9 C        46      93       67
-10 A        88      81       83
+ 1 C        69      78       73
+ 2 A        61      60       60
+ 3 B        77      83       61
+ 4 B        45      49       68
+ 5 A        52      25       52
+ 6 C        79      65       74
+ 7 C        61      61       59
+ 8 B        85      85       84
+ 9 C        71      73       65
+10 A        79      79       78
 # ℹ 30 more rows</code></pre>
 </div>
 </div>
@@ -2867,16 +2866,16 @@ window.Quarto = {
 <pre><code># A tibble: 40 × 1
    japanese
       &lt;dbl&gt;
- 1       45
- 2       72
- 3       73
- 4       85
- 5       61
- 6       75
- 7       51
- 8      100
- 9       67
-10       83
+ 1       73
+ 2       60
+ 3       61
+ 4       68
+ 5       52
+ 6       74
+ 7       59
+ 8       84
+ 9       65
+10       78
 # ℹ 30 more rows</code></pre>
 </div>
 </div>
@@ -2945,16 +2944,16 @@ window.Quarto = {
 <pre><code># A tibble: 40 × 5
    class name   math english japanese
    &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
- 1 A     渡辺     42      59       89
- 2 B     吉川     43      58       56
- 3 C     木村     43      97       71
- 4 A     赤石     44      53       40
- 5 B     岩田     45      63       51
- 6 A     白川     45      58       68
- 7 C     安田     46      93       67
- 8 B     大泉     47      55       73
- 9 A     鈴井     51      74       61
-10 C     荻下     51      98       48
+ 1 B     前田     35      36       48
+ 2 B     木村     45      49       68
+ 3 B     岩田     46      32       57
+ 4 C     平藤     49      71       59
+ 5 B     福井     50      65       52
+ 6 A     鈴井     52      25       52
+ 7 B     野沢     52      71       99
+ 8 A     赤石     53      64       56
+ 9 B     平井     56      56       73
+10 C     山津     57      65       34
 # ℹ 30 more rows</code></pre>
 </div>
 </div>
@@ -2965,16 +2964,16 @@ window.Quarto = {
 <pre><code># A tibble: 40 × 5
    class name   math english japanese
    &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
- 1 B     山口    100      99      100
- 2 C     荻下     51      98       48
- 3 C     望月     87      98       87
- 4 C     木村     43      97       71
- 5 C     増田     70      97       66
- 6 C     安田     46      93       67
- 7 B     前田     92      92       78
- 8 B     橋本     71      87       59
- 9 C     望月     79      84       75
-10 B     磯部     95      83       47
+ 1 B     橋本     73      95      100
+ 2 A     桜井     83      92       72
+ 3 C     松沢     83      91       68
+ 4 B     吉川     83      88       80
+ 5 B     磯部     62      87       75
+ 6 B     金田     81      87       89
+ 7 B     岩村     69      86       82
+ 8 B     山口     85      85       84
+ 9 B     大泉     77      83       61
+10 B     砂原     74      80       75
 # ℹ 30 more rows</code></pre>
 </div>
 </div>
@@ -2996,12 +2995,12 @@ window.Quarto = {
 <pre><code># A tibble: 6 × 6
   class name   math english japanese total_score
   &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;
-1 C     安藤     67      78       45         190
-2 A     藤村     55      73       72         200
-3 B     大泉     47      55       73         175
-4 B     木村     78      71       85         234
-5 A     鈴井     51      74       61         186
-6 C     望月     79      84       75         238</code></pre>
+1 C     安藤     69      78       73         220
+2 A     藤村     61      60       60         181
+3 B     大泉     77      83       61         221
+4 B     木村     45      49       68         162
+5 A     鈴井     52      25       52         129
+6 C     望月     79      65       74         218</code></pre>
 </div>
 </div>
 <p>ただし、この方法では追加したい列の数だけこの記述を繰り返す必要がある。</p>
@@ -3018,16 +3017,16 @@ window.Quarto = {
 <pre><code># A tibble: 40 × 8
    class name   math english japanese total_score math_japanese math_english
    &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;         &lt;dbl&gt;        &lt;dbl&gt;
- 1 C     安藤     67      78       45         190           112          145
- 2 A     藤村     55      73       72         200           127          128
- 3 B     大泉     47      55       73         175           120          102
- 4 B     木村     78      71       85         234           163          149
- 5 A     鈴井     51      74       61         186           112          125
- 6 C     望月     79      84       75         238           154          163
- 7 C     嬉野     54      50       51         155           105          104
- 8 B     山口    100      99      100         299           200          199
- 9 C     安田     46      93       67         206           113          139
-10 A     新城     88      81       83         252           171          169
+ 1 C     安藤     69      78       73         220           142          147
+ 2 A     藤村     61      60       60         181           121          121
+ 3 B     大泉     77      83       61         221           138          160
+ 4 B     木村     45      49       68         162           113           94
+ 5 A     鈴井     52      25       52         129           104           77
+ 6 C     望月     79      65       74         218           153          144
+ 7 C     嬉野     61      61       59         181           120          122
+ 8 B     山口     85      85       84         254           169          170
+ 9 C     安田     71      73       65         209           136          144
+10 A     新城     79      79       78         236           157          158
 # ℹ 30 more rows</code></pre>
 </div>
 </div>
@@ -3049,16 +3048,16 @@ window.Quarto = {
 <pre><code># A tibble: 40 × 5
    class name   math english japanese
    &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;
- 1 C     安藤     67      78       45
- 2 A     藤村     55      73       72
- 3 B     大泉     47      55       73
- 4 B     木村     78      71       85
- 5 A     鈴井     51      74       61
- 6 C     望月     79      84       75
- 7 C     嬉野     54      50       51
- 8 B     山口    100      99      100
- 9 C     安田     46      93       67
-10 A     新城     88      81       83
+ 1 C     安藤     69      78       73
+ 2 A     藤村     61      60       60
+ 3 B     大泉     77      83       61
+ 4 B     木村     45      49       68
+ 5 A     鈴井     52      25       52
+ 6 C     望月     79      65       74
+ 7 C     嬉野     61      61       59
+ 8 B     山口     85      85       84
+ 9 C     安田     71      73       65
+10 A     新城     79      79       78
 # ℹ 30 more rows</code></pre>
 </div>
 </div>
@@ -3078,16 +3077,16 @@ window.Quarto = {
 <pre><code># A tibble: 40 × 6
    class name   math english japanese total_score
    &lt;chr&gt; &lt;chr&gt; &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;       &lt;dbl&gt;
- 1 C     安藤     67      78       45         190
- 2 A     藤村     55      73       72         200
- 3 B     大泉     47      55       73         175
- 4 B     木村     78      71       85         234
- 5 A     鈴井     51      74       61         186
- 6 C     望月     79      84       75         238
- 7 C     嬉野     54      50       51         155
- 8 B     山口    100      99      100         299
- 9 C     安田     46      93       67         206
-10 A     新城     88      81       83         252
+ 1 C     安藤     69      78       73         220
+ 2 A     藤村     61      60       60         181
+ 3 B     大泉     77      83       61         221
+ 4 B     木村     45      49       68         162
+ 5 A     鈴井     52      25       52         129
+ 6 C     望月     79      65       74         218
+ 7 C     嬉野     61      61       59         181
+ 8 B     山口     85      85       84         254
+ 9 C     安田     71      73       65         209
+10 A     新城     79      79       78         236
 # ℹ 30 more rows</code></pre>
 </div>
 </div>

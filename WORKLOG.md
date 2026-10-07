@@ -137,3 +137,41 @@ var filterRegex = new RegExp('/' + window.location.host + '/');
 という正規表現で「サイト内リンクかどうか」を判定しており、`file://`で直接ローカルファイルを開いた場合は`window.location.host`が空文字列になるため、この正規表現が`//`という「ほぼ全てのhttp(s)リンクにマッチしてしまう」パターンになってしまうことが判明（Pythonで`re`を使って`//`が`https://r4ds.hadley.nz/`等に必ずマッチすることを確認）。結果として、ローカルでfile://として開いたときだけ全リンクが「サイト内リンク」と誤判定され、新しいタブで開かなくなっていた（GitHub Pagesで公開後は`window.location.host`が`michihito-ando.github.io`になるため、この問題自体は起きない想定だが、ローカルでの動作確認に支障が出る）。
 
 **対応**: `format: html:`に`link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'`を明示的に追加し、`window.location.host`に依存しない判定に変更。これにより`file://`で直接開いた場合でも、本サイト（michihito-ando.github.io）以外へのリンクは正しく新しいタブで開くようになる。01_elements.qmd・02_data_wrangling.qmdの両方に適用し、再レンダリング後、埋め込まれたスクリプトの正規表現が意図通りになっていることを確認。`docs/`配下の該当htmlにも反映済み。
+
+## 2026-10-07: 03_EDA.Rmd → 03_EDA.qmd
+
+第3回「データの可視化」を、第1回・第2回と同じ方針でqmd化。
+
+### やったこと
+
+1. **[03_EDA.qmd](03_EDA.qmd) を新規作成**。YAMLは第1・2回と同じ形（`subtitle`での日付表示、`link-external-newwindow` + `link-external-filter`など）。元のRmdの図のサイズ設定（`fig_height: 4`, `fig_width: 6`）は維持。画像ファイルの参照はなし。
+2. **第2回で決めた講義全体の方針に合わせた修正**: `%>%`→`|>`（第2回で「本講義では以降`|>`に統一」と明記したため、7箇所）、「RStudio Cloud」→「Posit Cloud」。
+3. **明らかな誤りの修正**: 「`packman`をインストール」→`pacman`、コメントの「plolyで表示」→「plotlyで表示」、リンク切れだった`skimr`の解説（CRANのvignette URLが404）を[rOpenSciの現行ページ](https://docs.ropensci.org/skimr/articles/using_skimr.html)に差し替え。
+4. **見出しの`{-}`（番号なし見出し）**: 元のRmdでは`見出し{-}`とスペースなしで書かれていたが、確実に効くよう`見出し {.unnumbered}`に変更。
+5. **日本語のグラフタイトルの文字化けを修正**: この環境（macOS）で通常の`png`デバイスで描くと、`labs(title = "クラスごとの国語の点数の分布")`などの日本語が□□□になっていた。非表示のセットアップチャンクで`knitr::opts_chunk$set(dev = "ragg_png")`を指定し、フォントの代替表示に対応した`{ragg}`で描画するようにした（学生向けに見えるコードには影響しない）。plotlyのインタラクティブなグラフは元々問題なし。
+6. `pacman`パッケージがこのマシンに未インストールだったため、レンダリングのためCRANからインストールした。
+7. レンダリングし、ブラウザで静的なggplot（日本語タイトル含む）、plotlyのインタラクティブグラフ、番号なし見出し、外部リンクの新規タブ化を確認済み。
+
+## 2026-10-08: 03_EDA.qmdへの提案事項の反映
+
+ユーザーの承認を受けて、変換時に提案した6項目をすべて反映。
+
+1. **「（おまけ）Pythonで同様の作業を行う場合」を追加**（第14節）。pandas＋seaborn/matplotlib＋plotly.expressで、要約統計量・相関・各種グラフ（棒グラフ・ヒストグラム・散布図・回帰直線・折れ線・箱ひげ図・バイオリンプロット・層別化・バブルチャート）・グラフの保存・集計してからの描画に対応するコードを掲載。掲載前に一時的なvenvで全コードを実行し、出力（グラフ画像含む）を確認済み（venvは作業後に削除）。
+   - matplotlibもRと同様、日本語フォントを指定しないと□□□になるため、`plt.rcParams["font.family"]`の設定をコードに含めた。
+   - seabornのバイオリンプロットはデフォルトで最小値・最大値の外側まで曲線が伸びる（Rの`geom_violin()`は切る）ため`cut=0`を指定。クラスの並び順もRと同じA・B・Cになるよう`order`を指定。
+   - Rの`longley`データはPythonでは`statsmodels`に収録されているので、それを使った。
+2. `summary()`の説明で「`english`、`japanese`、`math`は整数（integer）型」となっていたのを「数値（numeric）型」に修正（`read_excel()`は`dbl`として読み込むため）。
+3. ggplot2チートシートの「日本語翻訳」への参考リンクを削除（第2回で日本語チートシート情報を削除したのに合わせた）。
+4. 見出し「例示用データの用意と前処理」→「例示用データの読み込み」（列名変換をなくしたため前処理をしていない）。
+5. 表示されない（`eval=F, include=F`）分散の計算コードを削除。
+6. **参考文献を刷新**: 2021年のブログ記事を削除し、R for Data Science 2nd edition（Data visualization / Layers / Exploratory data analysis）、私たちのR（第19〜21章 可視化）、ggplot2公式本（3rd edition）、Healy『Data Visualization』のウェブ版（日本語訳の書籍も併記）、Kabacoff『Data Visualization with R』、Plotly公式のggplot2解説、skimr公式解説に整理。全リンクの生存を確認済み。
+
+## 2026-10-08: test_scores.xlsxの得点データを作り直し
+
+旧データは3教科の得点間の相関がほぼゼロ（math–english 0.16、math–japanese 0.23、english–japanese 0.04）で、散布図や相関行列の例として面白みに欠けるとの指摘を受け、得点（math, english, japanese列）だけを作り直した。
+
+- **残したもの**: 40行×5列の構成、`class`・`name`列の値と並び順、シート名（`classes`）、フォント等の書式。第2回の`str_subset("安")`・`str_which("川")`のデモが名前に依存しているため。
+- **生成方法**: 「一般的な学力」の因子を3教科共通に、「語学系」の因子をenglishとjapaneseにだけ持たせ、科目固有の成分を足して得点を作った（標準偏差16前後、平均65前後）。クラスごとに小さな得意傾向（A：数学がやや高い、B：国語がやや高い、C：英語がやや高い）もつけた。四捨五入して25〜100点に収めた。
+- **乱数のseedの選び方**: 第2回のデモが意味のある結果を返す条件を満たす最初のseedを使った（seed=39）。条件は、①100点がある（`if_any(... == 100)`のデモ用）、②englishとjapaneseがともに90超の生徒がいる（`if_all(...)`のデモ用）、③50<english<60の生徒が4人以上いる、④相関が狙った範囲に入る、の4つ。
+- **結果**: 相関はmath–english 0.51、math–japanese 0.36、english–japanese 0.62（語学系どうしの相関が最も高い、それっぽい構造）。平均は67.8/66.0/66.1、標準偏差は13.8/17.1/14.4。100点とenglish・japaneseがともに90超の両方に該当するのは「橋本」。50<english<60は7人。english=25の生徒（鈴井）が1人いる（下限で切った値。外れ値の例にもなる）。
+- リポジトリ直下と`docs/`の両方の`test_scores.xlsx`を更新し、第2回・第3回を再レンダリングしてエラーがないことを確認。第3回の散布図・回帰直線ではっきりした右上がりの関係が見えるようになった。
