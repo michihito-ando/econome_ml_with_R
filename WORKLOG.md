@@ -175,3 +175,40 @@ var filterRegex = new RegExp('/' + window.location.host + '/');
 - **乱数のseedの選び方**: 第2回のデモが意味のある結果を返す条件を満たす最初のseedを使った（seed=39）。条件は、①100点がある（`if_any(... == 100)`のデモ用）、②englishとjapaneseがともに90超の生徒がいる（`if_all(...)`のデモ用）、③50<english<60の生徒が4人以上いる、④相関が狙った範囲に入る、の4つ。
 - **結果**: 相関はmath–english 0.51、math–japanese 0.36、english–japanese 0.62（語学系どうしの相関が最も高い、それっぽい構造）。平均は67.8/66.0/66.1、標準偏差は13.8/17.1/14.4。100点とenglish・japaneseがともに90超の両方に該当するのは「橋本」。50<english<60は7人。english=25の生徒（鈴井）が1人いる（下限で切った値。外れ値の例にもなる）。
 - リポジトリ直下と`docs/`の両方の`test_scores.xlsx`を更新し、第2回・第3回を再レンダリングしてエラーがないことを確認。第3回の散布図・回帰直線ではっきりした右上がりの関係が見えるようになった。
+
+## 2026-10-14: 04_OLS.Rmd → 04_OLS.qmd
+
+第4回「回帰分析」を、第1〜3回と同じ方針でqmd化。
+
+### やったこと
+
+1. **[04_OLS.qmd](04_OLS.qmd) を新規作成**。YAMLは第1〜3回と同じ形（`subtitle`での日付表示、`link-external-newwindow` + `link-external-filter`、非表示のセットアップチャンクで`dev = "ragg_png"`）。図のサイズは元と同じ高さ3・幅4。
+2. **講義全体の方針に合わせた修正**: `%>%`→`|>`（1箇所）、`df = CPS1985 ...`→`df <- CPS1985 ...`。
+3. **記法の不具合の修正**:
+   - `summary(reg_logwage_r)`のチャンクが、開始は4つのバッククォート（` ```` `）で終了は3つという不一致になっていた。Quartoでは閉じられないチャンクになってしまうため、3つに揃えた。
+   - チャンクのエンジン指定が大文字の`{R}`になっていた4箇所を、他と同じ`{r}`に統一。
+   - 番号なし見出し`{-}`（2箇所）を`{.unnumbered}`に変更（第3回と同様）。
+   - 参考文献の本文中の誤字「`lm_robst`」→「`lm_robust`」。
+4. `{AER}`パッケージ（CPS1985データを収録）がこのマシンに未インストールだったため、レンダリングのためにCRANからインストールした。
+5. レンダリングし、stargazer/texregの表、ヒストグラム、F検定の出力などを確認済み。stargazerにtibbleを渡すと表が空になるバグ（本文で注意書きしている例）は、現行のstargazer 5.2.3でもそのまま再現することを確認したので、注意書きは現在も正しい。
+
+## 2026-10-14: 04_OLS.qmdへの提案事項の反映（modelsummaryへの移行など）
+
+ユーザーの承認を受けて、変換時に提案した8項目をすべて反映。表作成は`{modelsummary}`をメインにするよう指示があった。
+
+1. **表作成を`{stargazer}`/`{texreg}`から`{modelsummary}`に移行**:
+   - 要約統計量の表は`datasummary_skim(CPS1985, type = "numeric")`（小さなヒストグラムつき）。回帰分析の表はすべて`modelsummary(list(...), stars = TRUE, gof_omit = "AIC|BIC|Log.Lik|RMSE")`。ファイル保存は`output = "xxx.docx"`（Word）/`.html`。
+   - `gof_omit`でAIC・BIC・対数尤度・RMSEを省略している理由: `lm_robust()`の結果を`modelsummary()`に入れると、AIC/BIC/RMSEがおかしな値（RMSEが`lm()`の0.46に対して8.59など）で表示されるため。
+   - `lm_robust()`の結果も`modelsummary()`にそのまま入るので、以前の「stargazerと相性が悪いのでtexregを使う」という説明は不要になり、`{texreg}`は使わなくなった。
+   - 新しい節「modelsummaryでロバスト標準誤差を指定する」を追加。`lm()`の結果に`vcov = "HC1"`と指定するだけでロバスト標準誤差の表が作れる。**このとき表のF統計量も頑健なものに置き換わる**（90.416/77.265/53.462で、`waldtest(..., vcov = vcovHC(..., type = "HC1"))`と一致）ことを確認し、本文の説明に反映した。分散共分散行列を自分で計算して`vcov = list(...)`で渡した場合はF統計量が表示されないことも確認し、本文に明記した。
+   - stargazerは「（参考）stargazerを使う場合」という節に移した（更新停止中であること、`se`引数でロバスト標準誤差に置き換える方法、tibbleを入れると表示されないバグ）。
+2. 「制約なし」→「制約あり」（定数項のみに回帰するモデルは制約ありのモデル）。直前に「まず」がないのに「次に」で始まっていた文も修正。
+3. 変数名・コメントの綴り`reg_lowage`/`vcov_reg_lowage`→`reg_logwage`/`vcov_reg_logwage`。
+4. 使われていないコード（コメントアウトされた「ディレクトリの設定」、中身がコメントだけの非表示チャンク2つ）を削除。
+5. Rコード中の全角スペース（`　#`）3箇所を半角に。
+6. 「RMarkdown（このウェブ資料）ではNote以下の部分が正しく表示されていない」という古い一文を削除。
+7. 節「（参考）不均一分散への対応 (lm_robustを使わない方法)」を「（参考）ロバスト標準誤差を自分で計算する方法」に改題し、表は`modelsummary(..., vcov = list(自分で計算した分散共分散行列))`に変更。
+8. **参考文献を刷新**: 安藤の「計量経済学１」講義資料は残し、Hanckらの[Introduction to Econometrics with R](https://www.econometrics-with-r.org/)（Stock & Watsonの教科書のRでの実践版で、本講義と同じ`{AER}`を使う）、矢内勇生氏の[KUT 計量経済学応用](https://yukiyanai.github.io/econometrics2/)、[modelsummary公式](https://modelsummary.com/)、[estimatr公式](https://declaredesign.org/r/estimatr/articles/getting-started.html)に整理。本文中のManchester大学ECLRへの参照（httpsの証明書切れ）も、Introduction to Econometrics with Rの5.4節に差し替え。
+9. **「（おまけ）Pythonで同様の作業を行う場合」を追加**（statsmodels）。データは`sm.datasets.get_rdataset("CPS1985", "AER")`で読み込む。一時的なvenvで実行し、係数・ロバスト標準誤差・均一分散のF統計量（90.006/71.214/55.229）・頑健なF統計量（90.416/77.265/53.462）がRと完全に一致することを確認した。`summary_col()`の`*`の基準が`modelsummary()`と異なることも注記した。
+   - このマシンのPython（公式サイト版）では`get_rdataset()`がSSL証明書のエラーになった（公式サイト版のPythonは`Install Certificates.command`を実行するまで証明書が入っていないため）。テストは`certifi`の証明書を指定して実行し、学生も同じエラーに遭遇しうるので本文に対処法を一文入れた。
+- （追記）ユーザーの指示で、`lm_robust()`の結果を入れるオブジェクト名を`reg_logwage_r`/`reg_multiple_r`/`reg_mincer_r`から`reg_logwage_robust`/`reg_multiple_robust`/`reg_mincer_robust`に変更（R本文とPython付録の両方、計12箇所）。

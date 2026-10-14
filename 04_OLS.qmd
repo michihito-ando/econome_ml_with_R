@@ -1,0 +1,638 @@
+---
+title: "Rで学ぶ計量経済学と機械学習 4<br> <br> 回帰分析"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+subtitle: "This version: `r Sys.Date()`"
+format:
+  html:
+    css: R_style.css
+    embed-resources: true   # 画像などの埋め込み
+    # theme: cosmo
+    highlight-style: haddock     # Rスクリプトのハイライト形式
+    # code-fold: true       # Rコードの折りたたみ表示を設定
+    toc: true
+    toc-depth: 2           # 見出しの表示とその深さを指定
+    number-sections: true  # 見出しごとに番号を振る
+    # df-print: paged       # head()の出力をnotebook的なものに（tibbleと相性良）
+    fig-height: 3          # 画像サイズのデフォルトを設定
+    fig-width: 4           # 画像サイズのデフォルトを設定
+    fig-format: png
+    link-external-newwindow: true  # 外部リンクを新しいタブで開く
+    # 「サイト内リンク」とみなすドメインを明示的に指定。
+    # 指定しない場合はブラウザの現在地(window.location.host)から自動判定されるが、
+    # file://で直接開いたときはhostが空文字になり、結果的に全リンクが「サイト内」と
+    # 誤判定されて新しいタブで開かなくなってしまう。それを避けるための設定。
+    link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F,
+                      fig.height=3, fig.width=4)
+# 日本語のグラフ文字が文字化け（□）しないよう、フォントの代替表示に対応したraggで描画する
+knitr::opts_chunk$set(dev = "ragg_png")
+```
+
+
+# 本講義の目的
+
+- Rを用いた回帰分析の方法を学ぶ。
+- 要約統計量や回帰分析の結果の実践的な出力方法を学ぶ
+
+# パッケージの読み込み
+
+まず、{tidyverse}や{AER}や{modelsummary}など、今回用いるパッケージのインストールと読み込みを行う。新しい関数については、適宜説明していく。
+
+```{r, results='hide'}
+pacman::p_load(
+   tidyverse,
+   skimr,
+   estimatr,
+   AER,
+   modelsummary,
+   stargazer,
+   gridExtra
+)
+```
+
+
+# データの用意
+
+以下ではRで回帰分析を行っていくが、今回は{AER}パッケージ（Applied Econometrics with Rパッケージ）に収録されているCPS1985というデータセットを例に使用する。
+
+今回使用する`CPS1985`データセットは、1985年アメリカの時給や教育年数などの変数が入ったものである。
+
+`data()`関数でデータセットの読み込みを行う。
+
+```{r}
+# データの読み込み
+data("CPS1985")
+head(CPS1985)
+```
+
+
+# 記述統計の表示
+
+回帰分析を行う前に、ほとんどの場合、分析に用いる統計の要約統計量（summary statistics)を載せる。
+
+要約統計量をチェックするだけならば、`summary()`や`skimr::skim(df)`を使えばよい。
+
+```{r}
+summary(CPS1985)
+skimr::skim(CPS1985)
+```
+
+だが、これらはそのまま論文などに掲載することはできない。そこで、`{modelsummary}`パッケージの`datasummary_skim()`関数を使い、要約統計量の表を作成する。
+
+```{r}
+datasummary_skim(CPS1985, type = "numeric")
+```
+
+`type = "numeric"`は数値の変数だけを表にするという指定である（`type = "categorical"`とすると、`gender`や`occupation`などのカテゴリ変数の度数の表になる）。
+
+`output`引数にファイル名を指定すると、表をファイルとして保存できる。拡張子を`.docx`にすればWord形式、`.html`にすればhtml形式で保存される。
+
+```{r, eval=FALSE}
+# Word形式で保存（Wordで作成した論文に貼り付ける場合はこちらが便利）
+datasummary_skim(CPS1985, type = "numeric", output = "summary_CPS1985.docx")
+
+# html形式で保存
+datasummary_skim(CPS1985, type = "numeric", output = "summary_CPS1985.html")
+```
+
+`{modelsummary}`の表はもっと細かく調整できる。ヘルプや[公式サイト](https://modelsummary.com/)を参照して、自分用にカスタマイズした表を作ることができる。また、LaTeX形式（拡張子`.tex`）での出力も可能である。
+
+
+# 回帰分析の基礎
+
+**回帰分析**（regression analysis）は、ある変数$Y$（被説明変数）を、別の変数$X$（説明変数）で説明することで両変数の関係を分析する手法である。
+
+最も基本的な回帰モデルは次のような線形で説明変数が１つの回帰モデルである。
+
+$$
+Y_i = \beta_0 + \beta_1 X_i + u_i
+$$
+
+
+こうした線形の回帰モデルは**線形回帰**（linear regression）と呼ばれ、また説明変数$X_i$が１つの回帰モデルは**単回帰モデル**（simple regression model）と呼ばれる。
+
+
+
+## 最小二乗法
+
+線形回帰のパラメータ$\beta_0, \beta_1$はデータ$X_i,Y_i$から推定する。最も有名で強力な推定方法は**最小二乗法**（ordinary least squares method, OLS method）である。この方法では、実測値$Y_i$と予測値$\hat{Y}_i$との残差二乗和$\sum_{i=1}^n (Y_i - \hat{Y}_i)^2$を最小化するように推定量$\hat{\beta}_0, \hat{\beta}_1$を求める。
+
+最小二乗法による線形回帰は`lm()`関数で行うことができる。
+
+例えば、被説明変数を賃金$\text{Wage}$、説明変数を教育年数$\text{Education}$とする
+
+$$
+\text{Wage}_i  = \beta_0 + \beta_1 \text{Education}_i  + u_i
+$$
+のような回帰モデルを作って推定したい場合は、`lm()`の`formula`引数に`wage ~ education`と指定し、使用するデータフレームを`data`引数に指定すればよい。
+
+```{r}
+# Regression
+reg <- lm(formula = wage ~ education, 
+          data = CPS1985) # 教育年数が賃金を決めるモデル
+
+reg
+```
+
+ここで`Coefficients:`の部分に表示されている`(Intercept)`は切片の係数$\beta_0$で、`education`は傾き係数$\beta_1$である。
+
+推定したlmオブジェクトは、`summary()`関数でより詳細な情報を見ることができる。
+
+```{r}
+summary(reg)
+```
+
+## 回帰分析の結果表示
+
+`summary()`による結果表示は論文に使用できるような整った形ではない。そこで再び`{modelsummary}`パッケージを使って整形する。
+
+`modelsummary()`に`lm()`関数の結果を入れると、以下のような表が作成される。`stars = TRUE`を指定すると、係数の有意水準を示す`*`がつく。括弧内の数値は標準誤差である。
+
+```{r}
+modelsummary(reg, stars = TRUE)
+```
+
+表の下部にはサンプルサイズ（`Num.Obs.`）や決定係数（`R2`）などの統計量が表示される。`gof_omit`引数を使うと、不要な統計量を省略できる。以下では、AIC・BIC・対数尤度（`Log.Lik.`）・RMSEを省略して表示する。
+
+`output = "reg1.docx"`（Word形式）や`output = "reg1.html"`（html形式）とおけばファイルとして保存できる。
+
+```{r, eval=F}
+modelsummary(reg,                    # 回帰分析の結果
+             stars = TRUE,           # 有意水準の*を表示
+             output = "reg1.docx")   # 保存するファイル名（拡張子でファイル形式が決まる）
+```
+
+# 対数変換
+
+データ分析の過程では、データを対数変換したい場合もある。
+
+例えば、賃金のように「低い人（低所得者層）が多く、高い人（高所得者層）が少ない」ような分布はL字型のような右に歪んだ分布になる。こうした分布は対数変換を行うことで正規分布に近づく。
+
+```{r}
+g1 <- ggplot(CPS1985, aes(x = wage)) +
+  geom_histogram(bins = 10)
+
+g2 <- ggplot(CPS1985, aes(x = log(wage))) +
+  geom_histogram(bins = 10)
+
+grid.arrange(g1, g2) # gridExtraパッケージによるグラフの結合。他にもpatchworkパッケージなどがある。
+```
+
+また、対数変換を行うことによって係数の解釈も次のように変わる。
+
+| モデル                                | 係数の解釈                                                 |
+| ------------------------------------- | ---------------------------------------------------------- |
+| $Y = \beta_0 + \beta_1 X$             | 「$X$が1単位増加すると、$Y$が$\beta_1$単位増加する」       |
+| $Y = \beta_0 + \beta_1 \ln(X)$       | 「$X$が1%増加すると、$Y$が$\beta_1 / 100$単位増加する」 |
+| $\ln(Y) = \beta_0 + \beta_1 X$       | 「$X$が1単位増加すると、$Y$が$(\beta_1 \times 100)$%増加する」 |
+| $\ln(Y) = \beta_0 + \beta_1 \ln(X)$ | 「$X$が1%増加すると、$Y$が$\beta_1$%増加する」             |
+
+
+回帰分析での変数の対数変換は`lm()`関数内で変数を`log()`で囲うだけでよい（なお、`log()`はデフォルトでは自然対数$\ln(\cdot)$となる）。
+
+先程の単回帰モデルの被説明変数$Wage$を対数変換した回帰モデル
+
+$$
+\ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i  + u_i
+$$
+
+は以下のコードで実行できる。
+
+```{r}
+reg_logwage <- lm(formula = log(wage) ~ education, 
+                  data = CPS1985)
+```
+
+対数変換をしなかった線形回帰の結果`reg`と今回の`reg_logwage`を`list()`でまとめて`modelsummary()`に入れることで、まとめて結果表示できる。
+
+```{r}
+modelsummary(list(reg, reg_logwage), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+
+# 重回帰モデル
+
+## 重回帰モデルとは
+
+複数の説明変数を使用した回帰モデルを**重回帰モデル**（multiple regression model）という。
+
+$$
+Y_i = \beta_0 + \beta_1X_{i1} + \beta_2 X_{i2} + \cdots + \beta_p X_{ip} + u_i
+$$
+
+先程の回帰モデルに新たな変数$\text{Experience}$（潜在経験年数）を追加した回帰モデル
+
+$$
+\ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i + \beta_2 \text{Experience}_i + u_i
+$$
+
+をRで推定する場合、`lm()`関数の引数`formula`に` + experience`を追加し、
+
+```{r}
+reg_multiple <- lm(formula = log(wage) ~ education + experience, 
+                   data = CPS1985)
+```
+
+と書けばよい。
+
+```{r}
+modelsummary(list(reg_logwage, reg_multiple), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+
+## ミンサー型賃金関数と２乗項
+
+### ミンサー型賃金関数 {.unnumbered}
+
+賃金$\text{Wage}$を教育年数$\text{Education}$、潜在経験年数$\text{Experience}$、潜在経験年数の２乗$\text{Experience}^2$、観察不能な賃金決定要因の関数$u$として示す式
+
+$$
+\ln(\text{Wage}_i)  = \beta_0 + \beta_1 \text{Education}_i + \beta_2 \text{Experience}_i + \beta_3 \text{Experience}_i^2 + u_i
+$$
+
+はミンサー型賃金関数と呼ばれ、世界各国の様々な時点の賃金分布をよく説明することが知られている。
+
+### ２乗項を含む重回帰モデル {.unnumbered}
+
+ミンサー型賃金関数を実際のデータにあてはめて分析する場合は、
+
+1. 潜在経験年数の２乗$\text{Experience}^2$の変数を作成し
+2. 重回帰モデルとして分析する
+
+という手順で分析すればよい。
+
+まず、２乗の変数を作成する。
+
+`mutate(新しい変数の名前 = 既存の変数の名前^2)`のように書くことで任意の変数の2乗項を作成できる。
+
+```{r}
+# mutate関数で新しい変数を追加したデータをdfオブジェクトに代入
+df <- CPS1985 |> 
+  dplyr::mutate(experience2 = experience^2) 
+```
+
+次に、このデータフレーム`df`と新たな変数名`experience2`を使って`lm()`関数を書く。
+
+```{r}
+reg_mincer <- lm(
+  formula = log(wage) ~ education + experience + experience2, 
+  data = df
+)
+```
+
+3つのモデルの推定結果を並べると以下のようになる。
+
+```{r}
+modelsummary(list(reg_logwage, reg_multiple, reg_mincer), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+Word形式で保存する場合は、以下のようにする。
+
+```{r, eval=FALSE}
+modelsummary(list(reg_logwage, reg_multiple, reg_mincer), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE",
+             output = "04reg_table.docx")
+```
+
+# 不均一分散への対応
+
+## 不均一分散に対して頑健な標準誤差 
+
+`lm`によるOLS推定における標準誤差は、誤差項の分散が均一（均一分散）であると仮定している。しかし、実際の計量経済分析において均一分散の仮定が満たされていると想定できるケースはまれであり、通常は、不均一分散に対して頑健な標準誤差(ロバスト標準誤差, heteroskedasticity robust standard error)を用いる。
+
+## lm_robust
+
+ロバスト標準誤差は、`lm()`の代わりに`{estimatr}`パッケージの`lm_robust()`を用いて計算し、分析結果表に組み込むことができる。
+
+パッケージを読み込み、`lm`と同じような形で`lm_robust`を用いる、ロバスト標準誤差にはいくつかの種類があるが、ここでは `HC1`と指定する。
+
+```{r}
+# ロバスト標準誤差を用いたOLS推定
+reg_logwage_robust <- 
+  lm_robust(formula = log(wage) ~ education, 
+            data = CPS1985, se_type = "HC1")
+
+reg_multiple_robust <- 
+  lm_robust(formula = log(wage) ~ education + experience, 
+            data = CPS1985, 
+            se_type = "HC1")
+
+reg_mincer_robust <- 
+  lm_robust(formula = log(wage) ~ education + experience + experience2, 
+            data = df, 
+            se_type = "HC1")
+```
+
+なお、`HC1`は計量経済学でもっともよく使われるロバスト標準誤差であり、経済学者によく使用される計量分析ソフトのStataのロバスト標準誤差と同一のものであり、`lm_robust`では、`HC1`のかわりに`stata`と表記してもよい。
+
+推定結果は、lmと同じく`summary()`関数で見ることができる。
+
+```{r}
+summary(reg_logwage_robust)
+summary(reg_multiple_robust)
+summary(reg_mincer_robust)
+```
+
+`lm_robust()`の結果も、`lm()`の結果と同じように`modelsummary()`に入れて表にすることができる。
+
+```{r}
+modelsummary(list(reg_logwage_robust, reg_multiple_robust, reg_mincer_robust), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+## modelsummaryでロバスト標準誤差を指定する
+
+`modelsummary()`では、`lm()`の結果に対して`vcov = "HC1"`と指定するだけでも、ロバスト標準誤差を用いた表を作ることができる。係数の推定値は同じで、括弧内の標準誤差がロバスト標準誤差に置き換わる。表の最下部の`Std.Errors`の行に、どの種類の標準誤差を用いたかが表示される。
+
+```{r}
+modelsummary(list(reg_logwage, reg_multiple, reg_mincer), 
+             vcov = "HC1",
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+上の`lm_robust()`の表と、係数・標準誤差が一致していることが確認できる。また、この場合は表のF統計量（`F`の行）も、不均一分散に対して頑健なものに置き換わっている（`vcov`を指定していない前節の表のF統計量とは値が異なる）。
+
+Word形式で保存する場合は、以下のようにする。
+
+```{r, eval=FALSE}
+modelsummary(list(reg_logwage, reg_multiple, reg_mincer), 
+             vcov = "HC1",
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE",
+             output = "04reg_table_r.docx")
+```
+
+
+# （参考）ロバスト標準誤差を自分で計算する方法
+
+ロバスト標準誤差が実際にどのように計算されているかを確認するため、`{sandwich}`パッケージを使って自分で計算する方法を紹介する（`lm_robust()`が登場する前は、この方法が一般的だった）。
+
+## vcovHC
+
+`{sandwich}`パッケージの`vcovHC`関数を用いる。なおsandwichという名称は、ロバスト標準誤差の推定量の式の形状から来ている。
+
+まず`{sandwich}`パッケージをインストールして読み込む。
+
+```{r}
+pacman::p_load(sandwich)
+```
+
+上記の3種類の重回帰モデルの推定結果の標準誤差を、ロバスト標準誤差に置き換える。
+
+まず、`vcovHC`関数を用いてロバスト標準誤差を得る。
+
+```{r}
+# (1) reg_logwage
+vcov_reg_logwage <- vcovHC(reg_logwage, 
+                           type = "HC1")  # 分散共分散行列
+robustSE_reg_logwage <- sqrt(diag(vcov_reg_logwage)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
+
+# (2) reg_multiple
+vcov_reg_multiple <- vcovHC(reg_multiple, 
+                            type = "HC1") # 分散共分散行列
+
+robustSE_reg_multiple <- sqrt(diag(vcov_reg_multiple)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
+
+# (3) reg_mincer
+vcov_reg_mincer <- vcovHC(reg_mincer, 
+                          type = "HC1")  # 分散共分散行列
+
+robustSE_reg_mincer <- sqrt(diag(vcov_reg_mincer)) # ロバスト標準誤差（分散共分散行列の対角成分の平方根）
+```
+
+ここで、`type = "HC1"`とは、ロバスト標準誤差の種類の指定であり、`HC1`は計量経済学でもっともよく使われるものである。
+
+`modelsummary()`の`vcov`引数に、計算した分散共分散行列をリストで渡すと、表の標準誤差がそれに置き換わる（`Std.Errors`の行は`Custom`と表示される）。
+
+```{r}
+modelsummary(list(reg_logwage, reg_multiple, reg_mincer), 
+             vcov = list(vcov_reg_logwage, 
+                         vcov_reg_multiple, 
+                         vcov_reg_mincer), # 自分で計算した分散共分散行列
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+`vcov = "HC1"`と指定した前節の表と同じ標準誤差になっていることが確認できる。通常は、均一分散を仮定した標準誤差よりもロバスト標準誤差のほうが大きくなる傾向があるが、今回はほとんど変わらない。なお回帰係数の推定値は全く同じとなる。
+
+## 不均一分散に対して頑健なF検定
+
+前節で`vcov = "HC1"`と指定した表では、F統計量も不均一分散に対して頑健なものに置き換わっていた（なお、上のように分散共分散行列を自分で渡した場合は、F統計量は表示されない）。以下では、`lm`での回帰分析結果を利用して、均一分散を仮定したF検定と不均一分散に対して頑健なF検定を自分で行う方法を記す。
+
+まず、F検定に使用する「制約あり」の回帰モデル（被説明変数を定数項のみに回帰するモデル）を実行し、オブジェクトに保存する。
+
+```{r}
+reg_no_X <- lm(log(wage) ~ 1, 
+               data = CPS1985) # no_X:説明変数なし
+```
+
+均一分散を仮定したF検定は、{AER}パッケージの`waldtest`関数を使って、以下のような形で行うことができる。`vcov`を指定せずに作成した表（重回帰モデルの節の表）のF統計量と一致することが確認できる。
+
+```{r}
+# (1) reg_logwage
+waldtest(reg_logwage, 
+         reg_no_X)
+
+# (2) reg_multiple
+waldtest(reg_multiple, 
+         reg_no_X)
+
+# (3) reg_mincer
+waldtest(reg_mincer, 
+         reg_no_X)
+```
+
+一方、不均一分散に対して頑健なF検定は、以下のように実施できる。
+
+```{r}
+# (1) reg_logwage
+waldtest(reg_logwage, 
+         reg_no_X, 
+         vcov = vcovHC(reg_logwage, 
+                       type = "HC1")) # HC1を用いたF検定
+
+# (2) reg_multiple
+waldtest(reg_multiple, 
+         reg_no_X, 
+         vcov = vcovHC(reg_multiple, 
+                       type = "HC1")) # HC1を用いたF検定
+
+# (3) reg_mincer
+waldtest(reg_mincer, 
+         reg_no_X, 
+         vcov = vcovHC(reg_mincer, 
+                       type = "HC1")) # HC1を用いたF検定
+```
+
+F値が均一分散を仮定したものとは異なり、`vcov = "HC1"`と指定した表のF統計量と一致していることが確認できる。
+
+なお、ロバスト標準誤差や頑健な検定についてのさらに詳しい解説は、[Introduction to Econometrics with R](https://www.econometrics-with-r.org/)の[5.4節](https://www.econometrics-with-r.org/5.4-hah.html)などを参照すること。ただしそこでは、上記とは若干異なる方法（`{lmtest}`パッケージの`coeftest()`や`{car}`パッケージの`linearHypothesis()`）で検定を行っている。
+
+
+# （参考）stargazerを使う場合
+
+`{stargazer}`パッケージも、回帰分析の結果表を作るパッケージとして長く使われてきた。現在は更新が止まっている（2022年のver.5.2.3が最新）が、古い解説記事などで今もよく見かけるので、基本的な使い方を紹介しておく。
+
+`type = "text"`とすると、表をテキスト形式で表示する。
+
+```{r}
+stargazer(reg_logwage, 
+          reg_multiple, 
+          reg_mincer, 
+          type = "text")
+```
+
+`type = "html", out = "ファイル名.html"`とすれば、html形式で保存できる。
+
+ロバスト標準誤差を表示したい場合は、`se`引数に、上で計算したロバスト標準誤差をリストで渡す。
+
+```{r}
+stargazer(reg_logwage, 
+          reg_multiple, 
+          reg_mincer, 
+          se = list(robustSE_reg_logwage, 
+                    robustSE_reg_multiple, 
+                    robustSE_reg_mincer), # robust SEに置き換え
+          type = "text")
+```
+
+ただし、この場合も表の下部のF統計量は均一分散を仮定したもののままであることに注意。また、`lm_robust()`の結果はそのままでは`stargazer()`に入れることができない。
+
+要約統計量の表も`stargazer()`にデータフレームを入れれば作成できるが、{tibble}パッケージのデータフレームを入れると結果が表示されないバグがあるので注意（ver.5.2.3時点）。
+
+```{r}
+stargazer(CPS1985, type = "text")               # 通常のデータフレーム：表示される
+stargazer(tibble::tibble(CPS1985), type = "text") # tibble：表示されない
+```
+
+
+# 参考文献
+
+回帰分析や均一分散/不均一分散については、「[計量経済学１](https://sites.google.com/site/michihito7ando/lectures/econome2018)」の講義資料などを参照すること。
+
+- **Christoph Hanck, Martin Arnold, Alexander Gerber, Martin Schmelzer [Introduction to Econometrics with R](https://www.econometrics-with-r.org/)**
+    - Stock & Watsonの計量経済学の教科書に沿って、Rでの実践方法を解説した無料のウェブ教科書（英語）。本講義と同じ`{AER}`パッケージを使っており、回帰分析やロバスト標準誤差（[5.4節](https://www.econometrics-with-r.org/5.4-hah.html)）なども扱っている。
+
+- **矢内勇生 [KUT 計量経済学応用](https://yukiyanai.github.io/econometrics2/)**
+    - 第1回でも紹介した、Rを使った計量経済学（統計的因果推論）の講義資料（日本語）。
+
+- **[modelsummary 公式サイト](https://modelsummary.com/)**
+    - 本講義で用いた`modelsummary()`・`datasummary_skim()`の使い方や、表のカスタマイズ方法の公式解説（英語）。
+
+- **[Getting started using estimatr](https://declaredesign.org/r/estimatr/articles/getting-started.html)**
+    - `lm_robust()`を含む`{estimatr}`パッケージの公式解説（英語）。
+
+
+# （おまけ）Pythonで同様の作業を行う場合
+
+本講義の演習はRで行うが、参考として、ここまで学んだ内容に対応するPythonのコードを簡単に紹介する。
+
+Pythonで計量経済学的な回帰分析を行う場合は、主に**statsmodels**というライブラリを使う。`smf.ols()`を使うと、Rの`lm()`とほぼ同じ書き方（`"y ~ x1 + x2"`という式）で回帰分析ができる。
+
+```python
+# ターミナル上で実行（Rのinstall.packages()に相当）
+# pip install pandas statsmodels matplotlib seaborn
+```
+
+```python
+import numpy as np
+import pandas as pd
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from statsmodels.iolib.summary2 import summary_col
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+## データの用意と記述統計
+
+Rのパッケージに収録されているデータセットは、`sm.datasets.get_rdataset()`でインターネット経由で読み込める（Rの`data("CPS1985")`に相当）。
+
+```python
+cps = sm.datasets.get_rdataset("CPS1985", "AER").data
+cps.head()
+cps.describe()  # 要約統計量（Rの summary() に相当）
+```
+
+（※Macで公式サイト版のPythonを使っている場合、ここで`SSL: CERTIFICATE_VERIFY_FAILED`というエラーが出ることがある。その場合は、Pythonのインストールフォルダにある`Install Certificates.command`を一度実行すればよい。）
+
+## 回帰分析
+
+`.fit()`で推定し、`.summary()`で詳細な結果を表示する（Rの`lm()`と`summary()`に相当）。
+
+```python
+reg = smf.ols("wage ~ education", data=cps).fit()
+reg.summary()
+```
+
+## 対数変換・重回帰モデル・２乗項
+
+式の中で`np.log()`を使えば対数変換ができる。２乗項の変数は、あらかじめ列として追加しておく（Rの`mutate()`に相当）。
+
+```python
+reg_logwage = smf.ols("np.log(wage) ~ education", data=cps).fit()
+reg_multiple = smf.ols("np.log(wage) ~ education + experience", data=cps).fit()
+
+cps["experience2"] = cps["experience"] ** 2
+reg_mincer = smf.ols("np.log(wage) ~ education + experience + experience2", data=cps).fit()
+```
+
+賃金の分布の対数変換前後の比較は、以下のように描ける（Rの`grid.arrange()`に相当）。
+
+```python
+fig, axes = plt.subplots(2, 1)
+sns.histplot(cps["wage"], bins=10, ax=axes[0])
+sns.histplot(np.log(cps["wage"]), bins=10, ax=axes[1])
+plt.show()
+```
+
+## 回帰分析の結果表示
+
+複数のモデルを並べた表は`summary_col()`で作成できる（Rの`modelsummary()`に相当）。
+
+```python
+summary_col([reg_logwage, reg_multiple, reg_mincer],
+            stars=True,
+            info_dict={"N": lambda x: f"{int(x.nobs)}",
+                       "F": lambda x: f"{x.fvalue:.3f}"})
+```
+
+なお、`summary_col()`の`*`の基準（`* p<.1, ** p<.05, *** p<.01`）は、`modelsummary()`の基準（`+ p<0.1, * p<0.05, ** p<0.01, *** p<0.001`）とは異なるので注意。
+
+## ロバスト標準誤差
+
+`.fit()`の中で`cov_type="HC1"`と指定すると、ロバスト標準誤差（HC1）を用いた推定結果になる（Rの`lm_robust(..., se_type = "HC1")`や`modelsummary(..., vcov = "HC1")`に相当）。
+
+```python
+reg_logwage_robust = smf.ols("np.log(wage) ~ education", data=cps).fit(cov_type="HC1")
+reg_multiple_robust = smf.ols("np.log(wage) ~ education + experience", data=cps).fit(cov_type="HC1")
+reg_mincer_robust = smf.ols("np.log(wage) ~ education + experience + experience2",
+                       data=cps).fit(cov_type="HC1")
+
+summary_col([reg_logwage_robust, reg_multiple_robust, reg_mincer_robust],
+            stars=True,
+            info_dict={"N": lambda x: f"{int(x.nobs)}",
+                       "F": lambda x: f"{x.fvalue:.3f}"})
+```
+
+この場合、`.fvalue`（F統計量）も不均一分散に対して頑健なものになり、Rの`waldtest(..., vcov = vcovHC(..., type = "HC1"))`や`modelsummary(..., vcov = "HC1")`のF統計量と一致する。
+
+```python
+reg_logwage_robust.fvalue   # 頑健なF統計量
+reg_logwage.fvalue     # 均一分散を仮定したF統計量
+```
