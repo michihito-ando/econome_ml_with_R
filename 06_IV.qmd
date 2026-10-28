@@ -1,0 +1,464 @@
+---
+title: "Rで学ぶ計量経済学と機械学習 6<br> <br> 計量経済学２：操作変数法"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+subtitle: "This version: `r Sys.Date()`"
+format:
+  html:
+    css: R_style.css
+    embed-resources: true   # 画像などの埋め込み
+    # theme: cosmo
+    highlight-style: haddock     # Rスクリプトのハイライト形式
+    # code-fold: true       # Rコードの折りたたみ表示を設定
+    toc: true
+    toc-depth: 2           # 見出しの表示とその深さを指定
+    number-sections: true  # 見出しごとに番号を振る
+    # df-print: paged       # head()の出力をnotebook的なものに（tibbleと相性良）
+    fig-height: 3.5        # 画像サイズのデフォルトを設定
+    fig-width: 5           # 画像サイズのデフォルトを設定
+    fig-format: png
+    link-external-newwindow: true  # 外部リンクを新しいタブで開く
+    # 「サイト内リンク」とみなすドメインを明示的に指定。
+    # 指定しない場合はブラウザの現在地(window.location.host)から自動判定されるが、
+    # file://で直接開いたときはhostが空文字になり、結果的に全リンクが「サイト内」と
+    # 誤判定されて新しいタブで開かなくなってしまう。それを避けるための設定。
+    link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+# 日本語のグラフ文字が文字化け（□）しないよう、フォントの代替表示に対応したraggで描画する
+knitr::opts_chunk$set(dev = "ragg_png")
+```
+
+
+# 本講義の目的
+
+- 操作変数法の実施方法を学ぶ。
+
+
+# パッケージの読み込み
+
+今回の分析で使うパッケージを読み込む。
+
+```{r}
+pacman::p_load(tidyverse, 
+               modelsummary, 
+               skimr, 
+               ivreg, 
+               estimatr)
+```
+
+
+# データの用意
+
+前回と同じく、架空のデータを生成して分析を行う。
+
+前回は個人の所得$Y$と学歴$X$・能力$A$との関係についての架空データを次のように生成した（ただし$\varepsilon$は誤差項）。
+
+$$
+Y = 200 + 10A + 500X + \varepsilon
+$$
+
+- サンプルサイズは10,000人
+- 能力は0から100まで均等に分布する
+- 能力が1上がると所得は10万円上昇する
+- 能力が80 以上の約 2,000人中から約 1,000人がランダムに選ばれて大卒となる。
+- 大卒だと所得が500万円上昇する
+- 切片は200万円（能力=0、非大卒の平均給与）
+
+
+```{r, echo=F}
+pacman::p_load(DiagrammeR)
+
+grViz("digraph dot{
+graph[rankdir = LR]
+
+node[shape = circle, fontname = 'Yu Gothic']
+
+edge[fontname = 'Yu Gothic', fontsize = 10]
+能力A -> 所得Y [label='10']
+能力A -> 学歴X [label='A≧80からランダム抽出']
+学歴X -> 所得Y [label='500']
+
+{rank = same; 能力A; 学歴X}
+}")
+```
+
+今回は、前回のデータに新たな変数を加える。**「能力に関係なく、30％の確率でランダムに選ばれた人が学費を免除され、入学を許可される」**という制度があるとし、さらに、**「学費免除に選ばれた人は、50%の確率で大学を卒業できる」**（ただし能力が80以上の条件で選ばれて大卒となった人はこの法則の対象外）とする。
+
+
+```{r, echo=F}
+grViz("digraph dot{
+graph[rankdir = LR]
+
+node[shape = circle, fontname = 'Yu Gothic']
+
+edge[fontname = 'Yu Gothic', fontsize = 10]
+能力A -> 所得Y [label='10']
+能力A -> 学歴X [label='A≧80からランダム抽出']
+学歴X -> 所得Y [label='500']
+学費免除Z -> 学歴X [label='50％の確率で大学を卒業']
+
+{rank = same; 能力A; 学歴X}
+}")
+```
+
+データ生成過程は、以下のように設定できる。（難しく感じる人は、コピペでかまわない）
+
+前回は、`filter()`と`slice_sample()`で大卒の人を抽出し、`anti_join()`と`bind_rows()`で結合するという方法でデータを生成した。今回は、二項分布の乱数を発生させる`rbinom()`を用いて、`mutate()`の中で変数を1つずつ作っていく。
+
+```{r}
+# 乱数の種を固定（同じ種からは常に同じ乱数が生成される。10101を他の数値に変えると異なる乱数となる。）
+set.seed(10101)
+
+# n:サンプルサイズ
+n <- 10000
+
+# rbinom(n, 1, p): 確率pで1、確率1-pで0となる乱数をn個生成
+# if_else(条件, 条件を満たすときの値, 満たさないときの値)
+df <- tibble(ID = 1:n,
+             ability = runif(n, min = 0, max = 100)) |>   # 能力は0から100まで均等に分布
+  mutate(
+    # 能力が80以上の人は、50%の確率で大卒になる（前回と同じ設定）
+    university = if_else(ability >= 80, rbinom(n, 1, 0.5), 0),
+    # 能力に関係なく、30%の確率で学費免除になる
+    exemption = rbinom(n, 1, 0.3),
+    # まだ大卒でない学費免除者は、50%の確率で大卒になる
+    university = if_else(university == 0 & exemption == 1, rbinom(n, 1, 0.5), university),
+    # DGPに基づいて所得を生成（誤差項は平均=0、標準偏差=50）
+    income = 200 + 10*ability + 500*university + rnorm(n, mean = 0, sd = 50)
+  )
+
+# 最初の6行
+head(df)
+```
+
+
+生成したデータの記述統計を、第3回で学んだ`skimr::skim()`で表示し、どのくらいが学費免除および大卒になったかチェックしてみる（0か1をとるダミー変数`exemption`と`university`の平均値`mean`は、それぞれ学費免除になった人と大卒の人の割合を表す）。
+
+```{r}
+skimr::skim(df)
+```
+
+
+
+こうして生成したデータの所得と能力・学歴の関係をプロットすると次のようになる。前回と異なり、`ability`が80を下回っても、学費免除によって大学を卒業し、所得が上昇している人々がいることが分かる。
+
+```{r}
+# 大卒か否かのラベルをデータフレームに加える
+df <- df |> mutate(edu_label =
+                      case_when(university == 1 ~ "Grad.",
+                                university == 0 ~ "Not grad."))
+
+# 散布図を描く with 大卒ラベル
+ggplot(df, aes(x = ability, y = income, color = edu_label)) + 
+  geom_point(alpha = 0.5) +
+  labs(title = "Ability and Income")
+```
+
+
+以下では、「**学歴（大卒になること）が所得をどれだけ上昇させるのか**」を推定することを目的として分析していく。
+
+# 操作変数法の概要
+
+効果を測りたい処置変数（学歴$X$）を通じてのみアウトカム変数（所得$Y$)に影響を与える変数のことを**操作変数（instrumental variable）**という。そのような変数が存在することは多くないが、今回の場合は学費免除ダミー$Z$を操作変数として用いることができる。
+
+前回、回帰分析などで学歴の効果を推定しようとした際には、交絡要因である能力がデータとして得られないという想定の下では
+学歴の効果が過大に推定される問題が起こることを述べた。**操作変数法（instrumental variable method、IV method）**は操作変数から得られる情報を活用することで、そのような状況においてもよりよい推定を行う方法である。
+
+
+## 操作変数法の求め方
+
+ベーシックな操作変数推定値は、以下の２種類のやり方によって求めることができる（両者の推定値は一致する）。
+
+1. **二段階最小二乗法(TSLS)**：学歴$X$の変動のうち、学費免除$Z$の変動による変動分$\hat{X}$を推計し（第一段階）、$\hat{X}$→所得$Y$の因果効果を推定する（第二段階）。
+2. **誘導型推定値を第一段階推定値で割る**：学費免除→学歴の因果効果（第一段階）、学費免除→所得の因果効果（誘導型）はそれぞれ回帰分析で推定できるので、この二つの推定値を利用して、以下のように推定する
+
+$$
+学歴X\to 所得Y \text{の因果効果} = \frac{学費免除Z \to 所得Y\text{の因果効果}}{学費免除Z \to 学歴X\text{の因果効果}}
+$$
+
+実際には、第一段階の推定結果を開示しつつも、操作変数推定値およびその標準誤差は二段階最小二乗法(TSLS)によって求めることがほとんどである。
+
+なお二段階最小二乗法を用いる場合は、手動で二段階の推定を行うのではなく、下記で提示するパッケージなどを使うこと。自ら$\hat{X}$を推定し、それを$Y$に回帰して推定値と標準誤差を得ると、誤った標準誤差を算出することになる。
+
+
+# Rで実践
+
+## 欠落変数を無視した回帰分析
+
+まず、欠落変数（能力$A$)を無視して、$Y$を$X$に回帰してみる。単純な単回帰に加えて、学費免除$Z$をコントロール変数に加えた重回帰分析も行ってみる。
+
+回帰分析結果は以下のようになる。
+
+```{r}
+reg_biased1 <- lm(formula = income ~ university,
+                  data = df)
+reg_biased2 <- lm(formula = income ~ university + exemption,
+                  data = df)
+
+modelsummary(list(reg_biased1, reg_biased2), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+「大卒になることによる所得上昇の効果」は、約`r round(reg_biased1$coefficients[2], 0)`（万円）および約`r round(reg_biased2$coefficients[2], 0)`（万円）と過大推定される。
+
+## 誘導型推定値を第一段階推定値で割る
+
+二段階最小二乗法を実施する前に、操作変数法をより深く理解するために、第一段階推定と誘導型推定を単純にOLSで実行し、両者の推定値より操作変数推定値を求めてみよう。
+
+それぞれ、以下の回帰式で推定できる。
+
+- 第一段階（first stage）：$X_i =\pi_0 + \pi_1 Z_i + v_i$
+- 誘導型（reduced form）：$Y_i = \gamma_0 + \gamma_1 Z_i + w_i$
+
+求めたい因果効果は
+
+$$
+学歴X\to 所得Y \text{の因果効果} = \frac{\gamma_1}{\pi_1} = \frac{\text{誘導型の}Z_i \text{の係数}}{\text{第一段階の}Z_i\text{の係数}}
+$$
+
+となる。
+
+
+第一段階の推定結果は以下のようになる。
+
+```{r}
+first_stage <- lm(formula = university ~ exemption, 
+                  data = df)
+
+modelsummary(first_stage, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+学費免除ダミーの係数推定値は、約`r round(first_stage$coefficients[2], 2)`である。本モデルは線形確率モデルであるため、この結果は、学費免除になると大卒になる確率が約`r round(first_stage$coefficients[2] * 100, 0)`%ポイント上昇することを示している。
+
+なお、データ生成過程では「学費免除に選ばれた人は、50%の確率で大学を卒業できる」と設定したが、なぜここでは50%より小さい値が推定されるのだろうか。
+
+それは、学費免除者（10000×0.3で約3,000人）の中には、能力が80以上で学費免除とは関係なく大卒となる人（3000×0.2×0.5で約300人）が含まれているからである。学費免除によって大卒になるのは、残りの約2,700人のうちの50%の約1,350人なので、学費免除の「因果効果」は、1350/3000=0.45となる（学費免除者の大卒率は(300+1350)/3000=0.55、学費免除でない人の大卒率は0.2×0.5=0.1であり、その差が0.45である）。第一段階推定値はこの値をほぼ正確に推定している。
+
+一方、誘導型の推定結果は以下のようになる。
+
+```{r}
+reduced_form <- lm(formula = income ~ exemption, 
+                   data = df)
+
+modelsummary(reduced_form, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+学費免除ダミーの係数推定値は、約`r round(reduced_form$coefficients[2], 0)`であり、これは、「学費免除にあたると（大卒になることを通じて）平均所得が約`r round(reduced_form$coefficients[2], 0)`万円上昇する」ことを意味している。つまり誘導型推定値は、「学費免除の所得に対する平均処置効果」である。
+
+最後に、両者の係数を割ると、操作変数推定値を得ることができる。
+
+```{r}
+reduced_form$coefficients[2] / first_stage$coefficients[2]
+```
+
+「学歴（大卒）が所得に与える効果」である500万円を、ほぼ推定できている。ただし、このような方法では、標準誤差を得ることはできない。
+
+## 二段階最小二乗法(TSLS)を実行する
+
+`{ivreg}`パッケージに操作変数法による回帰を行う`ivreg()`という関数がある。これを実行すれば操作変数法で推定し、標準誤差を出すことができる。
+
+（注）`ivreg()`は、もともと`{AER}`パッケージに含まれていた関数である。現在は同じ開発者たちによって独立した`{ivreg}`パッケージとして開発が続けられており、本講義ではこちらを使う。書き方や推定結果は`AER::ivreg()`と同じであり、`{ivreg}`版では回帰診断（外れ値の影響の確認など）の機能が追加されている。古い教科書やウェブ上の資料では`AER::ivreg()`がよく使われているが、そのまま読み替えてよい。なお、両方のパッケージを読み込むと関数名が重なるので、`ivreg::ivreg()`のようにパッケージ名を明示して使うとよい。
+
+```{r}
+iv_reg <- ivreg::ivreg(
+  formula = income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数　と指定
+  data = df
+)
+
+modelsummary(iv_reg, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+TSLS推定値は、約`r round(iv_reg$coefficients[2],0)`であり、先に求めた値とも一致する。
+
+## 弱操作変数の確認
+
+`summary()`で`diagnostics = TRUE`と指定すると、推定結果の下の「Diagnostic tests」に、操作変数法に関する検定の結果が表示される。
+
+```{r}
+iv_summary <- summary(iv_reg, diagnostics = TRUE)
+iv_summary
+```
+
+- **Weak instruments**：第一段階において、操作変数の係数が0であるという帰無仮説の$F$検定（操作変数が1つの場合は、第一段階の回帰の表にある$F$値と同じ値になる）。操作変数と処置変数の相関が弱い（**弱操作変数**）と、操作変数推定値に大きな偏りが生じたり、標準誤差が正しく計算できなくなったりする。目安として、$F$値が10を上回るかどうかがよく使われる（近年は、より厳しい基準も提案されている）。今回の$F$値は約`r format(round(iv_summary$diagnostics["Weak instruments", "statistic"], 0), big.mark = ",")`であり、十分大きい。
+- **Wu-Hausman**：OLS推定値と操作変数推定値に差があるかの検定。帰無仮説は「処置変数は外生である（OLSでも偏りがない）」であり、棄却されれば、処置変数が内生的である（OLSには偏りがある）と考えられる。
+- **Sargan**：操作変数の数が処置変数の数より多い場合に、操作変数の妥当性を調べる検定（過剰識別制約の検定）。今回は操作変数が1つなので計算されない（`NA`となる）。
+
+## ロバスト標準誤差
+
+ただし、TSLSにおいても、一般的には、不均一分散に対して頑健な標準誤差（ロバスト標準誤差）を使うことが望ましい。そこで、{estimatr}パッケージの`iv_robust()`を使えば、ロバスト標準誤差を用いてTSLSを実施できる。実際にデータ分析する際には、この関数を活用することが望ましい。
+
+```{r}
+iv_reg_robust <- estimatr::iv_robust(
+  income ~ university | exemption, # 被説明変数 ~ 説明変数 | 操作変数
+  data = df, 
+  se_type = "HC1"
+)
+
+# summary
+summary(iv_reg_robust)
+
+# 結果表の出力
+modelsummary(list("ivreg（通常の標準誤差）" = iv_reg, 
+                  "iv_robust（ロバスト標準誤差）" = iv_reg_robust), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+### （参考）`modelsummary()`で標準誤差を書き換える {.unnumbered}
+
+`ivreg()`で推定した結果を使う場合でも、表を作る段階で`modelsummary()`の`vcov`引数を指定すれば、ロバスト標準誤差に書き換えることができる（計算には内部で`{sandwich}`パッケージが使われる）。`vcov = "HC1"`とすると、`iv_robust()`の`se_type = "HC1"`と同じロバスト標準誤差になる。
+
+```{r}
+# 同じiv_regを2回並べ、1列目は通常の標準誤差（"iid"）、2列目はロバスト標準誤差（"HC1"）で表示する
+modelsummary(list("ivreg（通常の標準誤差）" = iv_reg, 
+                  "ivreg（ロバスト標準誤差）" = iv_reg), 
+             vcov = list("iid", "HC1"), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+表の最後の行（`Std.Errors`）に、各列の標準誤差の種類が表示されている。2列目の標準誤差は、上の`iv_robust()`の結果と一致する。
+
+結果の表をhtmlファイルとして保存するには、`modelsummary()`の`output`引数にファイル名を指定する。
+
+```{r, eval=FALSE}
+# 結果表の出力：html
+modelsummary(list("ivreg（通常の標準誤差）" = iv_reg, 
+                  "iv_robust（ロバスト標準誤差）" = iv_reg_robust), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE", 
+             output = "06ivreg_table.html")
+```
+
+
+# 参考文献
+
+- **矢内勇生「[計量経済学応用](https://yukiyanai.github.io/econometrics2/)」**（2020年度、高知工科大学）
+    - 第1回・第4回・第5回でも紹介した講義資料（日本語、Rのコードつき）。「[Topic 9 操作変数法](https://yukiyanai.github.io/econometrics2/instrumental-variable.html)」が本講義の内容と対応している。
+
+- **Nick Huntington-Klein (2021) [The Effect: An Introduction to Research Design and Causality](https://theeffectbook.net/)**（Chapman & Hall/CRC、ウェブ版は無料、英語）
+    - 「[Chapter 19 - Instrumental Variables](https://theeffectbook.net/ch-InstrumentalVariables.html)」が本講義の内容と対応している。
+
+- **Scott Cunningham [Causal Inference: The Remix](https://mixtape.scunning.com/)**（ウェブ版は無料、英語）
+    - "Causal Inference: The Mixtape"（2021年）の第2版。「[Instrumental Variables](https://mixtape.scunning.com/07-instrumental_variables)」の章が本講義の内容と対応しており、弱操作変数の問題などもより詳しく解説されている。Rのコードつき。
+
+
+# （おまけ）Pythonで同様の作業を行う場合
+
+本講義の演習はRで行うが、参考として、ここまで学んだ内容に対応するPythonのコードを簡単に紹介する。
+
+乱数の生成には**NumPy**、通常の回帰分析には**statsmodels**、操作変数法（二段階最小二乗法）には**linearmodels**を使う。なお、PythonとRでは乱数の生成方法が異なるので、同じ設定でデータを生成しても数値は少し異なる。
+
+```python
+# ターミナル上で実行（Rのinstall.packages()に相当）
+# pip install numpy pandas statsmodels linearmodels matplotlib seaborn
+```
+
+```python
+import numpy as np
+import pandas as pd
+import statsmodels.formula.api as smf
+from linearmodels.iv import IV2SLS, compare
+import matplotlib.pyplot as plt
+import seaborn as sns
+```
+
+## データの用意
+
+```python
+rng = np.random.default_rng(10101)  # 乱数の種を固定（Rの set.seed(10101) に相当）
+n = 10000
+
+# 能力は0から100まで均等に分布（Rの runif() に相当）
+df = pd.DataFrame({"ID": np.arange(1, n + 1),
+                   "ability": rng.uniform(0, 100, n)})
+
+# 能力が80以上の人は、50%の確率で大卒になる（np.where()はRの if_else() に相当）
+df["university"] = np.where(df["ability"] >= 80, rng.binomial(1, 0.5, n), 0)
+
+# 能力に関係なく、30%の確率で学費免除になる（Rの rbinom(n, 1, 0.3) に相当）
+df["exemption"] = rng.binomial(1, 0.3, n)
+
+# まだ大卒でない学費免除者は、50%の確率で大卒になる
+df["university"] = np.where((df["university"] == 0) & (df["exemption"] == 1),
+                            rng.binomial(1, 0.5, n), df["university"])
+
+# DGPに基づいて所得を生成（誤差項は平均0、標準偏差50の正規分布）
+df["income"] = 200 + 10 * df["ability"] + 500 * df["university"] + rng.normal(0, 50, n)
+
+# 記述統計（university・exemptionの平均値meanは、大卒・学費免除の人の割合）
+df.describe()
+```
+
+```python
+# 散布図
+df["edu_label"] = np.where(df["university"] == 1, "Grad.", "Not grad.")
+sns.scatterplot(data=df, x="ability", y="income", hue="edu_label", alpha=0.5)
+plt.show()
+```
+
+## 欠落変数を無視した回帰分析
+
+```python
+reg_biased1 = smf.ols("income ~ university", data=df).fit()
+reg_biased2 = smf.ols("income ~ university + exemption", data=df).fit()
+print(reg_biased1.summary())
+print(reg_biased2.summary())
+```
+
+大卒の係数は約690・約749となり、R版と同様に過大推定される。
+
+## 誘導型推定値を第一段階推定値で割る
+
+```python
+first_stage = smf.ols("university ~ exemption", data=df).fit()  # 第一段階
+reduced_form = smf.ols("income ~ exemption", data=df).fit()     # 誘導型
+
+# 操作変数推定値 = 誘導型の係数 / 第一段階の係数
+reduced_form.params["exemption"] / first_stage.params["exemption"]
+```
+
+第一段階の係数は約0.44、誘導型の係数は約216で、操作変数推定値は約487となる（R版とは乱数が異なるため、数値も少し異なる）。
+
+## 二段階最小二乗法(TSLS)と弱操作変数の確認
+
+linearmodelsの`IV2SLS.from_formula()`では、`[処置変数 ~ 操作変数]`のように角括弧の中に第一段階を書く。また、切片を入れるために`1 +`を明示する必要がある（Rの`income ~ university | exemption`に相当）。
+
+```python
+iv_reg = IV2SLS.from_formula("income ~ 1 + [university ~ exemption]",
+                             data=df).fit(cov_type="unadjusted")  # 通常の標準誤差
+print(iv_reg.summary)
+
+# 弱操作変数の確認（第一段階の結果。「Partial F-statistic」が第一段階のF値）
+print(iv_reg.first_stage)
+
+# Wu-Hausman検定
+print(iv_reg.wu_hausman())
+```
+
+操作変数推定値は約487（標準誤差は約15）、第一段階の$F$値は約2,956となり、十分大きい。
+
+## ロバスト標準誤差
+
+`cov_type="robust"`とするとロバスト標準誤差になる。さらに`debiased=True`とすると、Rの`se_type = "HC1"`と同じように自由度の調整が行われる。`compare()`で、通常の標準誤差の結果と並べて表示できる。
+
+```python
+iv_reg_robust = IV2SLS.from_formula("income ~ 1 + [university ~ exemption]",
+                                    data=df).fit(cov_type="robust", debiased=True)
+
+# 結果の比較表（括弧内は標準誤差）
+print(compare({"Unadjusted": iv_reg, "Robust": iv_reg_robust},
+              precision="std_errors", stars=True))
+```

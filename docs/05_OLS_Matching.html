@@ -3628,7 +3628,7 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Rで学ぶ計量経済学と機械学習 5<br> <br> 計量経済学１：差の検定/回帰分析/マッチング</h1>
-<p class="subtitle lead">This version: 2026-10-21</p>
+<p class="subtitle lead">This version: 2026-10-28</p>
 </div>
 
 
@@ -3711,8 +3711,8 @@ Y = 200 + 10A + 500X+ \varepsilon
 </ul>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div class="grViz html-widget html-fill-item" id="htmlwidget-26e81d07901211a55686" style="width:100%;height:454px;"></div>
-<script type="application/json" data-for="htmlwidget-26e81d07901211a55686">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div class="grViz html-widget html-fill-item" id="htmlwidget-f014a861f9c65e28450a" style="width:100%;height:454px;"></div>
+<script type="application/json" data-for="htmlwidget-f014a861f9c65e28450a">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>ここで、学歴<span class="math inline">\(X\)</span>が所得<span class="math inline">\(Y\)</span>に与える効果に興味があるとき、<span class="math inline">\(X\)</span>を<strong>処置変数</strong>、<span class="math inline">\(Y\)</span>を<strong>アウトカム変数</strong>と呼ぶ。また、<span class="math inline">\(X\)</span>と<span class="math inline">\(Y\)</span>に影響を及ぼすことが想定される能力<span class="math inline">\(A\)</span>のような変数を<strong>共変量/交絡要因/コントロール変数</strong>と呼ぶ（分野によって呼び方やニュアンスが若干異なるが、ほぼ同じ意味で用いて問題ない）。</p>
@@ -5147,8 +5147,8 @@ Y = 200 + 10A + 0.5P + 100U + 500X + \varepsilon
 \]</span></p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div class="grViz html-widget html-fill-item" id="htmlwidget-8535a0348ec6c64ac3be" style="width:100%;height:454px;"></div>
-<script type="application/json" data-for="htmlwidget-8535a0348ec6c64ac3be">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 学歴X\n親の所得P -> 学歴X\n都市部出身U -> 学歴X\n能力A -> 所得Y [label=\"10\"]\n親の所得P -> 所得Y [label=\"0.5\"]\n都市部出身U -> 所得Y [label=\"100\"]\n学歴X -> 所得Y [label=\"500\"]\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div class="grViz html-widget html-fill-item" id="htmlwidget-66285fa97c123fc40fbf" style="width:100%;height:454px;"></div>
+<script type="application/json" data-for="htmlwidget-66285fa97c123fc40fbf">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 学歴X\n親の所得P -> 学歴X\n都市部出身U -> 学歴X\n能力A -> 所得Y [label=\"10\"]\n親の所得P -> 所得Y [label=\"0.5\"]\n都市部出身U -> 所得Y [label=\"100\"]\n学歴X -> 所得Y [label=\"500\"]\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>なお、前節までのデータは「能力が80以上の人の中からだけ大卒が選ばれる」というDGPだったため、能力が80未満で大卒の人は一人もいない。このように「ある共変量の値の人が処置を受ける確率が0（または1）」になっていると、比較相手がいないため、後述する傾向スコアを使った方法は使えない（傾向スコアが0から1の間に収まり、処置群と対照群が重なり合っていることを<strong>オーバーラップ</strong>という）。そこでこの節では、大卒になる確率がなめらかに変化する上記のDGPを使う。</p>
@@ -6047,9 +6047,9 @@ Standard error: HC0 robust (adjusted for estimation of weights)</code></pre>
 <ul>
 <li>「<a href="https://theeffectbook.net/ch-StatisticalAdjustment.html">Chapter 13 - Regression</a>」と「<a href="https://theeffectbook.net/ch-Matching.html">Chapter 14 - Matching</a>」が本講義の内容と対応している。第14章では、マハラノビス距離によるマッチング、傾向スコア、IPWなどを丁寧に解説している。</li>
 </ul></li>
-<li><strong>Scott Cunningham <a href="https://mixtape.scunning.com/">Causal Inference: The Mixtape</a></strong>（ウェブ版は無料、英語）
+<li><strong>Scott Cunningham <a href="https://mixtape.scunning.com/">Causal Inference: The Remix</a></strong>（ウェブ版は無料、英語）
 <ul>
-<li>現在ウェブ上では、改訂中の第2版（“Causal Inference: The Remix”）が公開されている。「<a href="https://mixtape.scunning.com/04-potential_outcomes_and_randomization">Potential Outcomes and Randomization</a>」（潜在的結果の枠組み）と「<a href="https://mixtape.scunning.com/05-causal_cross_sectional_designs">Unconfoundedness</a>」（無交絡性のもとでの回帰分析・最近傍マッチング・傾向スコア・IPW）の章が本講義の内容と対応している。Rのコードつき。</li>
+<li>“Causal Inference: The Mixtape”（2021年）の第2版。「<a href="https://mixtape.scunning.com/04-potential_outcomes_and_randomization">Potential Outcomes and Randomization</a>」（潜在的結果の枠組み）と「<a href="https://mixtape.scunning.com/05-causal_cross_sectional_designs">Unconfoundedness</a>」（無交絡性のもとでの回帰分析・最近傍マッチング・傾向スコア・IPW）の章が本講義の内容と対応している。Rのコードつき。</li>
 </ul></li>
 <li><strong>Miguel A. Hernán and James M. Robins (2020) <a href="https://miguelhernan.org/whatifbook">Causal Inference: What If</a></strong>（Chapman &amp; Hall/CRC、PDFは無料、英語）
 <ul>

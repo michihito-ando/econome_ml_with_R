@@ -725,8 +725,8 @@ tibble(
 - **Nick Huntington-Klein (2021) [The Effect: An Introduction to Research Design and Causality](https://theeffectbook.net/)**（Chapman & Hall/CRC、ウェブ版は無料、英語）
     - 「[Chapter 13 - Regression](https://theeffectbook.net/ch-StatisticalAdjustment.html)」と「[Chapter 14 - Matching](https://theeffectbook.net/ch-Matching.html)」が本講義の内容と対応している。第14章では、マハラノビス距離によるマッチング、傾向スコア、IPWなどを丁寧に解説している。
 
-- **Scott Cunningham [Causal Inference: The Mixtape](https://mixtape.scunning.com/)**（ウェブ版は無料、英語）
-    - 現在ウェブ上では、改訂中の第2版（"Causal Inference: The Remix"）が公開されている。「[Potential Outcomes and Randomization](https://mixtape.scunning.com/04-potential_outcomes_and_randomization)」（潜在的結果の枠組み）と「[Unconfoundedness](https://mixtape.scunning.com/05-causal_cross_sectional_designs)」（無交絡性のもとでの回帰分析・最近傍マッチング・傾向スコア・IPW）の章が本講義の内容と対応している。Rのコードつき。
+- **Scott Cunningham [Causal Inference: The Remix](https://mixtape.scunning.com/)**（ウェブ版は無料、英語）
+    - "Causal Inference: The Mixtape"（2021年）の第2版。「[Potential Outcomes and Randomization](https://mixtape.scunning.com/04-potential_outcomes_and_randomization)」（潜在的結果の枠組み）と「[Unconfoundedness](https://mixtape.scunning.com/05-causal_cross_sectional_designs)」（無交絡性のもとでの回帰分析・最近傍マッチング・傾向スコア・IPW）の章が本講義の内容と対応している。Rのコードつき。
 
 - **Miguel A. Hernán and James M. Robins (2020) [Causal Inference: What If](https://miguelhernan.org/whatifbook)**（Chapman & Hall/CRC、PDFは無料、英語）
     - 疫学の分野で広く使われている因果推論の教科書。IPWや傾向スコアについての章がある。
