@@ -3,7 +3,7 @@ title: "Rで学ぶ計量経済学と機械学習 1<br> <br> Rの基礎"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
 # Quartoは date: を実際の日付として解釈し独自書式で表示してしまうため、
 # 「This version: 」という接頭辞を保ったまま表示するために subtitle を使う
-subtitle: "This version: `r Sys.Date()`"
+subtitle: "First version: 2019-04-11<br>This version: `r Sys.Date()`"
 format:
   html:
     css: R_style.css

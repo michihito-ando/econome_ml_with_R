@@ -1,7 +1,7 @@
 ---
 title: "Rで学ぶ計量経済学と機械学習 6<br> <br> 計量経済学２：操作変数法"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
-subtitle: "This version: `r Sys.Date()`"
+subtitle: "First version: 2019-05-24<br>This version: `r Sys.Date()`"
 format:
   html:
     css: R_style.css
@@ -108,7 +108,7 @@ edge[fontname = 'Yu Gothic', fontsize = 10]
 
 データ生成過程は、以下のように設定できる。（難しく感じる人は、コピペでかまわない）
 
-前回は、`filter()`と`slice_sample()`で大卒の人を抽出し、`anti_join()`と`bind_rows()`で結合するという方法でデータを生成した。今回は、二項分布の乱数を発生させる`rbinom()`を用いて、`mutate()`の中で変数を1つずつ作っていく。
+前回と同じく、二項分布の乱数を発生させる`rbinom()`と`if_else()`を用いて、`mutate()`の中で変数を1つずつ作っていく。前回のコードに、学費免除ダミー`exemption`の作成と、それによる大卒ダミー`university`の修正（2行）を加えればよい。
 
 ```{r}
 # 乱数の種を固定（同じ種からは常に同じ乱数が生成される。10101を他の数値に変えると異なる乱数となる。）

@@ -1,7 +1,7 @@
 ---
 title: "Rで学ぶ計量経済学と機械学習 3<br> <br> データの可視化"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
-subtitle: "This version: `r Sys.Date()`"
+subtitle: "First version: 2019-04-23<br>This version: `r Sys.Date()`"
 format:
   html:
     css: R_style.css

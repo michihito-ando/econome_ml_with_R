@@ -3613,7 +3613,7 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
 <h1 class="title">Rで学ぶ計量経済学と機械学習 6<br> <br> 計量経済学２：操作変数法</h1>
-<p class="subtitle lead">This version: 2026-10-28</p>
+<p class="subtitle lead">First version: 2019-05-24<br>This version: 2026-11-03</p>
 </div>
 
 
@@ -3670,19 +3670,19 @@ Y = 200 + 10A + 500X + \varepsilon
 </ul>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div class="grViz html-widget html-fill-item" id="htmlwidget-037b13806768b90f07a6" style="width:100%;height:454px;"></div>
-<script type="application/json" data-for="htmlwidget-037b13806768b90f07a6">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div class="grViz html-widget html-fill-item" id="htmlwidget-0b49950202a89587e729" style="width:100%;height:454px;"></div>
+<script type="application/json" data-for="htmlwidget-0b49950202a89587e729">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>今回は、前回のデータに新たな変数を加える。<strong>「能力に関係なく、30％の確率でランダムに選ばれた人が学費を免除され、入学を許可される」</strong>という制度があるとし、さらに、<strong>「学費免除に選ばれた人は、50%の確率で大学を卒業できる」</strong>（ただし能力が80以上の条件で選ばれて大卒となった人はこの法則の対象外）とする。</p>
 <div class="cell" data-layout-align="center">
 <div class="cell-output-display">
-<div class="grViz html-widget html-fill-item" id="htmlwidget-4f9209ab8f58af3295c9" style="width:100%;height:454px;"></div>
-<script type="application/json" data-for="htmlwidget-4f9209ab8f58af3295c9">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n学費免除Z -> 学歴X [label=\"50％の確率で大学を卒業\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+<div class="grViz html-widget html-fill-item" id="htmlwidget-cc4ad2c526defca9b30d" style="width:100%;height:454px;"></div>
+<script type="application/json" data-for="htmlwidget-cc4ad2c526defca9b30d">{"x":{"diagram":"digraph dot{\ngraph[rankdir = LR]\n\nnode[shape = circle, fontname = \"Yu Gothic\"]\n\nedge[fontname = \"Yu Gothic\", fontsize = 10]\n能力A -> 所得Y [label=\"10\"]\n能力A -> 学歴X [label=\"A≧80からランダム抽出\"]\n学歴X -> 所得Y [label=\"500\"]\n学費免除Z -> 学歴X [label=\"50％の確率で大学を卒業\"]\n\n{rank = same; 能力A; 学歴X}\n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
 </div>
 </div>
 <p>データ生成過程は、以下のように設定できる。（難しく感じる人は、コピペでかまわない）</p>
-<p>前回は、<code>filter()</code>と<code>slice_sample()</code>で大卒の人を抽出し、<code>anti_join()</code>と<code>bind_rows()</code>で結合するという方法でデータを生成した。今回は、二項分布の乱数を発生させる<code>rbinom()</code>を用いて、<code>mutate()</code>の中で変数を1つずつ作っていく。</p>
+<p>前回と同じく、二項分布の乱数を発生させる<code>rbinom()</code>と<code>if_else()</code>を用いて、<code>mutate()</code>の中で変数を1つずつ作っていく。前回のコードに、学費免除ダミー<code>exemption</code>の作成と、それによる大卒ダミー<code>university</code>の修正（2行）を加えればよい。</p>
 <div class="cell" data-layout-align="center">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 乱数の種を固定（同じ種からは常に同じ乱数が生成される。10101を他の数値に変えると異なる乱数となる。）</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">10101</span>)</span>

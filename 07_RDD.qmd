@@ -1,0 +1,713 @@
+---
+title: "Rで学ぶ計量経済学と機械学習 7<br> <br> 計量経済学３：回帰不連続デザイン（+モンテカルロ・シミュレーション入門）"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+subtitle: "First version: 2019-05-31<br>This version: `r Sys.Date()`"
+format:
+  html:
+    css: R_style.css
+    embed-resources: true   # 画像などの埋め込み
+    # theme: cosmo
+    highlight-style: haddock     # Rスクリプトのハイライト形式
+    # code-fold: true       # Rコードの折りたたみ表示を設定
+    toc: true
+    toc-depth: 2           # 見出しの表示とその深さを指定
+    number-sections: true  # 見出しごとに番号を振る
+    # df-print: paged       # head()の出力をnotebook的なものに（tibbleと相性良）
+    fig-height: 4          # 画像サイズのデフォルトを設定
+    fig-width: 6           # 画像サイズのデフォルトを設定
+    fig-format: png
+    link-external-newwindow: true  # 外部リンクを新しいタブで開く
+    # 「サイト内リンク」とみなすドメインを明示的に指定。
+    # 指定しない場合はブラウザの現在地(window.location.host)から自動判定されるが、
+    # file://で直接開いたときはhostが空文字になり、結果的に全リンクが「サイト内」と
+    # 誤判定されて新しいタブで開かなくなってしまう。それを避けるための設定。
+    link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+# 日本語のグラフ文字が文字化け（□）しないよう、フォントの代替表示に対応したraggで描画する
+knitr::opts_chunk$set(dev = "ragg_png")
+```
+
+# 本講義の目的
+
+- 回帰モデルを用いて不連続回帰デザインによる推定を行う方法を学ぶ。
+- ループの活用やモンテカルロ・シミュレーションの基礎を学ぶ。
+
+# パッケージの読み込み
+
+今回の分析で使うパッケージを読み込む。
+
+```{r}
+pacman::p_load(tidyverse, 
+               modelsummary, 
+               skimr, 
+               rdrobust)
+```
+
+
+# データ
+
+## データ生成過程
+前回、前々回と同様、自分で生成したデータを用いて分析していく。
+
+すなわち、個人の所得$Y$と学歴$X$・能力$A$との関係についての架空データを次のように生成する。
+
+$$
+Y = 200 + 10A + 500X+ \varepsilon
+$$
+
+- サンプルは1万人
+- 切片は200万円
+- 能力が1上がると所得は10上昇する
+- 能力は0から100まで均等に分布する
+- 大卒だと所得が500万円上昇する
+- 能力を部分的に反映した学力テストの点数が 180点以上であれば大卒となる
+- この最後の学力テスト点数が新しいデータ生成条件であり、これを回帰不連続デザインで利用する。
+
+
+```{r, echo=F}
+pacman::p_load(DiagrammeR)
+
+grViz("digraph dot{
+  graph[rankdir = LR]
+  node[shape = circle, fontname = 'Yu Gothic']
+  edge[fontname = 'Yu Gothic']
+
+  能力A -> 所得Y [label='10']
+  能力A -> テストの点 [label='能力を部分的に反映']
+  テストの点 -> 学歴X [label='180点以上かどうか']
+  学歴X -> 所得Y [label='500']
+
+  {rank = same; 能力A; テストの点; 学歴X}
+}")
+```
+
+
+```{r}
+# 事前準備 --------------------
+
+# 乱数の種を固定
+set.seed(0)
+
+# データの生成 ----------------
+n <- 10000
+# 能力は0から100まで均等に分布
+ability <- runif(n, min = 0, max = 100)
+
+# IDとabilityをデータフレームに格納する
+df <- tibble(ID = 1:n, ability)
+
+# 大卒フラグ
+## 条件：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる
+## 10%くらいが該当するように恣意的に設定
+## abilityとscoreの関係は非線形なものとする
+
+# 学力テストの点数 score
+df <- df |> mutate(score = 30 * log10(ability) + 
+                      rnorm(n, mean = 115, sd = 10))
+# 大卒ダミー university (score 180点以上=1)
+# if_else(条件, 条件を満たすときの値, 満たさないときの値)
+df <- df |> mutate(university = if_else(score >= 180, 1, 0))
+# 所得 income
+df <- df |> mutate(income = 200 + 10*ability + 500*university +
+                      rnorm(n, sd = 50))
+
+## dplyrを使わないやり方だと、以下の通り。
+#df["score"] = 30*log10(ability) + rnorm(n, mean = 115, sd = 10)
+#df["university"] = 1*(df["score"] >= 180)
+#df["income"] = 200 + 10*df["ability"] + 500*df["university"] + rnorm(n, sd = 50)
+
+# 最初の6行
+head(df)
+```
+
+
+今回はデータを生成する処理を繰り返すことになるので、データの生成処理を関数にまとめる
+
+```{r}
+generate_data <- function(n = 10000) {
+  # 能力は0から100まで均等に分布
+  ability <- runif(n, min = 0, max = 100)
+  
+  # IDとabilityをデータフレームに格納する
+  df <- tibble(ID = 1:n, ability)
+  
+  # 大卒フラグ
+  ## 条件：能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる
+  ## 10%くらいが該当するように恣意的に設定
+  ## abilityとscoreの関係は非線形なものとする
+  df <- df |> mutate(
+    # 学力テストの点数 score
+    score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10),
+    # 大卒ダミー university (score 180点以上=1)
+    university = if_else(score >= 180, 1, 0),
+    # 所得 income
+    income = 200 + 10*ability + 500*university + rnorm(n, sd = 50)
+  )
+  return(df)
+}
+```
+
+seedを指定してからデータを生成すれば同じデータが得られる
+
+```{r}
+set.seed(0)
+df2 <- generate_data()
+
+all(df == df2)  # すべて同じ値であることを確認
+```
+
+
+
+## グラフと記述統計
+
+こうして生成したデータの所得と能力・学歴の関係をプロットすると次のようになる。
+
+```{r}
+# 塗り分けプロット
+
+## 大卒か否かのラベルをデータフレームに加える
+df <- df |> mutate(edu_label =
+                      case_when(university == 1 ~ "Grad.", 
+                                university == 0 ~ "Not grad."))
+
+## 散布図を描く with 大卒ラベル
+ggplot(df, aes(x = ability, 
+               y = income, 
+               color = edu_label)) + 
+         geom_point(alpha = 0.5)+ 
+         labs(title = "Ability and Income")
+```
+
+また、データの記述統計を、第3回で学んだ`skimr::skim()`で表示すると以下のようになる（`university`の平均値`mean`は、大卒の人の割合を表す）。
+
+```{r}
+skimr::skim(df)
+```
+
+# モンテカルロ・シミュレーション入門
+
+## (欠落変数を無視した)回帰分析
+
+次に、欠落変数（能力$A$)を無視して、$Y$を$X$に回帰してみる。前回同様、単純な単回帰に加えて、学力テストの点数をコントロール変数に加えた重回帰分析も行ってみる。
+
+なお、第6回で紹介したように、`modelsummary()`で`vcov = "HC1"`と指定すると、標準誤差をロバスト標準誤差に書き換えて表示できる。今回は、以下のすべての表でロバスト標準誤差を用いる。
+
+回帰分析結果は以下のようになる。
+
+```{r}
+reg1 <- lm(income ~ university, 
+           data = df)
+reg2 <- lm(income ~ university + score, 
+           data = df)
+
+modelsummary(list(reg1, reg2), 
+             vcov = "HC1", 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+```{r, include=FALSE}
+# 本文中で使うreg2のuniversityのロバスト標準誤差
+reg2_se <- sqrt(diag(sandwich::vcovHC(reg2, type = "HC1")))["university"]
+```
+
+「大卒になることによる所得上昇の効果」は、単回帰分析(`reg1`)だと約`r round(reg1$coefficients[2], 0)`（万円）と過大推定される。
+
+`score`を含めた重回帰分析(`reg2`)だと約`r round(reg2$coefficients[2], 0)`（万円）となる。
+
+## モンテカルロ・シミュレーションとは
+
+`score`を含めた重回帰分析(`reg2`)における約`r round(reg2$coefficients[2], 0)`（万円）という係数推定値は、500（万円）に比較的近いが、これは、学力テストの点数(`score`)をコントロールすることによって欠落変数バイアスが完全に除去できた結果なのだろうか？
+
+このことを、理論的にではなく、基本的なシミュレーションにより検証してみよう。
+
+もし上記の重回帰モデル(`reg2`)におけるOLS推定量が正しいのであれば、上記の`r round(reg2$coefficients[2], 0)`（万円）と500（万円）の差は「たまたま」生じたにすぎないということになる。
+
+したがって、同様のデータ生成と回帰分析を何百回・何千回と実施すれば、`university`の係数のOLS推定値は500(万円)を中心に正規分布するはずである。これを実際に試してみるのが、モンテカルロ・シミュレーションである。
+
+## モンテカルロ・シミュレーションの実行
+
+下記では、上記のデータ生成と回帰分析(`reg2`)をループによって1000回繰り返し、その結果を保存する。
+
+
+```{r results = "hide"}
+# 再現性の確保のため、乱数の種を固定
+set.seed(0)
+
+# シミュレーション結果を入れる「箱」の作成
+# （coefという名前は、係数を取り出す関数coef()と重なるので避ける）
+coef_sim <- rep(NA, 1000)
+
+# 同じ回帰分析(上のreg2)を1000回繰りかえす。
+
+for(i in 1:1000){ # forによるループ。1000回繰り返す
+  # データの生成
+  df <- generate_data()
+  
+  # 回帰
+  reg2_sim <- lm(income ~ university + score, data = df)
+  
+  # 回帰係数推定値の保存
+  coef_sim[i] <- reg2_sim$coefficients[2] 
+}
+```
+
+
+
+シミュレーション結果（`university`の係数推定値の平均、標準偏差、ヒストグラム）は以下のようになる。
+
+```{r}
+# 平均、標準偏差
+mean(coef_sim)
+sd(coef_sim)
+
+# ヒストグラム（破線：真の値500、実線：シミュレーションの平均）
+ggplot(tibble(coef_sim), aes(x = coef_sim)) + 
+  geom_histogram(bins = 30, fill = "gray70", color = "white") + 
+  geom_vline(xintercept = 500, linetype = "dashed") + 
+  geom_vline(xintercept = mean(coef_sim), color = "red") + 
+  labs(title = "Monte Carlo simulation (1000 times)", 
+       x = "Estimated coefficient of university")
+```
+
+平均は`r round(mean(coef_sim), 1)`、標準偏差は`r round(sd(coef_sim), 1)`である。この標準偏差は、上記の`reg2`の`university`の標準誤差（約`r round(reg2_se, 1)`）に近い。標準誤差とは、「同じようにデータを取り直して推定を繰り返したときに、推定値がどのくらいばらつくか」を推定したものだからである。
+
+そして、`reg2`を1000回試行して得た`university`の係数推定値の平均が`r round(mean(coef_sim), 1)`であり、500から十分離れていることより、`reg2`の回帰モデルの`university`のOLS推定量にもバイアスがあることも分かる。
+
+これは、学力テストの点数(`score`)が、能力を誤差を含んだ形で、しかも非線形に（`log10()`を通して）反映しているにすぎないため、`score`をコントロールしても、能力の影響を完全には取り除けないからである。
+
+
+# 回帰不連続デザイン
+
+`ability`変数がない限り、通常の回帰分析では推定結果にバイアスが生じてしまう。そこで、「能力を部分的に反映した学力テストの点数が 180 点以上であれば大卒となる」という条件を利用した分析を考える。
+
+まず冒頭のデータをもう一度生成させる。
+
+```{r}
+# データ生成
+set.seed(0)
+df <- generate_data()
+head(df)
+```
+
+X軸を学力テストの点数(`score`)、Y軸を所得(`income`)として散布図を描くと、下記のようになる。
+
+```{r}
+# 塗り分けプロット
+
+## 大卒か否かのラベルをデータフレームに加える
+df <- df |> mutate(edu_label =
+                      case_when(university == 1 ~ "Grad.", 
+                                university == 0 ~ "Not grad."))
+
+## 散布図を描く with 大卒ラベル
+ggplot(df, aes(x = score, 
+               y = income, 
+               color = edu_label)) + 
+         geom_point(alpha = 0.5) + 
+         labs(title = "Score and Income")
+```
+
+テストの点数(`score`)の閾値（180点）を境に、所得が全体的に上振れ（ジャンプ）している。これは、学力テストで180点以上だと大卒となり、所得が上昇するからである。
+
+**回帰不連続デザイン**(regression discontinuity design: RD design, RDD)はこうした閾値を伴うデータ生成過程(DGP)を利用する調査設計（デザイン）で、以下のようなロジックをもとに分析を行う。
+
+- スコアが180点になる閾値で大卒になれるかどうかという「不連続な変化」を決めるというのは人為的な制度であり、その背景にある個々人の所得の決定要因（ここでは能力$A$のみだが、一般的にはあらゆる決定要因）は「連続的」に分布しているはず。
+- したがって、この閾値において所得に明確なジャンプ（不連続性）がある理由は、この閾値で同じく不連続に変化している「大卒」という要因以外には考えられない
+
+
+## RDデザインによる推定
+
+RDデザインの推定は、より高度なRD推定方法を扱うパッケージが存在するが、`lm`関数を使った重回帰分析で推定できる。
+
+基本的には閾値（ここでは`score=180`)での「ジャンプ」の大きさを推定すればよい。
+
+もっとも簡単な方法は、線形回帰分析でこのジャンプを推定することである。まずは簡便に、`ggplot2`を使って、グラフを使ってこのジャンプを確認してみよう。
+
+
+```{r}
+## 散布図を描く with 大卒ラベル
+ggplot(df, aes(x = score, 
+               y = income, 
+               color = edu_label, 
+               group = edu_label)) + 
+         geom_point(alpha = 0.5) + 
+         labs(title = "Score and Income") +
+         geom_smooth(method = lm, 
+                     se = TRUE, 
+                     color = "black") # group=edu_labelごとの回帰直線, SEあり
+```
+
+
+上図のようなRD分析を線形RD(linear RD)と呼び、以下のように推定できる。
+
+```{r}
+# 閾値=0となるように割当変数(score_gap)を作り直す
+df <- df |> mutate(score_gap = score - 180)
+
+# 線形RD: X軸にscore_gapを用いることにより、y切片の変化すなわちuniversityダミーの係数を上図の「ジャンプ」の大きさと解釈できる。
+linear_RD <- lm(income ~ university + score_gap + score_gap:university, 
+                data = df) 
+
+modelsummary(linear_RD, 
+             vcov = "HC1", 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+`university`の係数は閾値でのジャンプの大きさ、`score_gap`の係数は閾値左側の回帰直線の傾き、`university × score_gap`（コードの`score_gap:university`）の係数は閾値左側と閾値右側の回帰直線の傾きの変化である。`university`の係数推定値は500に近い。
+
+## 多項式RD
+
+閾値でのジャンプの大きさを測りたいだけなのに、閾値の左右における`score`と`income`の関係を線形回帰モデルで捉えるのは適切ではないかもしれない。
+
+ただし、loess曲線を用いて閾値の左右における`score`と`income`の関係をフレキシブルな曲線で捉えてみても、ジャンプの大きさはあまり変わらないように見える。
+
+```{r}
+## 散布図を描く with 大卒ラベル
+ggplot(df, aes(x = score, 
+               y = income, 
+               color = edu_label, 
+               group = edu_label)) + 
+         geom_point(alpha = 0.5)+ 
+         labs(title = "Score and Income") +
+         geom_smooth(method = lm, 
+                     se = TRUE, 
+                     color = "black") + # group=edu_labelごとの回帰直線, SEあり
+         geom_smooth(method = loess, 
+                     se = TRUE, 
+                     color = "black")   # group=edu_labelごとのloess曲線, SEあり
+```
+
+そこで、閾値の左右における`score`と`income`の関係を、それぞれ異なる二次、三次、四次曲線でとらえた多項式RDを推定してみる。
+
+```{r}
+# 二次多項式RD, I(score_gap^2)はscore_gap^2
+secondpoly_RD <- lm(income ~  university + 
+                              score_gap + 
+                              I(score_gap^2) + 
+                              score_gap:university + 
+                              I(score_gap^2):university, 
+                    data = df) 
+
+# 三次多項式RD,  I(score_gap^3)はscore_gap^3
+thirdpoly_RD <- lm(income ~  university + 
+                             score_gap + 
+                             I(score_gap^2) + 
+                             I(score_gap^3) +
+                             score_gap:university + 
+                             I(score_gap^2):university + 
+                             I(score_gap^3):university, 
+                   data = df) 
+
+# 四次多項式RD, I(score_gap^4)はscore_gap^4
+fourthpoly_RD <- lm(income ~  university + 
+                              score_gap + 
+                              I(score_gap^2) + 
+                              I(score_gap^3) + 
+                              I(score_gap^4) +
+                              score_gap:university + 
+                              I(score_gap^2):university +
+                              I(score_gap^3):university + 
+                              I(score_gap^4):university , 
+                    data = df) 
+
+
+# 一次~四次多項式RD（係数が多いので、fmt = 1で小数点以下1桁まで表示する）
+modelsummary(list("一次" = linear_RD, 
+                  "二次" = secondpoly_RD, 
+                  "三次" = thirdpoly_RD, 
+                  "四次" = fourthpoly_RD), 
+             vcov = "HC1", 
+             fmt = 1, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+どの結果も、`university`の係数推定値は、だいたい500前後になる。ただし、多項式の次数を大きくしていくほど、標準誤差も大きくなる。
+
+## 局所線形RD
+
+もう一つの考え方として、閾値から遠ざかるほど、閾値でのジャンプの大きさを測るには不必要な情報となる。したがって、線形モデルでのRDを使いつつ、推定に用いるサンプルを閾値近傍の局所的（local)なものに限定すればよいのではないかと考える。
+
+この考え方に従って、閾値前後のバンド幅(bandwidth)を設定し、そのバンド幅の内部のサンプルだけを使って線形RDを行う。
+
+以下では、バンド幅を30、10、5、1と変えながら同じ推定を繰り返す。同じ処理を何度も書かずに済むように、モンテカルロ・シミュレーションと同じく`for`ループを使い、「データと推定式を受け取り、バンド幅ごとにRD推定を行う」関数を作っておく。
+
+```{r}
+# バンド幅ごとにRD推定を行う関数
+## df: データ、formula: 推定式、bandwidths: バンド幅（複数）
+estimate_rd_by_bw <- function(df, formula, bandwidths = c(30, 10, 5, 1)) {
+  # 推定結果を入れる「箱」（リスト）の作成
+  results <- list()
+  
+  for (bw in bandwidths) { # バンド幅を1つずつ取り出してループ
+    # 閾値の前後bwの範囲のサンプルに限定する
+    df_band <- df |> filter(-bw <= score_gap & score_gap < bw)
+    # 回帰し、結果を「バンド幅=30」などの名前をつけてリストに保存する
+    results[[paste0("バンド幅=", bw)]] <- lm(formula, data = df_band)
+  }
+  return(results)
+}
+
+# 線形RDの推定式（推定式もオブジェクトとして保存できる）
+linear_formula <- income ~ university + score_gap + score_gap:university
+
+# バンド幅=30, 10, 5, 1の局所線形RD
+local_linear_RD <- estimate_rd_by_bw(df, linear_formula)
+
+modelsummary(local_linear_RD, 
+             vcov = "HC1", 
+             fmt = 1, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+バンド幅が10や5の場合は`university` の係数推定値は500に近いが、バンド幅を1にまで狭めると、推定値はかなり大きくなってしまっている。
+また、標準誤差もバンド幅を狭めるごとに大きくなる。
+
+一般的に、RD推定は、閾値前後のサンプルサイズが十分に大きくないと推定結果は不安定になりがちである。一方で、サンプルサイズを確保するためにバンド幅を大きくするとバイアスが生じる可能性が高くなり、バンド幅を大きくすることによるバイアスを高次多項式によってコントロールしようとすると多項式により推定結果は不安定になる。
+
+ためしに以下では、サンプルサイズを100倍すなわちn=1,000,000にして局所線形RDを推定してみる。
+
+
+```{r}
+# データ生成
+set.seed(0)
+df <- generate_data(n = 1000000)
+
+#割当変数score_gapの作成
+df <- df |> mutate(score_gap = score - 180)
+
+# バンド幅=30, 10, 5, 1の局所線形RD
+local_linear_RD <- estimate_rd_by_bw(df, linear_formula)
+
+modelsummary(local_linear_RD, 
+             vcov = "HC1", 
+             fmt = 1, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+バンド幅30だと少し下方バイアスがあるように見えるが、バンド幅を10以下にすると、ほぼ500になる。
+
+
+## 局所多項式RD
+
+サンプルを閾値近傍のものに限定した局所的な分析と多項式（高次）回帰モデルを組み合わせることもできる。ただし、局所回帰と高次の多項式を組み合わせると標準誤差が大きくなる傾向があるので、ここでは二次多項式回帰のみを用いてみる。
+
+推定式を二次多項式に変えるだけで、上で作った関数をそのまま使える。
+
+```{r}
+# データ生成
+set.seed(0)
+df <- generate_data(n = 10000)
+
+#割当変数score_gapの作成
+df <- df |> mutate(score_gap = score - 180)
+
+# 二次多項式RDの推定式
+secondpoly_formula <- income ~ university + score_gap + I(score_gap^2) + 
+                               score_gap:university + I(score_gap^2):university
+
+# バンド幅=30, 10, 5, 1の局所二次多項式RD
+local_secondpoly_RD <- estimate_rd_by_bw(df, secondpoly_formula)
+
+modelsummary(local_secondpoly_RD, 
+             vcov = "HC1", 
+             fmt = 1, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+全体としてRD推定値(`university`の係数推定値）は500よりも大きくなり、とりわけもっともバンド幅が小さいときには500から大きく離れている。
+
+ここでも、サンプルサイズを100倍(100万人)にするとどうなるか見てみよう。
+
+```{r}
+# データ生成
+set.seed(0)
+df <- generate_data(n = 1000000)
+
+#割当変数score_gapの作成
+df <- df |> mutate(score_gap = score - 180)
+
+# バンド幅=30, 10, 5, 1の局所二次多項式RD
+local_secondpoly_RD <- estimate_rd_by_bw(df, secondpoly_formula)
+
+modelsummary(local_secondpoly_RD, 
+             vcov = "HC1", 
+             fmt = 1, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+どの推定値も500にかなり近くなる。
+
+# 補足
+
+上記の一連の分析からもわかるように、RD推定値は、設定としてRDデザインの適用がふさわしい場合においても、サンプルサイズ、バンド幅、多項式回帰モデルの設定などによって結果が大きくかわりうる。
+
+RD推定の最適な方法については様々な専門的議論がなされ、Rのパッケージも提供されている（{rdrobust}パッケージなど）。
+
+ただし上記の方法で、`lm`関数を使って基本的なRD推定を行うことが可能であるし、この作業によって、何をどう分析しているのかを理解することは重要である。
+
+## （参考）{rdrobust}パッケージによるRD推定
+
+`{rdrobust}`パッケージの`rdrobust()`は、現在の実証研究でよく使われているRD推定の関数である。上で行った局所線形RDを基本としつつ、
+
+- バンド幅を、データから自動的に選ぶ（推定値の誤差が小さくなるように選ぶ）
+- 閾値に近いサンプルほど大きな重みをつけて回帰する（三角カーネル）
+- バンド幅の選び方などによって生じる偏りを補正した、頑健な信頼区間を計算する
+
+といった工夫がなされている。`y`に結果変数、`x`に割当変数（ここでは`score`）、`c`に閾値を指定する。
+
+```{r}
+# 1万人のデータに戻す
+set.seed(0)
+df <- generate_data(n = 10000)
+
+rd_result <- rdrobust(y = df$income, x = df$score, c = 180)
+summary(rd_result)
+```
+
+「BW est. (h)」が自動的に選ばれたバンド幅、「RD Effect」の「Point Estimate」がRD推定値、「95% C.I.」が偏りを補正した95%信頼区間である。推定値は約`r round(rd_result$coef[1], 0)`、バンド幅は約`r round(rd_result$bws[1, 1], 1)`となった。
+
+また、`rdplot()`を使うと、割当変数をいくつかの区間（ビン）に分けて区間ごとの平均値をプロットした、RD分析でよく使われるグラフを描くことができる。
+
+```{r}
+rdplot(y = df$income, x = df$score, c = 180, 
+       title = "RD plot", 
+       x.label = "Score", 
+       y.label = "Income")
+```
+
+# 参考文献
+
+- **安藤道人（2015) 「[多重回帰分析と回帰不連続デザイン](https://www.jil.go.jp/institute/zassi/backnumber/2015/04/pdf/012-013.pdf)」**『日本労働研究雑誌』 No.657 pp.12-13
+    - 今回用いたデータ生成過程（DGP)は、このエッセイのものと同一である。
+
+- **安藤道人「計量経済学２」・「計量経済特論２」の講義資料**（[講義のページ](https://sites.google.com/site/michihito7ando/lectures)）
+    - 「回帰不連続デザイン」の回の資料が本講義の内容と対応している。
+
+- **矢内勇生「[計量経済学応用](https://yukiyanai.github.io/econometrics2/)」**（2020年度、高知工科大学）
+    - 第1回・第4回〜第6回でも紹介した講義資料（日本語、Rのコードつき）。「[Topic 8 回帰不連続デザイン](https://yukiyanai.github.io/econometrics2/regression-discontinuity.html)」が本講義の内容と対応している。
+
+- **Nick Huntington-Klein (2021) [The Effect: An Introduction to Research Design and Causality](https://theeffectbook.net/)**（Chapman & Hall/CRC、ウェブ版は無料、英語）
+    - 「[Chapter 20 - Regression Discontinuity](https://theeffectbook.net/ch-RegressionDiscontinuity.html)」が本講義の内容と対応している。
+
+- **Scott Cunningham [Causal Inference: The Remix](https://mixtape.scunning.com/)**（ウェブ版は無料、英語）
+    - "Causal Inference: The Mixtape"（2021年）の第2版。「[Regression Discontinuity](https://mixtape.scunning.com/06-regression_discontinuity)」の章が本講義の内容と対応している。Rのコードつき。
+
+- **Matias D. Cattaneo, Nicolás Idrobo and Rocío Titiunik (2020) [A Practical Introduction to Regression Discontinuity Designs: Foundations](https://arxiv.org/abs/1911.09511)**（Cambridge University Press、arXiv版は無料、英語）
+    - {rdrobust}の開発者たちによるRDデザインの入門書。バンド幅の選び方やRDプロットの描き方などを、RとStataのコードとともに解説している。
+
+- **[RD Packages](https://rdpackages.github.io/)**（英語）
+    - {rdrobust}など、より学術的に洗練された方法でRD推定を行うためのパッケージ（R・Stata・Python）の公式サイト。
+
+
+# （おまけ）Pythonで同様の作業を行う場合
+
+本講義の演習はRで行うが、参考として、ここまで学んだ内容に対応するPythonのコードを簡単に紹介する。
+
+乱数の生成には**NumPy**、回帰分析には**statsmodels**を使う。また、{rdrobust}にはPython版もある。なお、PythonとRでは乱数の生成方法が異なるので、同じ設定でデータを生成しても数値は少し異なる。
+
+```python
+# ターミナル上で実行（Rのinstall.packages()に相当）
+# pip install numpy pandas statsmodels matplotlib seaborn rdrobust
+```
+
+```python
+import numpy as np
+import pandas as pd
+import statsmodels.formula.api as smf
+from statsmodels.iolib.summary2 import summary_col
+import matplotlib.pyplot as plt
+import seaborn as sns
+from rdrobust import rdrobust
+```
+
+## データの用意
+
+```python
+# データを生成する関数（rngは乱数の生成器）
+def generate_data(rng, n=10000):
+    ability = rng.uniform(0, 100, n)                              # 能力は0から100まで均等に分布
+    score = 30 * np.log10(ability) + rng.normal(115, 10, n)       # 学力テストの点数
+    university = np.where(score >= 180, 1, 0)                     # 180点以上なら大卒
+    income = 200 + 10 * ability + 500 * university + rng.normal(0, 50, n)
+    return pd.DataFrame({"ID": np.arange(1, n + 1), "ability": ability, "score": score,
+                         "university": university, "income": income})
+
+rng = np.random.default_rng(0)  # 乱数の種を固定（Rの set.seed(0) に相当）
+df = generate_data(rng)
+df.describe()
+```
+
+## 回帰分析とモンテカルロ・シミュレーション
+
+`fit(cov_type="HC1")`とすると、ロバスト標準誤差（HC1）になる。
+
+```python
+reg1 = smf.ols("income ~ university", data=df).fit(cov_type="HC1")
+reg2 = smf.ols("income ~ university + score", data=df).fit(cov_type="HC1")
+print(summary_col([reg1, reg2], stars=True))
+```
+
+```python
+# モンテカルロ・シミュレーション：データ生成と回帰を1000回繰り返す
+rng = np.random.default_rng(0)
+coef_sim = np.empty(1000)  # 結果を入れる「箱」
+for i in range(1000):
+    df_sim = generate_data(rng)
+    coef_sim[i] = smf.ols("income ~ university + score", data=df_sim).fit().params["university"]
+
+print(coef_sim.mean(), coef_sim.std(ddof=1))  # 平均、標準偏差
+
+plt.hist(coef_sim, bins=30, color="gray")
+plt.axvline(500, linestyle="--", color="black")  # 真の値
+plt.axvline(coef_sim.mean(), color="red")        # シミュレーションの平均
+plt.show()
+```
+
+平均は約464、標準偏差は約7.6となり、R版と同様にバイアスがあることが分かる。
+
+## 回帰不連続デザイン
+
+```python
+df["score_gap"] = df["score"] - 180  # 閾値=0となるように割当変数を作り直す
+
+# 線形RDと多項式RD（I(score_gap**2)はscore_gapの2乗）
+linear_RD = smf.ols("income ~ university * score_gap", data=df).fit(cov_type="HC1")
+secondpoly_RD = smf.ols("income ~ university * (score_gap + I(score_gap**2))",
+                        data=df).fit(cov_type="HC1")
+print(summary_col([linear_RD, secondpoly_RD], stars=True))
+```
+
+`university * score_gap`は、Rと同じく`university + score_gap + university:score_gap`を意味する。
+
+```python
+# バンド幅ごとに局所線形RDを推定する関数
+def estimate_rd_by_bw(df, formula, bandwidths=(30, 10, 5, 1)):
+    results = []
+    for bw in bandwidths:
+        df_band = df[(-bw <= df["score_gap"]) & (df["score_gap"] < bw)]
+        results.append(smf.ols(formula, data=df_band).fit(cov_type="HC1"))
+    return results
+
+local_linear_RD = estimate_rd_by_bw(df, "income ~ university * score_gap")
+print(summary_col(local_linear_RD, stars=True,
+                  model_names=["bw=30", "bw=10", "bw=5", "bw=1"]))
+```
+
+```python
+# rdrobustによるRD推定
+print(rdrobust(y=df["income"], x=df["score"], c=180))
+```
+
+推定値は約520、自動的に選ばれたバンド幅は約6.5となる（R版とは乱数が異なるため、数値も少し異なる）。

@@ -1,7 +1,7 @@
 ---
 title: "Rで学ぶ計量経済学と機械学習 5<br> <br> 計量経済学１：差の検定/回帰分析/マッチング"
 author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
-subtitle: "This version: `r Sys.Date()`"
+subtitle: "First version: 2019-05-16<br>This version: `r Sys.Date()`"
 format:
   html:
     css: R_style.css
@@ -127,12 +127,41 @@ edge[fontname = 'Yu Gothic', fontsize = 10]
 
 まず、上記のDGPに従うデータを生成する。なお、データ生成は、これまでに学習した内容と比較してやや高度なので、とりあえずは、ただコピペしてデータ生成するだけでも構わない。
 
-
 ```{r}
 # 事前準備 --------------------
 # パッケージの読み込み
 pacman::p_load(tidyverse, modelsummary, MatchIt, cobalt, estimatr)
 
+# 乱数の種を固定（同じ種からは常に同じ乱数が生成される。0を他の数値に変えると異なる乱数となる。）
+set.seed(0)
+
+# データの生成 ----------------
+# n:サンプルサイズ
+n <- 10000
+
+# runif(n, min, max): 最小値min、最大値maxの一様分布に従う乱数をn個生成
+# rbinom(n, 1, p): 確率pで1、確率1-pで0となる乱数をn個生成
+# rnorm(n, mean, sd): 平均mean、標準偏差sdの正規分布に従う乱数をn個生成
+# if_else(条件, 条件を満たすときの値, 満たさないときの値)
+df <- tibble(ID = 1:n,
+             ability = runif(n, min = 0, max = 100)) |>   # 能力は0から100まで均等に分布
+  mutate(
+    # 能力が80以上の人（約2000人）は、50%の確率で大卒になる（約1000人）
+    university = if_else(ability >= 80, rbinom(n, 1, 0.5), 0),
+    # 所得：上記のDGP(母集団回帰モデル）に基づいて生成（誤差項は平均=0、標準偏差=50）
+    income = 200 + 10*ability + 500*university + rnorm(n, mean = 0, sd = 50)
+  )
+
+# 最初の6行
+head(df)
+```
+
+同じデータ生成過程は、別の書き方でも作ることができる。以下は、dplyrの`filter()`・`slice_sample()`（ランダムに行を抽出する）・`anti_join()`（一方のデータにない行を取り出す）・`bind_rows()`（データを縦に結合する）を使って、「能力が80以上の人からちょうど半分を抽出して大卒にし、残りの人と結合する」という手順で作る方法である（クリックするとコードが表示される。ここでは実行しない）。
+
+```{r}
+#| eval: false
+#| code-fold: true
+#| code-summary: "他のデータ作成方法（filter()・slice_sample()・anti_join()・bind_rows()を使う方法）"
 # 乱数の種を固定（同じ種からは常に同じ乱数が生成される。0を他の数値に変えると異なる乱数となる。）
 set.seed(0)
 
@@ -770,11 +799,8 @@ n = 10000
 df = pd.DataFrame({"ID": np.arange(1, n + 1),
                    "ability": rng.uniform(0, 100, n)})
 
-# 能力が80以上の人の中から半分をランダムに選んで大卒にする
-high = df.index[df["ability"] >= 80]
-grad_idx = rng.choice(high, size=len(high) // 2, replace=False)
-df["university"] = 0
-df.loc[grad_idx, "university"] = 1
+# 能力が80以上の人は、50%の確率で大卒になる（np.where()はRの if_else() に、rng.binomial()はRの rbinom() に相当）
+df["university"] = np.where(df["ability"] >= 80, rng.binomial(1, 0.5, n), 0)
 
 # DGPに基づいて所得を生成（誤差項は平均0、標準偏差50の正規分布。Rの rnorm() に相当）
 df["income"] = 200 + 10 * df["ability"] + 500 * df["university"] + rng.normal(0, 50, n)
