@@ -1,0 +1,569 @@
+---
+title: "Rで学ぶ計量経済学と機械学習 9<br> <br> 計量経済学5：差分の差分(DID)法"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+subtitle: "First version: 2019-06-14<br>This version: `r Sys.Date()`"
+format:
+  html:
+    css: R_style.css
+    embed-resources: true   # 画像などの埋め込み
+    # theme: cosmo
+    highlight-style: haddock     # Rスクリプトのハイライト形式
+    # code-fold: true       # Rコードの折りたたみ表示を設定
+    toc: true
+    toc-depth: 2           # 見出しの表示とその深さを指定
+    number-sections: true  # 見出しごとに番号を振る
+    # df-print: paged       # head()の出力をnotebook的なものに（tibbleと相性良）
+    fig-height: 4          # 画像サイズのデフォルトを設定
+    fig-width: 6           # 画像サイズのデフォルトを設定
+    fig-format: png
+    link-external-newwindow: true  # 外部リンクを新しいタブで開く
+    # 「サイト内リンク」とみなすドメインを明示的に指定。
+    # 指定しない場合はブラウザの現在地(window.location.host)から自動判定されるが、
+    # file://で直接開いたときはhostが空文字になり、結果的に全リンクが「サイト内」と
+    # 誤判定されて新しいタブで開かなくなってしまう。それを避けるための設定。
+    link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'
+editor_options:
+  chunk_output_type: console
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+# 日本語のグラフ文字が文字化け（□）しないよう、フォントの代替表示に対応したraggで描画する
+knitr::opts_chunk$set(dev = "ragg_png")
+```
+
+
+# 本講義の目的
+
+- 差分の差分法(Difference-in-Differences)の考え方と、その前提となる平行トレンドの仮定を、グラフを用いて理解する。
+- `feols()`を用いた差分の差分法の推定の基礎を学ぶ。
+- データの前処理やグラフ作成の復習や練習をする。
+
+
+# パッケージの読み込み
+
+今回の分析で使うパッケージを読み込む。
+
+```{r}
+pacman::p_load(tidyverse,
+               fixest, # feolsによるパネルデータ分析
+               estimatr, # lm_robustによるパネルデータ分析（参考）
+               modelsummary) # 結果表の作成
+```
+
+
+# データの生成
+
+パネルデータ分析の応用として、**差分の差分法（difference in differences: DID）法**がある。
+
+詳しい解説は参考文献などに譲るが、ここではもっとも単純なDID（二群・二期間DID)の推定を行う。
+
+これまでの事例と同様、能力が均等に分布した個体の所得をアウトカム変数とした分析を行う。処置変数として、職業訓練(`training`)を想定する。
+
+まず、能力が0~100まで均等に分布した個体を1万人生成させる。
+
+あわせて、能力を部分的に反映した適性試験の点数(`score`)を作成する。2年目に、この点数が180点以上の個体が職業訓練を受けるものとする。職業訓練を受ける個体が処置群、受けない個体が対照群となるので、処置群ダミー(`treated`)もここで作成しておく。
+
+```{r}
+# 乱数の種を固定
+set.seed(0)
+
+# 個体数
+n <- 10000
+
+# 個体ごとの変数（1年目と2年目で共通）
+df <- tibble(ID = 1:n,
+             ability = runif(n, min = 0, max = 100)) |>  # 能力は0から100まで均等に分布
+  mutate(
+    # 適性試験の点数 score
+    # 10%くらいが180点以上になるように恣意的に設定。abilityとscoreの関係は非線形なものとする
+    score = 30 * log10(ability) + rnorm(n, mean = 115, sd = 10),
+    # 処置群ダミー treated (score 180点以上 = 1)
+    treated = if_else(score >= 180, 1, 0)
+  )
+```
+
+二期間DIDなので、１年目と２年目のデータ生成過程（DGP: Data Generating Process）をそれぞれ作成する。
+
+1年目は、誰も職業訓練を受けず、所得は、定数項、能力、誤差項のみによって決まるものとする。
+
+2年目は、処置群の個体が職業訓練(`training`)を受け、職業訓練を受けた個体は500万円、所得が上乗せされるものとする。また年ショックとして、平均100、標準偏差25の正規分布$N(\mu=100、\sigma=25)$に従う確率変数をすべての個体に加える。
+
+```{r}
+# 1年目 (year = 0)：誰も職業訓練を受けない
+df0 <- df |> mutate(year = 0,
+                    training = 0,
+                    income = 200 + 10*ability +
+                      rnorm(n, mean = 0, sd = 50))
+
+# 2年目 (year = 1)：処置群が職業訓練を受ける。所得には年ショックとしてN(100,25)も追加
+df1 <- df |> mutate(year = 1,
+                    training = treated,
+                    income = 200 + 10*ability + 500*training +
+                      rnorm(n, mean = 100, sd = 25) +
+                      rnorm(n, mean = 0, sd = 50))
+```
+
+最後に1年目と2年目のデータを結合して1つのデータフレームにする。
+
+```{r}
+# 1年目と2年目をくっつける。
+df_panel <- bind_rows(df0, df1)
+head(df_panel)
+```
+
+ここで、`training`は**処置ダミー**（その年に職業訓練を受けたかどうか）であり、`treated`は**処置群ダミー**（2年目に職業訓練を受ける個体かどうか）であることに注意。処置群の個体は、1年目には`training`$=0$だが、`treated`は1年目も2年目も$1$である。
+
+（なお、1年目と2年目のデータを別々に作り、処置群ダミーを後から作る方法もある。以前の版の講義資料では、以下の方法でデータを作成していた。）
+
+```{r}
+#| eval: false
+#| code-fold: true
+#| code-summary: "他のデータ作成方法（1年目と2年目を別々に作り、left_join()で処置群ダミーを後から作る方法）"
+# 事前準備 --------------------
+
+# 乱数の種を固定
+set.seed(0)
+
+# データの生成 ----------------
+n <- 10000
+# 能力は0から100まで均等に分布
+ability <- runif(n, min = 0, max = 100)
+
+# IDとabilityをデータフレームに格納する
+df <- tibble(ID = 1:n, ability)
+
+# 1年目
+
+## year = 0を加える
+df0 <- df |> mutate(year = 0)
+
+##　職業訓練フラグ
+##　一年目は誰も職業訓練をうけない
+df0 <- df0 |> mutate(training = 0)
+
+#所得 incomeを加える
+df0 <- df0 |> mutate(income = 200 + 10*ability +
+                        rnorm(n, mean = 0, sd = 50))
+
+# 2年目
+
+## year = 1　を加える
+df1 <- df |> mutate(year = 1)
+
+## 職業訓練フラグ
+## 条件：能力を部分的に反映した適性試験が 180 点以上であれば職業訓練を受けられる
+## 10%くらいが該当するように恣意的に設定
+## abilityとscoreの関係は非線形なものとする
+## 今回もmutate()とcase_when()を使用して作成
+
+# 適性試験の点数 score
+df1 <- df1 |> mutate(score = 30 * log10(ability) +
+                        rnorm(n, mean = 115, sd = 10))
+
+# 職業訓練ダミー training (score 180点以上=1)
+df1 <- df1 |> mutate(training = case_when(score >= 180 ~ 1,
+                                           TRUE ~ 0))
+
+#所得 income: 年ショックとしてn(100,25)も追加
+df1 <- df1 |> mutate(income = 200 + 10*ability + 500*training +
+                        rnorm(n, mean = 100, sd = 25) +
+                        rnorm(n, mean = 0, sd = 50))
+
+# 1年目と2年目をくっつける。
+df_binded <- bind_rows(df0, df1)
+
+#処置群ダミーの作成
+
+##　処置群の抽出
+df_treated <- df_binded |> filter(training == 1) |> dplyr::select(ID)
+
+##　処置群ダミーの作成
+df_treated <- df_treated |> mutate(treated = 1)
+
+## df_panelにdf_treatedを結合: dplyr::left_join(a, b, by = "x1") bをaに対応付け、結合する(aが全て残る)
+df_panel <- left_join(df_binded, df_treated, by ="ID")
+
+# treated(処置群ダミー）のNAを0をreplace関数を使って置き換える
+df_panel <- df_panel |> mutate(treated = replace(treated, which(is.na(treated)), 0))
+
+#以下のような方法など、他の置き換える方法もある。
+# df_panel$treated[is.na(df_panel$treated)] <- 0
+```
+
+
+# 差分の差分法(DID)推定
+
+## グラフを用いた説明
+
+上記のデータを用いてDID推定を実際に行う前に、グラフを使ってDID推定を説明しよう。
+
+まず、処置前と処置後、処置群と対照群について、アウトカム変数(`income`)の４つの平均値を作成する。処置前と処置後は時間ダミー変数(`year`)で、処置群と対照群は処置群ダミー変数(`treated`)で区別できる。
+
+```{r}
+# summarize(.by)でグループごとに平均値を計算
+df_panel_mean <- df_panel |> summarize(
+  income = mean(income),
+  .by = c("treated", "year")  # グループごとにmean(income)を計算
+)
+```
+
+
+（なお、別の書き方として`group_by()`してから`summarize()`する方法もある）
+
+```{r}
+# （参考） group_byでグループ分けし、summariseでグループごとに平均値を計算
+df_panel_mean <- df_panel |>
+  group_by(treated, year) |> # グループわけ
+  summarize(income = mean(income), .groups = "keep") |>  # グループごとに平均値を計算
+  ungroup() # グループ分けを解除
+```
+
+この４つの平均値を、下の図の点A〜Dに対応させて取り出しておく。
+
+```{r}
+# 4つの平均値を取り出す
+y_A <- df_panel_mean |> filter(treated == 1, year == 1) |> pull(income) # 処置群・処置後
+y_B <- df_panel_mean |> filter(treated == 1, year == 0) |> pull(income) # 処置群・処置前
+y_C <- df_panel_mean |> filter(treated == 0, year == 1) |> pull(income) # 対照群・処置後
+y_D <- df_panel_mean |> filter(treated == 0, year == 0) |> pull(income) # 対照群・処置前
+```
+
+この４つの平均値を図示すると、以下のようになる。破線については、後で説明する。
+
+```{r}
+# 処置群と対照群のラベルづけ
+df_panel_mean <- df_panel_mean |> mutate(treated_label =
+                      case_when(treated == 1 ~ "Treated",
+                                treated == 0 ~ "Control"))
+
+# A, B, C, Dのラベルづけ（図に挿入）
+df_panel_mean <- df_panel_mean |> mutate(point_label =
+                      case_when(treated == 1 & year == 1 ~ "A",
+                                treated == 1 & year == 0 ~ "B",
+                                treated == 0 & year == 1 ~ "C",
+                                treated == 0 & year == 0 ~ "D"))
+
+# 処置群の反実仮想（職業訓練を受けなかった場合の所得の平均値）
+# 点Bから、対照群と同じだけ (y_C - y_D) 所得が伸びたとする
+df_counterfactual <- tibble(year = c(0, 1),
+                            income = c(y_B, y_B + (y_C - y_D)),
+                            treated_label = "Treated",
+                            point_label = c("", "A'"))
+
+# 図の作成
+g <- df_panel_mean |> ggplot(aes(x = year,
+                                  y = income,
+                                  color = treated_label)) +
+  geom_point() + # 散布図
+  geom_line() +  # 直線
+  labs(title = "Income by year and group") + # タイトル
+  scale_x_continuous(breaks = c(0,1)) +　# X軸は0と1のみにする
+  geom_text(aes(label = point_label), vjust = -0.45, show.legend = FALSE) + #A,B,C,Dの文字を点の0.45上に表示（凡例には表示しない）
+  # 以下は反実仮想（show.legend = FALSEで凡例には表示しない）
+  geom_line(data = df_counterfactual, linetype = "dashed", show.legend = FALSE) + # 反実仮想を破線で表示
+  geom_point(data = df_counterfactual |> filter(year == 1), shape = 1, show.legend = FALSE) + # 点A'は白抜きで表示
+  geom_text(data = df_counterfactual, aes(label = point_label), vjust = 1.45, show.legend = FALSE) # A'の文字を点の下に表示
+
+# 図の表示
+g
+```
+
+ここで、職業訓練(`training`)の平均効果は、
+
+$$
+\hat{\beta} = (Y^A-Y^B) - (Y^C-Y^D)
+$$
+
+と推定できる。つまり、処置群(`Treated`)における`income`の平均値の伸び（=職業訓練効果+年ショック）から、対照群(`Control`)における`income`の平均値の伸び（=年ショック）を引いたものが、職業訓練の平均効果と推定される。
+
+実際に、4つの平均値からDID推定値を計算してみよう。
+
+```{r}
+# 4つの平均値からDID推定値を計算
+DID_mean <- (y_A - y_B) - (y_C - y_D)
+DID_mean
+```
+
+DID推定値は約`r sprintf("%.1f", DID_mean)`となり、真の職業訓練の効果である500に近い値となっている。
+
+## 平行トレンドの仮定
+
+DID推定で最も重要な仮定は、**平行トレンドの仮定（parallel trends assumption）**である。これは、「もし処置（職業訓練）がなかったとしたら、処置群のアウトカムの平均値は、対照群と同じだけ変化したはずだ」という仮定である。
+
+上の図の破線は、この仮定のもとでの処置群の反実仮想、つまり、処置群が職業訓練を受けなかった場合の所得の平均値を表している。点Bから対照群（点Dから点C）と平行に伸ばした破線の終点をA'とすると、$Y^{A'} = Y^B + (Y^C - Y^D)$なので、
+
+$$
+\hat{\beta} = (Y^A-Y^B) - (Y^C-Y^D) = Y^A - Y^{A'}
+$$
+
+となる。つまり、DID推定値は、処置群の実際の所得（点A）と、処置を受けなかった場合の所得（点A'）の差である。
+
+今回のデータは、年ショックがすべての個体に同じように加わるように作成したので、平行トレンドの仮定が満たされている。一方、例えば処置群の所得がもともと対照群よりも速く伸びる傾向にある場合には、この仮定は満たされず、DID推定値にはバイアスが生じる。
+
+なお、処置群と対照群の所得の**水準**が異なること自体は問題ではない。今回のデータでも、処置群は能力が高い個体が多いため、処置前（点Bと点D）の時点で処置群の所得が大きく上回っているが、DID推定ではこの差は引き算によって取り除かれる。
+
+平行トレンドの仮定は、処置を受けなかった場合という観察できない状況に関する仮定であるため、データから直接確かめることはできない。実際の研究では、処置前の期間が複数ある場合に、処置前の期間に処置群と対照群のアウトカムが平行に推移していたかどうか（プレトレンド）を確認することが多い。
+
+
+## 回帰モデルを用いたDID推定
+
+### 回帰モデル
+
+上記のような二群(処置群と対照群）・二期間($t=0,1$)のDID推定は、以下の回帰式を用いて推定できる。
+
+$$
+Y_{it} = \mu + \theta D_i + \pi T_t + \beta D_iT_t + \varepsilon_{it}
+\tag{1}
+$$
+ここで、$D_i$は処置群ダミー、$T_t$は時間ダミー($t=0$だと0、$t=1$だと1)であり、DIDパラメータ（処置群に対する平均処置効果:ATET)は$\beta$である。
+
+また、この式の二年間の差分（一階の階差）をとると、以下のように表すこともできる。
+
+$$
+\Delta Y_i =  \pi + \beta D_i + \Delta \varepsilon_{it}
+\tag{2}
+$$
+
+
+(2)式の$\Delta Y_i$は`income`の一階の階差変数であり、以下のように作成できる。
+
+```{r}
+# incomeのラグ変数および一階の階差変数の作成
+# dplyr::lagとplm::lagの二つがあるためか、dplyr::をつけないとうまくいかない
+df_panel <- df_panel |>
+  group_by(ID) |> # IDでグループ分け
+  mutate(
+    lag_income = dplyr::lag(income, order_by = year), # lag変数の作成
+    diff_income = income - lag_income # 一階の階差変数の作成
+  ) |>
+  ungroup() # グループ分けの解除
+```
+
+### fixestを用いた推定
+
+第8回で学んだ`{fixest}`パッケージの`feols()`を用いて、(1)式および(2)式に基づいてDID推定を行う。まずは、`vcov = "iid"`として、均一分散を仮定した通常の標準誤差を用いる。
+
+```{r}
+# DID regression
+
+# pooled OLS:(1)式
+DID_pooled <- feols(income ~ treated + year + treated:year,
+                    data = df_panel,
+                    vcov = "iid")
+
+# first-differenced (一階の階差) OLS: (2)式
+# year = 0の行はdiff_incomeがNAなので、自動的に推定から除かれる
+DID_FD <- feols(diff_income ~ treated,
+                data = df_panel,
+                vcov = "iid")
+
+# 結果表の出力
+modelsummary(list("DID (Pooled data)" = DID_pooled,
+                  "DID (FD data)" = DID_FD),
+             stars = TRUE,
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+DID推定値（(1)式では`treated × year`の係数、(2)式では`treated`の係数）は、いずれも`r sprintf("%.3f", coef(DID_pooled)["treated:year"])`であり、(1)式と(2)式で完全に一致する。また、上で4つの平均値から計算したDID推定値とも一致する。一方、DID推定量の標準誤差が(1)式と(2)式で大きく異なるのは、(1)式では処置群全体の固定効果$\theta$を除去しているのに対し、(2)式では、事実上、個体ごとの固定効果$\theta_i$を除去しているためである。
+
+パネルデータであれば、(1)式の処置群ダミー$\theta D_i$の代わりに、個体ダミーを用いてもよい。（ただし、繰り返しクロスセクションデータを用いたDID推定では個体ダミーは用いることはできない点は留意が必要である。）
+
+この場合、個体ダミーを$n-1$個用いて推定してもよいが、第8回と同様に、`feols()`で`|`の右側に個体固定効果（`ID`）を指定すればよい。また、同じ個体を2回観察しているので、`vcov = ~ ID`として個体レベルのクラスタロバスト標準誤差を用いる（`cluster = ~ ID`と書いても同じである）。
+
+```{r}
+# DID with a two-by-two DID model (オーソドックスなDIDモデル)
+DID_fe1 <- feols(
+  income ~ treated + year + treated:year,
+  data = df_panel,
+  vcov = ~ ID   # IDレベルのクラスタロバストSE
+)
+
+# DID with two-way FE model (年ダミー変数は変数として入れ，個体FEはfeolsで指定)
+DID_fe2 <- feols(
+  income ~ treated:year + year | ID,
+  data = df_panel,
+  vcov = ~ ID
+)
+
+# DID with two-way FE model（個体固定効果と年固定効果をfeolsで指定）
+DID_fe3 <- feols(
+  income ~ treated:year | ID + year,
+  data = df_panel,
+  vcov = ~ ID
+)
+
+# 結果表の出力
+modelsummary(list("Pooled" = DID_fe1,
+                  "Oneway" = DID_fe2,
+                  "Twoway" = DID_fe3),
+             stars = TRUE,
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+3つのモデルで、DID推定値（`treated × year`の係数）とその標準誤差は一致する。
+
+なお、`treated:year`（処置群ダミーと時間ダミーの交差項）は「処置群の個体の2年目」に1をとる変数なので、処置ダミー`training`と同じである。そのため、`DID_fe3`は`feols(income ~ training | ID + year, data = df_panel, vcov = ~ ID)`と書いても同じ結果になる。
+
+### （参考）lm_robustを用いた推定
+
+`{estimatr}`パッケージの`lm_robust()`でも、`fixed_effects`オプションで同じモデルを推定できる。
+
+```{r}
+# DID with a two-by-two DID model (オーソドックスなDIDモデル)
+DID_robust1 <- lm_robust(income ~ treated + year + treated:year,
+                         data = df_panel,
+                         clusters = ID,
+                         se_type = "stata")
+
+# DID with two-way FE model (年ダミー変数は活用し、個体固定効果はlm_robustで指定）
+DID_robust2 <- lm_robust(income ~ treated:year + year,
+                         fixed_effects = ~ ID, #個体固定効果
+                         data = df_panel,
+                         clusters = ID,
+                         se_type = "stata")
+
+# DID with two-way FE model（個体固定効果と年固定効果をlm_robustで指定）
+DID_robust3 <- lm_robust(income ~ treated:year,
+                         fixed_effects = ~ ID + year, #個体固定効果と年固定効果
+                         data = df_panel,
+                         clusters = ID,
+                         se_type = "stata")
+
+#結果表の出力
+modelsummary(list("Pooled" = DID_robust1,
+                  "Oneway" = DID_robust2,
+                  "Twoway" = DID_robust3),
+             stars = TRUE,
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+DID推定値は`feols()`と同じだが、個体固定効果を含むモデル（Oneway・Twoway）の標準誤差は約`r sprintf("%.3f", DID_robust3$std.error["treated:year"])`となり、`feols()`（約`r sprintf("%.3f", fixest::se(DID_fe3)["treated:year"])`）よりかなり大きい。
+
+これは、第8回で説明した標準誤差の小標本補正の違いによる。`lm_robust()`（`se_type = "stata"`）は、推定した固定効果の数（ここでは個体が1万人なので1万個）も補正に含める。今回のように期間が2期しかないと、固定効果の数がサンプルサイズ（2万）の半分にもなるため、補正によって標準誤差が約$\sqrt{2}$倍に膨らんでしまう。一方、`feols()`は、クラスタ（個体）の中に入れ子になっている個体固定効果の数を補正に含めないため、このような膨らみは生じない。実際、`feols()`の標準誤差は、個体固定効果を差分によって除去した(2)式の推定（一階の階差モデル）の標準誤差（約`r sprintf("%.3f", fixest::se(DID_FD)["treated"])`）とほぼ同じである。
+
+このように、個体の数が多く期間が短いパネルデータでは、小標本補正の違いが標準誤差に大きく影響することがある。固定効果がクラスタの中に入れ子になっている場合は、`feols()`のように、その固定効果の数を補正に含めない方法が適切だと考えられている（Stataでも、`xtreg, fe`や`reghdfe`はこの方法をとる）。
+
+
+## （参考）処置の時期が個体によって異なる場合のDID
+
+今回は、処置群の全員が同じ時点（2年目）に処置を受ける、もっとも単純な二群・二期間のDIDを扱った。しかし実際の研究では、期間が3期以上あり、処置を受ける時期が個体によって異なるデータを扱うことが多い（例：ある自治体では2015年に、別の自治体では2018年に、ある政策が導入される）。このような設定は、**staggered DID**（処置の時期がずれたDID）と呼ばれる。
+
+かつては、このような場合も、上の`DID_fe3`と同じように、処置ダミーを個体固定効果と年固定効果とともに入れたtwo-way固定効果モデル（`income ~ training | ID + year`）で推定するのが一般的だった。しかし近年の研究によって、処置の効果が処置を受けた時期や経過年数によって異なる場合には、このtwo-way固定効果モデルによる推定値が、処置効果の適切な平均にならない（極端な場合には符号が逆になる）ことが明らかになった。これは、先に処置を受けた個体が、後から処置を受ける個体の「対照群」として推定に使われてしまうことなどによる。
+
+この問題に対処するため、Callaway and Sant'Anna (2021)、Sun and Abraham (2021)、de Chaisemartin and D'Haultfœuille (2020)などによって、新しい推定方法が提案されている。Rでは、例えばCallaway and Sant'Annaの方法は`{did}`パッケージで、Sun and Abrahamの方法は`{fixest}`の`sunab()`関数で推定できる。詳しくは、参考文献のThe Remixの「Complex Diff-in-Diff Designs」の章などを参照してほしい。
+
+
+# 参考文献
+
+- **安藤道人「計量経済学２」・「計量経済特論２」の講義資料**（[講義のページ](https://sites.google.com/site/michihito7ando/lectures)）
+    - 「差分の差分法（差の差法）」の回の資料が本講義の内容と対応している。
+
+- **矢内勇生「[計量経済学応用](https://yukiyanai.github.io/econometrics2/)」**（2020年度、高知工科大学）
+    - 第1回・第4回〜第7回でも紹介した講義資料（日本語、Rのコードつき）。「[Topic 6 差分の差分法](https://yukiyanai.github.io/econometrics2/difference-in-differences.html)」が本講義の内容と対応している。
+
+- **Nick Huntington-Klein (2021) [The Effect: An Introduction to Research Design and Causality](https://theeffectbook.net/)**（Chapman & Hall/CRC、ウェブ版は無料、英語）
+    - 「[Chapter 18 - Difference-in-Differences](https://theeffectbook.net/ch-DifferenceinDifference.html)」が本講義の内容と対応している。
+
+- **Scott Cunningham [Causal Inference: The Remix](https://mixtape.scunning.com/)**（ウェブ版は無料、英語）
+    - "Causal Inference: The Mixtape"（2021年）の第2版。「[Difference-in-Differences Fundamentals](https://mixtape.scunning.com/09-difference_in_differences)」の章が本講義の内容と対応している。また、「[Complex Diff-in-Diff Designs](https://mixtape.scunning.com/10-Complex_Diff_in_Diff)」の章では、処置の時期が個体によって異なる場合のDIDの問題点と新しい推定方法が解説されている。Rのコードつき。
+
+- **[fixest公式サイト](https://lrberge.github.io/fixest/)**（英語）
+    - `{fixest}`の公式解説。固定効果モデルの推定方法や、`sunab()`によるstaggered DIDの推定方法などが紹介されている。
+
+
+# （おまけ）Pythonで同様の作業を行う場合
+
+本講義の演習はRで行うが、参考として、ここまで学んだ内容に対応するPythonのコードを簡単に紹介する。
+
+第8回のおまけと同じく、固定効果モデルの推定には**pyfixest**と**linearmodels**を使う（2つのパッケージの特徴やどちらがよく使われているかについては、第8回のおまけを参照）。
+
+```python
+# ターミナル上で実行（Rのinstall.packages()に相当）
+# pip install numpy pandas pyfixest linearmodels
+```
+
+```python
+import numpy as np
+import pandas as pd
+import pyfixest as pf
+from linearmodels.panel import PanelOLS
+```
+
+## データの生成
+
+Rと同じDGPでデータを生成する（乱数の生成方法がRとは異なるので、推定値はRと少し異なる）。
+
+```python
+rng = np.random.default_rng(0)  # 乱数の種を固定（Rの set.seed(0) に相当）
+n = 10000
+
+# 個体ごとの変数（1年目と2年目で共通）
+df = pd.DataFrame({"ID": np.arange(1, n + 1),
+                   "ability": rng.uniform(0, 100, n)})
+df["score"] = 30 * np.log10(df["ability"]) + rng.normal(115, 10, n)  # 適性試験の点数
+df["treated"] = np.where(df["score"] >= 180, 1, 0)  # 処置群ダミー（np.where()はRの if_else() に相当）
+
+# 1年目 (year = 0)：誰も職業訓練を受けない
+df0 = df.assign(year=0, training=0)
+df0["income"] = 200 + 10 * df0["ability"] + rng.normal(0, 50, n)
+
+# 2年目 (year = 1)：処置群が職業訓練を受ける。所得には年ショックとしてN(100,25)も追加
+df1 = df.assign(year=1, training=df["treated"])
+df1["income"] = (200 + 10 * df1["ability"] + 500 * df1["training"]
+                 + rng.normal(100, 25, n) + rng.normal(0, 50, n))
+
+# 1年目と2年目をくっつける（Rの bind_rows() に相当）
+df_panel = pd.concat([df0, df1], ignore_index=True)
+df_panel.head()
+```
+
+## 4つの平均値によるDID推定
+
+```python
+# treatedとyearのグループごとにincomeの平均値を計算（Rの summarize(.by = ...) に相当）
+df_panel_mean = df_panel.groupby(["treated", "year"])["income"].mean()
+print(df_panel_mean)
+
+y_A = df_panel_mean.loc[(1, 1)]  # 処置群・処置後
+y_B = df_panel_mean.loc[(1, 0)]  # 処置群・処置前
+y_C = df_panel_mean.loc[(0, 1)]  # 対照群・処置後
+y_D = df_panel_mean.loc[(0, 0)]  # 対照群・処置前
+
+DID_mean = (y_A - y_B) - (y_C - y_D)
+print(DID_mean)
+```
+
+## pyfixestによる推定
+
+Rの`{fixest}`とほぼ同じ書き方で推定できる。`vcov={"CRV1": "ID"}`で、個体レベルのクラスタロバスト標準誤差を指定する（Rの`vcov = ~ ID`に相当）。
+
+```python
+# pooled OLS：(1)式
+DID_pooled = pf.feols("income ~ treated + year + treated:year", data=df_panel, vcov="iid")
+
+# two-way固定効果モデル（個体固定効果と年固定効果）
+DID_fe3 = pf.feols("income ~ treated:year | ID + year", data=df_panel, vcov={"CRV1": "ID"})
+
+pf.summary([DID_pooled, DID_fe3])  # 結果の表示
+```
+
+DID推定値（`treated:year`の係数）は約497.0で、4つの平均値から計算した値と一致する。two-way固定効果モデルのクラスタロバスト標準誤差は約2.44で、Rの`feols()`と同じく、固定効果の数による標準誤差の膨らみは生じていない。
+
+## linearmodelsによる推定
+
+第8回と同じく、`set_index()`で「個体（ID）」と「時点（year）」をデータのインデックスに設定してから、`PanelOLS`を使う。ここでは、`treated:year`と同じ変数である処置ダミー`training`を説明変数とする。
+
+```python
+panel = df_panel.set_index(["ID", "year"])  # 個体と時点を指定
+
+DID_lm = PanelOLS.from_formula(
+    "income ~ training + EntityEffects + TimeEffects",
+    data=panel
+).fit(cov_type="clustered", cluster_entity=True,  # 個体レベルのクラスタロバストSE
+      auto_df=False, count_effects=False)        # 固定効果の数を小標本補正に含めない
+
+print(DID_lm)
+```
+
+`auto_df=False, count_effects=False`は、固定効果の数を小標本補正に含めないための指定である。これを指定しない場合、linearmodelsは（今回のように個体固定効果と時間固定効果の両方を含むモデルでは）固定効果の数を補正に含めるため、標準誤差はRの`lm_robust()`と同じく約3.46に膨らむ。指定すると、標準誤差は約2.44となり、pyfixestやRの`feols()`とほぼ一致する。

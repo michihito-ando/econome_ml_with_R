@@ -1,0 +1,529 @@
+---
+title: "Rで学ぶ計量経済学と機械学習 8<br> <br> 計量経済学４：固定効果モデル"
+author: "安藤道人（立教大学）　三田匡能 (株式会社 GA technologies)"
+subtitle: "First version: 2019-06-07<br>This version: `r Sys.Date()`"
+format:
+  html:
+    css: R_style.css
+    embed-resources: true   # 画像などの埋め込み
+    # theme: cosmo
+    highlight-style: haddock     # Rスクリプトのハイライト形式
+    # code-fold: true       # Rコードの折りたたみ表示を設定
+    toc: true
+    toc-depth: 2           # 見出しの表示とその深さを指定
+    number-sections: true  # 見出しごとに番号を振る
+    # df-print: paged       # head()の出力をnotebook的なものに（tibbleと相性良）
+    fig-height: 4          # 画像サイズのデフォルトを設定
+    fig-width: 6           # 画像サイズのデフォルトを設定
+    fig-format: png
+    link-external-newwindow: true  # 外部リンクを新しいタブで開く
+    # 「サイト内リンク」とみなすドメインを明示的に指定。
+    # 指定しない場合はブラウザの現在地(window.location.host)から自動判定されるが、
+    # file://で直接開いたときはhostが空文字になり、結果的に全リンクが「サイト内」と
+    # 誤判定されて新しいタブで開かなくなってしまう。それを避けるための設定。
+    link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r include = FALSE}
+knitr::opts_chunk$set(fig.align = 'center', message = F, warning = F)
+# 日本語のグラフ文字が文字化け（□）しないよう、フォントの代替表示に対応したraggで描画する
+knitr::opts_chunk$set(dev = "ragg_png")
+```
+
+# 本講義の目的
+
+- 固定効果モデルの推定の基礎を学ぶ。
+
+
+# パッケージの読み込み
+
+今回の分析で使うパッケージを読み込む。
+
+```{r}
+pacman::p_load(plm, # 使用するデータ（Grunfeld）が含まれている
+               tidyverse, 
+               fixest, # fixestによる固定効果分析
+               estimatr, # lm_robustによる固定効果分析（参考）
+               modelsummary) # 結果表の作成
+```
+
+
+# パネルデータ
+
+**パネルデータ(panel data)**とは、複数の個体を複数の期間にわたって観察したデータである。
+（e.g. 同じ人を追跡調査したデータ、国✕年度の公的統計データ）
+
+例えば以下のような形式のもの。
+
+```{r}
+data("Grunfeld", package = "plm") # plmパッケージに入っているデータの読み込み
+
+Grunfeld |> 
+  filter(1951 <= year & year <= 1953) |> 
+  head() |> 
+  knitr::kable(col.names = c("企業ID", "年度", "投資額", "企業価値", "資本ストック")) # 表の見出しだけ日本語にする
+```
+
+$k$個の説明変数$X$と被説明変数$Y$の個体$i$・時点$t$のパネルデータは、次のように表記される。
+
+$$
+(X_{1it}, X_{2it},…,X_{kit}, Y_{it}), \hspace{1em} i = 1,…,n \text{ and } t = 1,…,T
+$$
+
+
+- 欠損値の有無による分類がある
+    - **balanced panel**：各個体と各時点の観測値がすべて揃っているパネルデータ
+    - **unbalanced panel**：欠損のあるパネルデータ
+
+
+# 固定効果モデル
+
+固定効果モデルはパネルデータの分析で使われる代表的な分析手法のひとつである。とくに、欠落変数バイアスを引き起こす個体固有効果（時間によって変化しない個体に固有の要素）を除去し、個体内の変動(within variation)を活用して回帰分析を行うものがよく使われる。
+
+## one-way固定効果モデル
+
+### 個体固定効果モデル（グループ内推定：within）
+
+以下のような個体固定効果モデルを考える。
+
+$$
+Y_{it} = \beta_0 + \beta_1 X_{it} +\theta_i + \varepsilon_{it}
+$$
+
+パネルデータを用いることができる場合、以下の３つの方法によって個体固定効果（entity fixed effects）$\theta_i$を除去することができる。
+
+#### (1) "一回の階差モデル（first difference model）"によるOLS推定 {.unnumbered}
+
+$$
+(Y_{i,t+1} - Y_{it}) = (\beta_0 - \beta_0) + \beta_1 (X_{i,t+1}-X_{it}) +  (\varepsilon_{i,t+1} - \varepsilon_{it})
+$$
+
+記号を置き換えて、
+
+$$
+\Delta Y_{it} = \beta_1 \Delta X_{it}+ \Delta \varepsilon_{it}
+$$
+
+- 推定方法：
+  1. 説明変数、被説明変数それぞれ$t+1$期から$t$期を引く
+  2. 上の式をOLS推定する
+
+
+#### (2) “$n-1$個のダミー説明変数”を用いたOLS推定 {.unnumbered}
+
+最小二乗ダミー変数推定（Least Squares Dummy Variables (LSDV) 推定）とも呼ばれる。
+
+$$
+\begin{aligned}
+Y_{it} &= \beta_0 + \beta_1 X_{it} + \gamma_2 D2_i + \cdots + \gamma_n Dn_i + \varepsilon_{it} \\
+\text{where } D2_i &= 
+  \begin{cases}
+  1 & \text{for } i = 2\\
+  0 & \text{otherwise}
+  \end{cases} \text{, etc.}
+\end{aligned}
+$$
+
+- 推定方法：
+  1. 個体ダミー変数（個体$i$に該当する場合に1、それ以外は0となるダミー変数）$D2_i, \cdots, Dn_i$を作成する
+  2. 上の式をOLS推定する
+
+#### (3) ”平均差分法（Entity-demeaned）”を用いたOLS推定 {.unnumbered}
+
+$$
+\begin{aligned}
+\tilde{Y}_{it} &= \beta_1 \tilde{X}_{it} + \tilde{\varepsilon}_{it}, \\
+\text{where }
+\tilde{Y}_{it} &= Y_{it} - \bar{Y}_i, \hspace{1em}   \bar{Y}_i = \frac{1}{T} \sum^T_{t=1} Y_{it}\\
+\tilde{X}_{it} &= X_{it} - \bar{X}_i, \hspace{1em} \bar{X}_i  = \frac{1}{T} \sum^T_{t=1} X_{it}\\
+\tilde{\varepsilon}_{it} &= \varepsilon_{it}- \bar{\varepsilon}_i, \hspace{1em} \bar{\varepsilon}_i = \frac{1}{T} \sum_{t=1}^T \varepsilon_{it}
+\end{aligned}
+$$
+
+- 推定方法：
+  1. 説明変数・被説明変数について、変数から期間平均を引く
+  2. 上の式をOLS推定する
+- $n-1$個の個体ダミー説明変数による推定と同じ推定値が得られる
+- 統計ソフトでは通常は平均差分法による推定が行われる
+
+
+### 時間固定効果モデル
+
+なお、時間の固定効果（time fixed effects）$\pi_t$を除去したい場合も似たような手法で分析できる。
+
+$$
+Y_{it} = \beta_0 + \beta_1 X_{it} +\pi_t + \varepsilon_{it}
+$$
+
+1. $T-1$個の時間ダミー説明変数（時間$t$に該当する場合に1、それ以外は0となるダミー変数）を用いたOLS推定
+2. time-demeanedを用いたOLS推定
+
+ただし、計量経済学ではこのような時間固定効果のみを想定したモデルを推定することはほとんどない。
+
+## two-way固定効果モデル
+
+個体と時間の固定効果モデル（entity and time fixed effects model）は、two-way固定効果モデルと呼ばれ、以下のように表される。
+
+$$
+Y_{it} =\beta_1 X_{it} +\theta_i + \pi_t + \varepsilon_{it}
+$$
+
+個体の固定効果$\theta_i$と時間の固定効果$\pi_t$の両方を除去したい場合は、それぞれの推定方法の組み合わせになる。
+
+1. $n-1$個の個体ダミー変数と$T-1$個の時間ダミー変数を用いたOLS推定
+2. entity demeaningと$T-1$個の時間ダミー変数を用いたOLS推定
+3. time demeaningと$n-1$個の個体ダミー変数を用いたOLS推定
+4. entity & time demeaningを用いたOLS推定
+     - 説明変数と被説明変数について、個体と時間両方の平均を引いてOLS推定
+  
+なお、パネルデータを活用した計量経済分析では、時間固定効果がないと仮定できるケースはまれであるため、通常はone-way固定効果モデルではなくtwo-way固定効果モデルを用いる。
+
+# 使用するパッケージとデータ
+
+## パッケージとデータ
+Rでは、`{estimatr}`パッケージの`lm_robust()`、`{fixest}`パッケージの`feols()`、`{plm}`パッケージの`plm()`などによってパネルデータ分析を行うことができる。
+
+ここでは、現在の経済学の実証研究で最もよく使われているパッケージの一つである`{fixest}`の`feols()`を用いた分析方法を紹介する。`feols()`は、多数の固定効果を含むモデルも高速に推定でき、ロバスト標準誤差やクラスタロバスト標準誤差も簡単に利用できる。また、固定効果モデルだけでなく、操作変数法（第6回）や、次回扱う差分の差分法（DID）などにも使うことができる。第4回などで使った`estimatr::lm_robust()`による推定も、参考として最後に紹介する。
+
+なお、パネルデータ分析については、誤差項の系列相関も考慮する必要があるため、クラスタロバスト標準誤差を用いることが望ましい。ただし、クラスタの数が少ない場合（目安として数十未満）には、クラスタロバスト標準誤差は小さめに計算されがちで、信頼性が低くなることが知られている。今回のデータではクラスタ（企業）は10しかないので、以下の標準誤差はあくまで計算方法の例として見てほしい（実際の研究では、ワイルド・クラスタ・ブートストラップなどの方法が使われる）。
+
+今回は、`{plm}`パッケージに含まれている`Grunfeld`データセットを用いる。
+
+```{r}
+# データ読み込み
+data("Grunfeld", package = "plm")
+head(Grunfeld)
+```
+
+`Grunfeld`は1935～1954年にかけてのアメリカの10の企業のbalanced panelデータである。
+
+- `firm`: 企業（ID的なもの）
+- `year`: 年
+- `inv`: 投資総額
+- `value`: 企業価値
+- `capital`: 資本ストック
+
+## データの可視化
+
+```{r}
+# 投資総額(Y)
+Grunfeld |> ggplot(aes(x = year,
+                        y = inv,
+                        colour = as.factor(firm))) +
+  geom_line()
+
+# 企業価値(X1)
+Grunfeld |> ggplot(aes(x = year, 
+                        y = value, 
+                        colour = as.factor(firm))) + 
+  geom_line()
+
+# 資本ストック(X2)
+Grunfeld |> ggplot(aes(x = year, 
+                        y = capital, 
+                        colour = as.factor(firm))) + 
+  geom_line()
+
+# 企業価値(X1)と投資総額(Y)
+Grunfeld |> ggplot(aes(x = value, 
+                        y = inv, 
+                        colour = as.factor(firm))) + 
+  geom_point()
+
+# 資本ストック(X2)と投資総額(Y)
+Grunfeld |> ggplot(aes(x = capital, 
+                        y = inv, 
+                        colour = as.factor(firm))) + 
+  geom_point()
+
+# 企業価値(X1)と 資本ストック(X2)
+Grunfeld |> ggplot(aes(x = value, 
+                        y = capital, 
+                        colour = as.factor(firm))) + 
+  geom_point()
+```
+
+# fixestによる推定
+
+投資総額を企業価値、資本ストック、個体固定効果、時間固定効果に回帰する。
+
+$$
+Y_{it} =\beta_1 X1_{it} + \beta_2 X2_{it} +\theta_i + \pi_t + \varepsilon_{it}
+$$
+
+ここでは、`{fixest}`パッケージの`feols()`による推定方法を説明する。`feols()`では、
+
+- `被説明変数 ~ 説明変数 | 固定効果`のように、`|`の右側に固定効果を指定する
+- `vcov = "hetero"`でロバスト標準誤差、`cluster = ~ firm`で`firm`レベルのクラスタロバスト標準誤差を指定する
+
+という書き方をする。
+
+## Pooled OLS
+
+まず、固定効果を含まないプールドOLSモデルを推定する。`vcov = "iid"`は通常の標準誤差（誤差項の分散が均一であると仮定したもの）、`vcov = "hetero"`はロバスト標準誤差（第4回などで使った`lm_robust()`の`se_type = "HC1"`と同じもの）である。
+
+```{r}
+# 通常の標準誤差
+pooled_ols <- feols(inv ~ value + capital, 
+                    data = Grunfeld, 
+                    vcov = "iid")
+
+# ロバスト標準誤差
+pooled_robust <- feols(inv ~ value + capital, 
+                       data = Grunfeld, 
+                       vcov = "hetero")
+
+#結果表の出力
+modelsummary(list("Pooled" = pooled_ols, 
+                  "Pooled, robust" = pooled_robust), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+## One-way固定効果モデル
+
+次に、固定効果として個体固定効果のみを含む固定効果モデル(one-way fixed-effect model) を推定する。これには、n-1個の個体ダミー変数を説明変数に導入する方法（LSDV）と、平均差分法(entity-demeaned)を用いて固定効果を除去する方法がある。
+
+- 変数Xを`factor(X)`にして右辺に加えると、Xのそれぞれの値をカテゴリとみなして、それぞれのダミー変数を説明変数に加えてくれる（LSDV）。
+- `| firm`のように固定効果として指定すると、平均差分法によって個体固定効果が除去される。
+
+
+```{r}
+#n-1個の個体ダミーを直接導入（LSDV）
+oneway_lsdv <- feols(inv ~ value + capital + factor(firm),
+                     data = Grunfeld, 
+                     cluster = ~ firm) # firmレベルのクラスタロバストSE
+
+#個体固定効果として指定（平均差分法）
+oneway_fe <- feols(inv ~ value + capital | firm, # firmが固定効果
+                   data = Grunfeld, 
+                   cluster = ~ firm) # firmレベルのクラスタロバストSE
+
+# 表の下に加える行（個体ダミーを説明変数として含むか）
+dummy_rows <- tribble(~term,           ~Pooled, ~`Oneway LSDV`, ~`Oneway FE`,
+                      "個体ダミー",    "",      "X",            "")
+
+#結果表の出力（coef_omit = "factor"で、個体ダミーの係数は表示しない）
+modelsummary(list("Pooled" = pooled_robust, 
+                  "Oneway LSDV" = oneway_lsdv, 
+                  "Oneway FE" = oneway_fe), 
+             coef_omit = "factor", 
+             add_rows = dummy_rows, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+二つの固定効果モデル推定においては、どちらの方法を用いても、係数推定値は全く同じとなる（標準誤差がわずかに異なる理由は、[後で説明する](#ssc)）。ただし、個体ダミー（`factor(firm)`）を直接モデルに入れると、定数項や個々の個体ダミー変数の係数値も推定される（上の表では`coef_omit = "factor"`で個体ダミーの係数を省略している。`summary(oneway_lsdv)`で確認できる）。
+
+表の`FE: firm`の行は、`|`の右側で固定効果として指定したかどうか（`X`が指定したことを表す）、`R2 Within`は、固定効果を除去した後（平均差分をとった後）の変数について、説明変数がどれだけ説明できているかを示す決定係数である。`R2`は固定効果も含めたモデル全体の決定係数で、LSDVの`R2`と同じ値になる。
+
+## （参考）一階階差モデル
+
+個体固定効果を除去するもう一つの方法である一階階差モデル（first difference model）も、差分をとった変数を作れば`feols()`で推定できる。`group_by()`で企業ごとにグループ化し、`dplyr::lag()`（1つ前の行の値を取り出す関数）を使って前年との差をとる。
+
+なお、`{plm}`パッケージにも`lag()`という同じ名前の関数があり、読み込む順番によっては`lag()`が`{plm}`のものになって、正しく差分がとれないことがある。そのため、ここでは`dplyr::lag()`とパッケージ名を明示している。
+
+```{r}
+# 企業ごとに、前年からの差分（Δ）をとる
+fd_df <- Grunfeld |> 
+  arrange(firm, year) |>   # 企業・年の順に並べる
+  group_by(firm) |>        # 企業ごとに
+  mutate(d_inv = inv - dplyr::lag(inv),             # 投資総額の差分
+         d_value = value - dplyr::lag(value),       # 企業価値の差分
+         d_capital = capital - dplyr::lag(capital)) |> # 資本ストックの差分
+  ungroup()
+
+# 一階階差モデル（定数項は差分によって消えるので、- 1で定数項を除く）
+# 各企業の最初の年は差分がとれない（NA）ので、自動的に推定から除かれる
+fd_model <- feols(d_inv ~ d_value + d_capital - 1,
+                  data = fd_df, 
+                  cluster = ~ firm)
+
+# coef_renameで、差分の変数名を元の変数名にそろえて同じ行に表示する
+modelsummary(list("Oneway FE" = oneway_fe, 
+                  "First difference" = fd_model), 
+             coef_rename = c("d_value" = "value", "d_capital" = "capital"), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+一階階差モデルの係数推定値（`value`が約`r sprintf("%.3f", coef(fd_model)["d_value"])`、`capital`が約`r sprintf("%.3f", coef(fd_model)["d_capital"])`）は、固定効果モデル（平均差分法）の推定値（約`r sprintf("%.3f", coef(oneway_fe)["value"])`、約`r sprintf("%.3f", coef(oneway_fe)["capital"])`）と少し異なる。期間が2期だけの場合は両者は一致するが、3期以上の場合は一般に一致しない。どちらも個体固定効果を除去しているので、モデルが正しければどちらも一致推定量であるが、誤差項の性質（系列相関の有無など）によって、どちらがより効率的かが変わる。実証研究では、平均差分法による固定効果モデルが使われることが多い。
+
+## Two-way固定効果モデル
+
+次に、個体固定効果に加えて、時間固定効果を加えた固定効果モデル（twoway fixed-effect model:TWFE)を推定する。
+
+```{r}
+#n-1個の個体ダミーとT-1個の年ダミーを直接導入（LSDV）
+twoway_lsdv <- feols(inv ~ value + capital + factor(firm) + factor(year),
+                     data = Grunfeld, 
+                     cluster = ~ firm) # firmレベルのクラスタロバストSE
+
+#個体固定効果と時間固定効果として指定
+twoway_fe <- feols(inv ~ value + capital | firm + year, # firmとyearが固定効果
+                   data = Grunfeld, 
+                   cluster = ~ firm) # firmレベルのクラスタロバストSE
+
+# 表の下に加える行（個体ダミー・年ダミーを説明変数として含むか）
+dummy_rows <- tribble(~term,         ~Pooled, ~`Oneway LSDV`, ~`Oneway FE`, ~`Twoway LSDV`, ~`Twoway FE`,
+                      "個体ダミー",  "",      "X",            "",           "X",            "",
+                      "年ダミー",    "",      "",             "",           "X",            "")
+
+#結果表の出力（coef_omit = "factor"で、個体ダミー・年ダミーの係数は表示しない）
+modelsummary(list("Pooled" = pooled_robust, 
+                  "Oneway LSDV" = oneway_lsdv, 
+                  "Oneway FE" = oneway_fe, 
+                  "Twoway LSDV" = twoway_lsdv, 
+                  "Twoway FE" = twoway_fe), 
+             coef_omit = "factor", 
+             add_rows = dummy_rows, 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+ここでも、どちらの方法を用いても係数推定値は全く同じとなる。しかし、個体ダミー（`factor(firm)`)および時間ダミー(`factor(year)`)を用いた推定の場合、定数項や個々の個体ダミーや年ダミーの係数も推定される（表では省略している）。
+
+## 標準誤差の小標本補正 {#ssc}
+
+上の表では、LSDVと固定効果の指定（`|`）とで、係数推定値は同じなのに、クラスタロバスト標準誤差がわずかに異なっている（例えばtwo-wayの`capital`では`r sprintf("%.4f", fixest::se(twoway_lsdv)["capital"])`と`r sprintf("%.4f", fixest::se(twoway_fe)["capital"])`）。これは、標準誤差の小標本補正（サンプルサイズや推定するパラメータの数に応じた補正）の方法が異なるためである。
+
+企業固定効果のように、固定効果がクラスタ（企業）の中に入れ子になっている場合、`feols()`は`|`で指定した固定効果の数を補正に含めない。一方、LSDVでは個体ダミーは通常の説明変数として扱われるので、その数も補正に含まれる。後者は、`estimatr::lm_robust()`（`se_type = "stata"`）や、Stataでダミー変数を入れて回帰した場合（`reg`や`areg`）と同じ計算方法である（Stataでも、`xtreg, fe`や`reghdfe`は前者と同じ方法をとる）。`ssc = ssc(fixef.K = "full")`と指定すると、`|`で指定した固定効果の数も補正に含めるようになり、LSDVと同じ標準誤差になる。
+
+```{r}
+# 固定効果の数もすべて補正に含める（LSDVやlm_robust()と同じ）
+twoway_fe_full <- feols(inv ~ value + capital | firm + year,
+                        data = Grunfeld,
+                        cluster = ~ firm, 
+                        ssc = ssc(fixef.K = "full"))
+
+# 標準誤差の比較
+rbind(LSDV = fixest::se(twoway_lsdv)[c("value", "capital")], 
+      FE = fixest::se(twoway_fe), 
+      FE_full = fixest::se(twoway_fe_full))
+```
+
+どちらの補正も使われており、今回のデータでは違いは小さい。ただし、個体の数が多く期間が短いデータでは、違いが大きくなることがある（次回の差分の差分法で、その例を見る）。また、論文などで結果を報告する際には、どのソフト・設定で標準誤差を計算したかを明記するとよい。
+
+## （参考）lm_robustによる推定
+
+第4回などで使った`{estimatr}`パッケージの`lm_robust()`でも、`fixed_effects`オプションで固定効果モデルを推定できる。`clusters`でクラスタのレベルを、`se_type = "stata"`でStataと同じ方法のクラスタロバスト標準誤差を指定する。
+
+```{r}
+# one-way固定効果モデル
+oneway_robust <- lm_robust(inv ~ value + capital,
+                           data = Grunfeld, 
+                           fixed_effects = ~ firm, #個体固定効果の指定
+                           clusters = firm, #クラスタのレベルを指定
+                           se_type = "stata") # クラスタロバストはStataと同様の方法で計算
+
+# two-way固定効果モデル
+twoway_robust <- lm_robust(inv ~ value + capital,
+                           data = Grunfeld, 
+                           fixed_effects = ~ firm + year, #個体固定効果、時間固定効果の指定
+                           clusters = firm, #クラスタのレベルを指定
+                           se_type = "stata") # クラスタロバストはStataと同様の方法で計算
+
+modelsummary(list("Oneway, fixest" = oneway_fe, 
+                  "Oneway, lm_robust" = oneway_robust, 
+                  "Twoway, fixest" = twoway_fe, 
+                  "Twoway, lm_robust" = twoway_robust), 
+             stars = TRUE, 
+             gof_omit = "AIC|BIC|Log.Lik|RMSE")
+```
+
+係数推定値は`feols()`と全く同じである。標準誤差は、上で説明した小標本補正の違いにより`feols()`の結果とわずかに異なり、LSDV（`twoway_lsdv`）や`ssc(fixef.K = "full")`を指定した`feols()`と一致する。なお、`lm_robust()`の列では`FE: firm`などの行が空欄になっているが、同じ固定効果を含んでいる。
+
+`lm_robust()`は、固定効果の数が多い場合（3つ以上の種類の固定効果や、水準の数が非常に多い固定効果など）に推定速度が著しく遅くなることがある。そのため、固定効果モデルの推定には、高速な`feols()`を使うのが一般的である。
+
+# 参考文献
+
+- **安藤道人「計量経済学２」・「計量経済特論２」の講義資料**（[講義のページ](https://sites.google.com/site/michihito7ando/lectures)）
+    - 「パネルデータ分析」の回の資料が本講義の内容と対応している。
+
+- **Nick Huntington-Klein (2021) [The Effect: An Introduction to Research Design and Causality](https://theeffectbook.net/)**（Chapman & Hall/CRC、ウェブ版は無料、英語）
+    - 「[Chapter 16 - Fixed Effects](https://theeffectbook.net/ch-FixedEffects.html)」が本講義の内容と対応している。
+
+- **Scott Cunningham [Causal Inference: The Remix](https://mixtape.scunning.com/)**（ウェブ版は無料、英語）
+    - "Causal Inference: The Mixtape"（2021年）の第2版。「[Causal Panel Designs](https://mixtape.scunning.com/08-panel_data)」の章が本講義の内容と対応している。Rのコードつき。
+
+- **[Getting started using estimatr](https://declaredesign.org/r/estimatr/articles/getting-started.html)**（英語）
+    - `{estimatr}`の公式解説。`lm_robust()`での固定効果やクラスタロバスト標準誤差の指定方法などが紹介されている。
+
+- **[fixest公式サイト](https://lrberge.github.io/fixest/)**（英語）
+    - `{fixest}`の公式解説。固定効果モデルの推定方法や、標準誤差の小標本補正の詳細などが紹介されている。
+
+
+# （おまけ）Pythonで同様の作業を行う場合
+
+本講義の演習はRで行うが、参考として、ここまで学んだ内容に対応するPythonのコードを簡単に紹介する。
+
+Pythonで固定効果モデルを推定する代表的なパッケージには、**pyfixest**と**linearmodels**の2つがある。
+
+- **pyfixest**：Rの`{fixest}`をPythonに移植したパッケージ（2023年ごろから開発）。`"inv ~ value + capital | firm + year"`のように、`{fixest}`とほぼ同じ書き方ができ、標準誤差の計算方法も`{fixest}`にそろえられている。
+- **linearmodels**：2017年ごろから開発されている、パネルデータ分析や操作変数法（第6回のおまけで使用）のためのパッケージ。データにパネルの構造（個体と時点）を設定して使う。
+
+**実際にどちらが使われることが多いか**：利用の広がりという点では、歴史の長いlinearmodelsのほうが現在も多く使われている（例えば、2026年11月時点のPyPIの直近1か月のダウンロード数は、linearmodelsが約35万回、pyfixestが約12万回）。ウェブ上の解説記事や教科書のコード例も、linearmodelsを使ったものが多い。一方、経済学の実証研究者の間では、Rの`{fixest}`と同じ書き方ができ、多数の固定効果を高速に扱え、差分の差分法の新しい推定方法などにも対応しているpyfixestの利用が近年急速に広がっている。Rで`{fixest}`を使っている人や、これから経済学の実証研究を行う人にはpyfixest、既存のコードや解説が多いことを重視する場合はlinearmodelsが便利である。なお、ダウンロード数には他のパッケージの依存関係として自動的にインストールされた分なども含まれるので、あくまで目安である。
+
+```python
+# ターミナル上で実行（Rのinstall.packages()に相当）
+# pip install pandas statsmodels pyfixest linearmodels
+```
+
+```python
+import pandas as pd
+import statsmodels.formula.api as smf
+import pyfixest as pf
+from linearmodels.panel import PanelOLS
+```
+
+## データの用意
+
+Rの`{plm}`パッケージの`Grunfeld`データを、Rのデータセットを公開しているサイト（Rdatasets）からCSVで読み込む。
+
+```python
+url = "https://vincentarelbundock.github.io/Rdatasets/csv/plm/Grunfeld.csv"
+grunfeld = pd.read_csv(url).drop(columns="rownames")  # 行番号の列は不要なので削除
+grunfeld.head()
+```
+
+（※Macで公式サイト版のPythonを使っている場合、ここで`SSL: CERTIFICATE_VERIFY_FAILED`というエラーが出ることがある。その場合は、Pythonのインストールフォルダにある`Install Certificates.command`を一度実行すればよい。）
+
+## Pooled OLS
+
+```python
+pooled = smf.ols("inv ~ value + capital", data=grunfeld).fit(cov_type="HC1")  # ロバスト標準誤差
+print(pooled.summary())
+```
+
+## pyfixestによる推定
+
+`vcov={"CRV1": "firm"}`で、企業レベルのクラスタロバスト標準誤差を指定する（Rの`cluster = ~ firm`に相当）。
+
+```python
+oneway_fe = pf.feols("inv ~ value + capital | firm", data=grunfeld, vcov={"CRV1": "firm"})
+twoway_fe = pf.feols("inv ~ value + capital | firm + year", data=grunfeld, vcov={"CRV1": "firm"})
+
+pf.summary([oneway_fe, twoway_fe])  # 結果の表示
+```
+
+係数推定値と標準誤差は、Rの`{fixest}`と一致する（two-wayの`capital`の係数は約0.358、標準誤差は約0.048）。
+
+## linearmodelsによる推定
+
+`set_index()`で「個体（firm）」と「時点（year）」をデータのインデックスに設定してから、`PanelOLS`を使う。推定式に`EntityEffects`（個体固定効果）や`TimeEffects`（時間固定効果）を加えると、固定効果を含むモデルになる。
+
+```python
+panel = grunfeld.set_index(["firm", "year"])  # 個体と時点を指定
+
+twoway_lm = PanelOLS.from_formula(
+    "inv ~ value + capital + EntityEffects + TimeEffects",
+    data=panel
+).fit(cov_type="clustered", cluster_entity=True, group_debias=True)  # 個体（企業）レベルのクラスタロバストSE
+
+print(twoway_lm)
+```
+
+`cluster_entity=True`で個体レベルのクラスタロバスト標準誤差になる。`group_debias=True`はクラスタ数に応じた小標本補正で、これを指定すると、標準誤差がRのLSDVや`ssc(fixef.K = "full")`を指定した`feols()`、`lm_robust()`（いずれもStataでダミー変数を入れて回帰した場合と同じ計算方法）と一致する（`capital`の標準誤差は約0.049）。指定しない場合は、補正のない少し小さい値（約0.047）になる。

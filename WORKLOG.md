@@ -390,3 +390,84 @@ var filterRegex = new RegExp('/' + window.location.host + '/');
 3. 数値の変化（本文の数値はすべてインラインRなので自動で更新）: 平均所得の差・単回帰 945.7→946.6、真のモデルの大卒の係数 501.9→502.1、大卒の人数 1032→1051、最近傍マッチングのATT 502.8→498.0。第8節（共変量が複数ある場合）は`set.seed(1)`で別に生成しているので変化なし（テキストの差分で確認）。
 4. Pythonのおまけのデータ生成も`np.where(df["ability"] >= 80, rng.binomial(1, 0.5, n), 0)`に変更。一時的なvenvで実行し、平均の差942.5、真のモデル501.2、マッチングのATT 499.7を確認（本文にPythonの数値の記載はなし。第8節のPythonは変化なし）。venvは削除済み。
 5. **第6回の本文も修正**: 「前回は`filter()`と`slice_sample()`で抽出し…結合する方法で生成した。今回は`rbinom()`を用いて…」→「前回と同じく`rbinom()`と`if_else()`を用いて…。前回のコードに、学費免除ダミーの作成と大卒ダミーの修正（2行）を加えればよい」。06_IV.htmlも再レンダリング（数値は変化なし）。
+
+## 2026-11-03: 08_Fixed_Effects.Rmd → 08_Fixed_Effects.qmd
+
+第8回「計量経済学４：固定効果モデル」を、第1〜7回と同じ方針でqmd化。
+
+### やったこと
+
+1. **[08_Fixed_Effects.qmd](08_Fixed_Effects.qmd) を新規作成**。YAMLは第7回と同じ形（First version / This version、`link-external-newwindow` + `link-external-filter`、`dev = "ragg_png"`）。First versionは2019-06-07（`docs/08_Fixed_Effects.html`が最初に追加されたコミット2b39f39、当時のhtml内の日付も2019-06-07）。図のサイズは元と同じ高さ4・幅6。
+2. `%>%`→`|>`（10箇所）、`{-}`→`{.unnumbered}`（3箇所）。
+3. 明らかな誤字の修正: 「`{plm}`パッケージ含まれている」→「に含まれている」、「`fixest`の`feols'」（バッククォートの対応ミス）→「`feols()`」、「Pacakge」→「Package」、「Introuction」→「Introduction」。
+4. 初回レンダリング時に`pacman::p_load()`が不足パッケージをインストールし、そのメッセージがhtmlに出たので、もう一度レンダリングした。
+5. 結果を確認（元のhtmlと同じ）: Pooled value 0.116・capital 0.231、one-way FE 0.110・0.310、two-way FE 0.118・0.358（クラスターSEはlm_robustでcapital 0.049、fixestで0.048と小さく異なる）。
+
+### 確認したこと（提案事項の根拠）
+
+- LSDVの式で`\\`による改行がMathJaxで効かず、「where D2 = …」が同じ行に続いて表示される。
+- 参考文献のMixtapeのリンク（`panel-data.html?panelset=r-code`）は404。The Remixでは`https://mixtape.scunning.com/08-panel_data`（第8章 Causal Panel Designs）。
+- 矢内「計量経済学応用」にはパネルデータ・固定効果の独立した章はない（差の差法の章のみ）。
+
+## 2026-11-03: 08_Fixed_Effects.qmdへの提案事項の反映
+
+ユーザーの承認を受けて、変換時に提案した9項目をすべて反映（9はpyfixestとlinearmodelsの両方を採用し、どちらが多く使われているかの解説つき、というユーザーの指示）。
+
+1. **表を`texreg::screenreg()`から`{modelsummary}`に変更**。個体ダミー・年ダミーの係数は`coef_omit = "factor"`で省略し、`add_rows`（`tribble()`）で「個体固定効果」「年固定効果」の行（X）を追加。fixestとの比較表では、modelsummaryの`FE: firm`・`FE: year`・`R2 Within`の行を説明（lm_robustの列は空欄になるが同じ固定効果を含む旨も記載）。
+2. 本文・数式の修正: 「時間固定効果モデル（グループ間推定：between）」の「（グループ間推定：between）」を削除（between推定は個体平均を使う別の推定方法）。LSDVの式と平均差分法の式を`aligned`環境に（LSDVの`\\`改行がMathJaxで効いていなかった）。「plmを用いた推定も参考に残している」（実際にはなかった）を削除。
+3. パネルデータの例の表: 日本語への`rename()`をやめ、`knitr::kable(col.names = c("企業ID", ...))`で見出しだけ日本語に。
+4. パッケージ: `stargazer`・`texreg`・`lmtest`を外し、`modelsummary`を追加。`plm`はデータのためだけに使うとコメント。`data("Grunfeld", package = "plm")`と明示。
+5. **{fixest}の節を拡充**: one-wayとtwo-wayの両方を`feols()`で推定し、lm_robustと並べて比較。`{fixest}`が実証研究で広く使われていること（第6回のIV、第9回のDIDにも使える）を追記。クラスタロバストSEのわずかな違い（two-wayのcapitalで0.0491と0.0478）の理由（固定効果がクラスタに入れ子になっている場合、fixestはその固定効果の数を小標本補正に含めない）を説明し、`ssc = ssc(fixef.K = "full")`でlm_robustと完全に一致することをコードで示した。
+6. クラスタ数が少ない（10）ことへの注意を「パッケージとデータ」の節に追加（クラスタロバストSEは小さめに出がち、実際の研究ではワイルド・クラスタ・ブートストラップなど）。
+7. **「（参考）一階階差モデル」を追加**（one-wayの後）: `group_by(firm)`と`dplyr::lag()`で差分をとり、定数項なし（`- 1`）で`lm_robust()`。`coef_rename`で変数名をそろえてone-way FEと比較（FD: value 0.089・capital 0.279、FE: 0.110・0.310）。2期なら一致、3期以上では一般に不一致である旨を説明。
+   - **ハマりどころ**: `{plm}`を`{tidyverse}`より後に読み込むと、`plm::lag()`が`dplyr::lag()`を上書きし、差分がすべて0になって係数がNAになった。`p_load()`で`plm`を最初に読み込み、さらに`dplyr::lag()`と明示し、本文でもその理由を説明した。
+8. 参考文献を刷新（第5〜7回と同じ書式）: 安藤の講義資料、The Effect第16章、The Remix「Causal Panel Designs」（`https://mixtape.scunning.com/08-panel_data`。旧リンクは404）、estimatrの「Getting started」、fixest公式サイト（estimatrのPDFマニュアルは削除）。
+9. **「（おまけ）Pythonで同様の作業を行う場合」を追加**: データはRdatasetsのCSV（`plm/Grunfeld.csv`）から読み込み（SSL証明書エラーの注記は第4回と同じ文面）。statsmodelsのPooled OLS（HC1）、pyfixestの`pf.feols("inv ~ value + capital | firm + year", vcov={"CRV1": "firm"})`と`pf.summary()`、linearmodelsの`PanelOLS.from_formula("... + EntityEffects + TimeEffects")`と`fit(cov_type="clustered", cluster_entity=True, group_debias=True)`。
+   - pyfixestのSEはRのfixestと一致（capital 0.048）。linearmodelsは`group_debias=True`でlm_robust（Stata）と一致（0.049）、指定しないと0.047。
+   - pyfixest 0.60.0の`pf.etable()`は固定効果の行の表示が誤っていた（two-wayのモデルでfirm・yearとも「-」）ので使わず、`pf.summary()`にした。
+   - どちらが多く使われているかの解説: PyPIの直近1か月のダウンロード数（2026年11月時点、pypistats.orgのAPIで確認）はlinearmodels約35万回、pyfixest約12万回。linearmodelsは歴史が長く解説も多い、pyfixestは経済学の実証研究者の間で急速に普及、ダウンロード数は依存関係によるものも含むので目安、と記載。
+   - 掲載したコードを一時的なvenvでそのまま実行して確認し、venvは削除済み。
+
+## 2026-11-03: 08_Fixed_Effects.qmdを{fixest}中心の構成に変更
+
+ユーザーの同意を受けて、推定の節を`fixest::feols()`をメインに、`lm_robust()`を参考扱いに組み替えた（第9回のqmd化でも同じ方針を提案予定）。
+
+- 「# lm_robustによる推定」と「# fixestによる推定」の2節を、「# fixestによる推定」1節にまとめた: Pooled OLS（`vcov = "iid"`と`"hetero"`。後者はlm_robustのHC1と一致）→ One-way（`factor(firm)`のLSDVと`| firm`の比較）→（参考）一階階差モデル（`feols(d_inv ~ d_value + d_capital - 1, cluster = ~firm)`）→ Two-way（LSDVと`| firm + year`）→ **標準誤差の小標本補正**（`{#ssc}`。LSDV・Stata・lm_robustは固定効果の数を補正に含める、`| `で指定したfeolsは入れ子の固定効果を含めない、`ssc(fixef.K = "full")`で一致）→（参考）lm_robustによる推定（one-way・two-wayをfixestと並べた表）。
+- 表では個体ダミー・年ダミーの係数を`coef_omit = "factor"`で省略し、`add_rows`で「個体ダミー」「年ダミー」の行を追加（`|`で指定した固定効果は`FE: firm`などの行に自動で出る）。
+- 「パッケージとデータ」の説明と`p_load()`のコメントもfixest中心に書き換え。
+- 確認した数値: LSDVのクラスタSE（two-wayのcapital 0.0491）＝lm_robust（stata）＝`fixef.K = "full"`、`| firm + year`は0.0478。one-wayではLSDV 0.054、FE 0.053。Pooledの`vcov = "hetero"`はlm_robust HC1と完全一致。
+- Pythonのlinearmodelsの説明（`group_debias=True`で一致する相手）を「LSDV・`fixef.K = "full"`のfeols・lm_robust」に更新。
+
+## 2026-11-03: 09_DID.Rmd → 09_DID.qmd
+
+第9回「計量経済学5：差分の差分(DID)法」を、第1〜8回と同じ方針でqmd化。
+
+### やったこと
+
+1. **[09_DID.qmd](09_DID.qmd) を新規作成**。YAMLは第8回と同じ形。タイトルは現在のRmdのもの（「差分の差分(DID)法」。初公開時は「差の差(DID)法」だった）。First versionは2019-06-14（`docs/09_DID.html`が最初に追加されたコミット5eac414の日付。当時のhtml内の日付は前日の2019-06-13で、レンダリングした日とpushした日がずれていたと思われる。他の回と同じく、公開＝コミットの日付を採用）。図のサイズは元と同じ高さ4・幅6。
+2. `%>%`→`|>`（22箇所）。
+3. 明らかな誤字の修正: 「適正試験」→「適性試験」（3箇所）、「うまくいかなない」→「うまくいかない」、「能力が1~100まで均等に分布」→「0~100」（コードは`runif(n, 0, 100)`）、「`fixest`関数を用いた推定も可能」→「`{fixest}`パッケージの`feols()`を用いた推定も可能」、「Introuction」→「Introduction」。
+4. **ユーザーの指示で、第8回と同じく`feols()`をメイン、`lm_robust()`を参考扱いに組み替え**（表は第4〜8回と同じく`{modelsummary}`に。`stargazer`・`texreg`を外した）。
+   - 「lmを用いた推定」→「fixestを用いた推定」: (1)式のpooledと(2)式のFDを`feols(..., vcov = "iid")`で推定（lmと同じ結果）。続けて個体FE・two-way FEを`feols(..., vcov = ~ ID)`で推定（元のfixestの節を移動）。本文の「DID推定値」が(1)式では`treated × year`、(2)式では`treated`の係数であることを明記。
+   - 「（参考）lm_robustを用いた推定」: 元のlm_robustの3モデル。**個体FEを含むモデルのクラスタSEがlm_robust（stata）3.443、feols 2.435と√2倍違う**ことを説明（T=2で個体FEが1万個＝サンプル2万の半分あり、固定効果の数を補正に含める方式だとSEが約√2倍に膨らむ。feolsは入れ子のFEを補正に含めないので、FD推定（2.419）とほぼ同じ。Stataでも`xtreg, fe`や`reghdfe`はfeolsと同じ方式）。
+5. 本講義の目的の「`lm_robust()`を用いた…」→「`feols()`を用いた…」。
+6. **第8回の記述も修正**: 小標本補正の節の「Stataと同じ計算方法」を「`lm_robust()`（stata）や、Stataでダミー変数を入れて回帰した場合（`reg`や`areg`）と同じ」に（Stataの`xtreg, fe`や`reghdfe`はfeolsと同じ方式なので、「Stataは含める」は不正確だった）。「実用上の違いは小さい」→「今回のデータでは違いは小さいが、個体が多く期間が短いデータでは大きくなることがある（次回の差の差法で例を見る）」。Pythonのおまけの該当箇所も同様に修正。08_Fixed_Effects.htmlを再レンダリング。
+
+### 確認したこと（提案事項の根拠）
+
+- 参考文献: 矢内の講義ノートの新URLは`https://yukiyanai.github.io/econometrics2/difference-in-differences.html`（Topic 6 差分の差分法）。Mixtapeの旧リンクは404、The Remixでは`https://mixtape.scunning.com/09-difference_in_differences`（第9章 Difference-in-Differences Fundamentals）。
+- 第8回の「差の差法」（3箇所）を、第9回の表記に合わせて「差分の差分法」に統一。
+
+## 2026-11-03: 09_DID.qmdに追加の修正（提案1〜8をすべて反映）
+
+1. **データ生成を簡潔に**（第5〜7回と同じ方針）: `tibble(ID, ability = runif()) |> mutate(score = ..., treated = if_else(score >= 180, 1, 0))`で個体ごとの変数を先に作り、1年目・2年目は`mutate(year, training, income)`の1回ずつ（2年目は`training = treated`）、`bind_rows()`で`df_panel`に。処置群の割合は10.8%。元のコード（`left_join()`と`replace()`による処置群ダミー作成まで）は、`eval: false`・`code-fold: true`の「他のデータ作成方法」として残した。乱数の使われ方が変わったので、推定値は変化（DID 503.117→501.917、個体FEのクラスタSE: lm_robust 3.400・feols 2.404・FD 2.407）。
+   - `training`（処置ダミー）と`treated`（処置群ダミー）の違いの説明を、データ生成の直後に移した。
+2. 不要な部分を削除: `mutate_at()`・`funs()`のコメントアウトのコード、HTMLコメント2つ（`pacman::p_load(lmtest)`、`summarise_each`に関するMEMO）。Posit Cloudに関するコメントは、前回の組み替えですでに削除済みだった。
+3. **「## 平行トレンドの仮定」を追加**: 仮定の内容、図の破線（反実仮想）との対応（$Y^{A'} = Y^B + (Y^C - Y^D)$なので$\hat\beta = Y^A - Y^{A'}$）、仮定が崩れる例、水準の違いは問題ないこと、データから直接確かめられずプレトレンドを確認することが多いこと。本講義の目的にも1項目追加。
+4. **図に反実仮想の破線と点A'を追加**: `df_counterfactual`（点Bから対照群と同じだけ伸ばす）を`geom_line(linetype = "dashed")`・白抜きの`geom_point(shape = 1)`・`geom_text()`で描画。凡例に破線や文字「a」が重なって表示されたので、文字と反実仮想の層は`show.legend = FALSE`にした。
+5. **4つの平均値からDID推定値を計算**: `y_A`〜`y_D`を`filter() |> pull()`で取り出し、`DID_mean <- (y_A - y_B) - (y_C - y_D)`。回帰の節の「概ね500近傍」は、インラインのRコードで推定値（501.917）を埋め込み、4つの平均値から計算した値と一致すると書いた。あわせて、`treated:year`は`training`と同じなので`DID_fe3`は`income ~ training | ID + year`と同じであることを追記。
+6. **「## （参考）処置の時期が個体によって異なる場合のDID」を追加**: staggered DIDでtwo-way FEの推定値が処置効果の適切な平均にならない（符号が逆になることもある）こと、その理由、Callaway and Sant'Anna (2021)・Sun and Abraham (2021)・de Chaisemartin and D'Haultfœuille (2020)、`{did}`と`fixest::sunab()`（コードは載せていない）。
+7. **参考文献を刷新**（第5〜8回と同じ書式）: 安藤の講義資料、矢内「計量経済学応用」の「Topic 6 差分の差分法」、The Effect第18章、The Remix「Difference-in-Differences Fundamentals」（`09-difference_in_differences`）と「Complex Diff-in-Diff Designs」（`10-Complex_Diff_in_Diff`）、fixest公式サイト。リンクはすべて200を確認。
+8. **「（おまけ）Pythonで同様の作業を行う場合」を追加**: NumPyによるデータ生成、`groupby()`による4つの平均値とDID、pyfixest（pooledと`| ID + year`、`vcov={"CRV1": "ID"}`）、linearmodels `PanelOLS`（`training + EntityEffects + TimeEffects`）。
+   - **linearmodelsのハマりどころ**: 既定では、個体と時間の2つの固定効果があると固定効果の数を補正に含める（`auto_df`は、入れ子の固定効果が1つだけのときしか補正から外さない）ため、SEが約3.46とlm_robustと同じく膨らむ。`count_effects=False`だけでは変わらず、`auto_df=False, count_effects=False`の両方を指定すると約2.44となり、pyfixest（2.444）やRのfeolsとほぼ一致（linearmodels 7.1、pyfixest 0.60.0）。本文でその旨を説明。
+   - Python側の結果: DID 496.961、pooledのSE 12.691。掲載したコードを一時的なvenvで実行して確認し、venvは削除済み。
