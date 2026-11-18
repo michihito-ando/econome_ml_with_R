@@ -1,0 +1,56 @@
+---
+title: "データサイエンス概論　課題レポート"
+author: "学籍番号　氏名"
+date: today
+format:
+  html:
+    embed-resources: true   # 画像などをhtmlに埋め込み、1つのファイルで提出できるようにする
+    toc: true               # 目次を表示する
+    toc-depth: 2
+    number-sections: true   # 見出しに番号を振る
+    # code-fold: true       # コードを折りたたんで表示したい場合はコメントを外す
+    link-external-newwindow: true   # 外部リンクを新しいタブで開く
+    # html をパソコン上で直接開いた場合も、外部リンクを新しいタブで開くための設定
+    link-external-filter: '^(?:http:|https:)\/\/michihito-ando\.github\.io'
+lang: ja
+---
+
+```{r include = FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE)
+
+# グラフの日本語が文字化け（□）する場合は、次の行の先頭の # を外す。
+# （{ragg} パッケージが必要。入っていなければ install.packages("ragg") でインストールする）
+# knitr::opts_chunk$set(dev = "ragg_png")
+```
+
+# 準備
+
+# 課題A
+
+## 分析用データの作成
+
+## A1. データ可視化
+
+## A2. 回帰分析
+
+## A3. マッチング法または傾向スコア法
+
+## A4. 機械学習による予測
+
+# 課題B
+
+## 問い
+
+## データ
+
+## データの読み込みと加工
+
+## 記述統計と分布図
+
+## X と Y の関係
+
+## 単回帰分析と重回帰分析
+
+## 考察
+
+# 生成AI利用申告

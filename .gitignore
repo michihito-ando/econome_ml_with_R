@@ -3,3 +3,8 @@
 .RData
 .Ruserdata
 Icon*
+
+# 課題の教員用ファイル（模範解答・旧版）は公開しない
+kadai/model_answer.qmd
+kadai/model_answer.html
+kadai/ボツ/
