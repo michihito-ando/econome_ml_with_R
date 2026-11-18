@@ -160,10 +160,10 @@ cps_mixtape   # CPS のデータ
 # 提出物
 
 1. **分析結果レポート（課題Aと課題Bをまとめた html ファイル1つ）**
-   - 次の**レポートの雛形**を用いること。
-     - [雛形（qmd ファイル）](https://michihito-ando.github.io/econome_ml_with_R/kadai_template.qmd){target="_blank" rel="noopener"}：クリックすると `kadai_template.qmd` がダウンロードされる。保存したファイルを RStudio で開き、このファイルに書き込んでレポートを作成する。
-     - [雛形を render した html](https://michihito-ando.github.io/econome_ml_with_R/kadai_template.html){target="_blank" rel="noopener"}：雛形をそのまま render するとどのような html になるか（見出しの構成や目次）を確認するためのもの。
-     - 雛形には、課題A・課題Bの見出しと、html を1つのファイルとして出力するための設定があらかじめ入っている。`author` の欄に学籍番号と氏名を書き、各見出しの下にコードと解説を書き込んでいけばよい。見出しは必要に応じて追加して構わない。
+   - 次の**レポートのテンプレ**を用いること。
+     - [テンプレ（qmd ファイル）](https://michihito-ando.github.io/econome_ml_with_R/kadai_template.qmd){target="_blank" rel="noopener"}：クリックすると `kadai_template.qmd` がダウンロードされる。保存したファイルを RStudio で開き、このファイルに書き込んでレポートを作成する。
+     - [テンプレを render した html](https://michihito-ando.github.io/econome_ml_with_R/kadai_template.html){target="_blank" rel="noopener"}：テンプレをそのまま render するとどのような html になるか（見出しの構成や目次）を確認するためのもの。
+     - テンプレには、課題A・課題Bの見出しと、html を1つのファイルとして出力するための設定があらかじめ入っている。`author` の欄に学籍番号と氏名を書き、各見出しの下にコードと解説を書き込んでいけばよい。見出しは必要に応じて追加して構わない。
    - 全体を Quarto で作成し、render して html として出力すること。
    - **コードがすべて html に表示されていること**（`echo: false` でコードを隠さないこと。`code-fold: true` で折りたたむのは構わない）。
    - スクリプト（コード）には、「10年後の自分がコードを読んでも分かる」ということを一つの目安に、適宜説明を付けること。
